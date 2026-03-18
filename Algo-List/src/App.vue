@@ -66,11 +66,34 @@ function deleteItem(item) {
   openMenuId.value = null
 }
 
-// 다중 삭제 (현재는 선택된 항목 삭제)
-function deleteSelected() {
-  if (selectedItem.value) {
-    deleteItem(selectedItem.value)
+// 다중 삭제 모드
+const isDeleteMode = ref(false)
+const checkedIds = ref([])
+
+function enterDeleteMode() {
+  isDeleteMode.value = true
+  checkedIds.value = []
+}
+
+function cancelDeleteMode() {
+  isDeleteMode.value = false
+  checkedIds.value = []
+}
+
+function toggleCheck(id) {
+  if (checkedIds.value.includes(id)) {
+    checkedIds.value = checkedIds.value.filter(i => i !== id)
+  } else {
+    checkedIds.value.push(id)
   }
+}
+
+function deleteChecked() {
+  items.value = items.value.filter(item => !checkedIds.value.includes(item.id))
+  if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
+    selectedItem.value = null
+  }
+  cancelDeleteMode()
 }
 
 // 수정 (일단 제목 변경으로 간단히)
@@ -122,8 +145,10 @@ function editItem(item) {
 
         <!-- 액션 버튼 (추가 / 다중삭제) -->
         <div class="action-bar">
-          <button class="action-button add" @click="addItem">+</button>
-          <button class="action-button trash" @click="deleteSelected">🗑</button>
+          <button class="action-button add" @click="addItem" v-if="!isDeleteMode">+</button>
+          <button class="action-button trash" @click="enterDeleteMode" v-if="!isDeleteMode">🗑</button>
+          <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">삭제</button>
+          <button class="action-button cancel" @click="cancelDeleteMode" v-if="isDeleteMode">취소</button>
         </div>
 
         <!-- 리스트 -->
@@ -134,11 +159,18 @@ function editItem(item) {
             :class="['list-item', { active: selectedItem?.id === item.id }]"
             @click="selectItem(item)"
           >
+            <input
+              v-if="isDeleteMode"
+              type="checkbox"
+              :checked="checkedIds.includes(item.id)"
+              @click.stop="toggleCheck(item.id)"
+              class="delete-checkbox"
+            />
             <div class="item-info">
               <img :src="`/icons/${item.site}.png`" :alt="item.site" class="site-icon" />
               <span class="item-title">[{{ item.number }}] {{ item.title }}</span>
             </div>
-            <button class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
+            <button v-if="!isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
 
             <!-- 드롭다운 메뉴 -->
             <div v-if="openMenuId === item.id" class="dropdown-menu">
@@ -249,6 +281,35 @@ function editItem(item) {
 .delete-button:hover {
   background-color: #ff4d4d;
   color: white;
+}
+.delete-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.action-button.delete-confirm {
+  background-color: #ff4d4d;
+  color: white;
+  border-color: #ff4d4d;
+  width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.action-button.cancel {
+  width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.action-button.delete-confirm:hover {
+  background-color: #e03e3e;
+}
+
+.action-button.cancel:hover {
+  background-color: #e9ecef;
 }
 
 /* 탭 */
