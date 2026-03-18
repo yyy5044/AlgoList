@@ -10,9 +10,9 @@ const searchQuery = ref('')
 
 // 리스트 데이터
 const items = ref([
-  { id: 1, category: ['BFS'], number: '1941', title: '소문난 칠공주', },
-  { id: 2, category: ['DP', '시뮬레이션'], number: '4014', title: '활주로 건설', },
-  { id: 3, category: ['조합', 'BFS'], number: '2309', title: '번데기 먹기', },
+  { id: 1, category: ['BFS'], number: '1941', title: '소문난 칠공주', site: 'BOJ' },
+  { id: 2, category: ['DP', '시뮬레이션'], number: '4014', title: '활주로 건설', site: 'SWEA' },
+  { id: 3, category: ['조합', 'BFS'], number: '2309', title: '번데기 먹기', site: 'BOJ' },
 ])
 
 // 선택 / 메뉴
@@ -52,6 +52,7 @@ function addItem() {
     category: ['미분류'],
     number: '0000',
     title: `새 문제`,
+    site: 'BOJ',
   }
   items.value.push(newItem)
 }
@@ -134,13 +135,7 @@ function editItem(item) {
             @click="selectItem(item)"
           >
             <div class="item-info">
-              <span
-                v-for="cat in item.category"
-                :key="cat"
-                class="item-category"
-              >
-                {{ cat }}
-              </span>
+              <img :src="`/icons/${item.site}.png`" :alt="item.site" class="site-icon" />
               <span class="item-title">[{{ item.number }}] {{ item.title }}</span>
             </div>
             <button class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
@@ -230,7 +225,7 @@ function editItem(item) {
 
 .list-item {
   position: relative;
-  padding: 14px 20px;
+  padding: 6px 20px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
   font-size: 15px;
@@ -339,10 +334,16 @@ function editItem(item) {
 }
 
 /* 리스트 항목 */
+.site-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 .item-info {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
 }
