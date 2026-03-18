@@ -30,8 +30,10 @@ function onSelectItem(item) {
 
 .app-container {
   display: flex;
-  width: 1500px;
-  height: 1000px;
+  width: 90vw;
+  height: 85vh;
+  max-width: 1500px;
+  max-height: 1000px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
