@@ -69,7 +69,7 @@ const filteredItems = computed(() => {
 // 1. 문제 검색 
 // 검색 모달
 const isSearchModalOpen = ref(false)
-const problemSearchQuery = ref('')
+const problemSearchQuery = ref('') // 문제 검색어
 
 function openSearchModal() {
   isSearchModalOpen.value = true
@@ -200,6 +200,7 @@ function editItem(item) {
 
   <!-- 검색 모달 -->
   <Teleport to ="body">
+    <!--검은색 배경(modal-overlay) 먼저 그리고, 검은색 배경을 클릭하면 closeSearchModal 호출-->
     <div v-if="isSearchModalOpen" class="modal-overlay" @click.self="closeSearchModal">
       <div class="modal-content">
         <h3 class="modal-title">문제 검색</h3>
