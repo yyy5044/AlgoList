@@ -12,9 +12,30 @@ const searchQuery = ref('')
 
 // 리스트 데이터
 const items = ref([
-  { id: 1, category: ['BFS'], number: '1941', title: '소문난 칠공주', site: 'BOJ' },
-  { id: 2, category: ['DP', '시뮬레이션'], number: '4014', title: '활주로 건설', site: 'SWEA' },
-  { id: 3, category: ['조합', 'BFS'], number: '2309', title: '번데기 먹기', site: 'BOJ' },
+  {
+    id: 1,
+    // 외부 API에서 받는 데이터
+    title: '게리맨더링',
+    number: '17471',
+    difficulty: 'gold3',
+    category: ['수학', '그래프 이론', '그래프 탐색', 'BFS'],
+    site: 'BOJ',
+    // 내부에서 관리하는 데이터
+    grade: 'RED',
+    solveCount: 3,
+    lastSolvedDate: '2026-03-19',
+  },
+  {
+    id: 2,
+    title: '활주로 건설',
+    number: '4014',
+    difficulty: 'gold3',
+    category: ['DP', '시뮬레이션'],
+    site: 'SWEA',
+    grade: 'GREEN',
+    solveCount: 1,
+    lastSolvedDate: '2026-03-15',
+  },
 ])
 
 // 선택 / 메뉴
