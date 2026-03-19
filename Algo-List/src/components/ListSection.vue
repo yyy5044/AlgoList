@@ -20,6 +20,7 @@ const items = ref([
     difficulty: 'gold3',
     category: ['수학', '그래프 이론', '그래프 탐색', 'BFS'],
     site: 'BOJ',
+    link: 'https://www.acmicpc.net/problem/17471',
     // 내부에서 관리하는 데이터
     grade: 'RED',
     solveCount: 3,
@@ -32,6 +33,7 @@ const items = ref([
     difficulty: 'gold3',
     category: ['DP', '시뮬레이션'],
     site: 'SWEA',
+    link: 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AWIeW7FakkUDFAVH',
     grade: 'GREEN',
     solveCount: 1,
     lastSolvedDate: '2026-03-15',

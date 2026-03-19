@@ -10,7 +10,9 @@ defineProps({
       <!-- 상단: 사이트 아이콘 + 문제 번호 + 제목 -->
       <div class="detail-header">
         <img :src="`/icons/${selectedItem.site}.png`" :alt="selectedItem.site" class="detail-site-icon" />
-        <h2>[{{ selectedItem.number }}] {{ selectedItem.title }}</h2>
+        <a :href="selectedItem.link" target="_blank" class="detail-title-link">
+          <h2>[{{ selectedItem.number }}] {{ selectedItem.title }}</h2>
+        </a>
       </div>
 
       <!-- 문제 정보 -->
@@ -58,6 +60,15 @@ defineProps({
 </template>
 
 <style scoped>
+.detail-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.detail-title-link:hover h2 {
+  color: #1a56db;
+}
+
 .detail-section {
   flex: 1;
   padding: 32px;
