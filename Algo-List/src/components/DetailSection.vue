@@ -39,9 +39,10 @@ defineProps({
       <div class="info-group">
         <div class="info-row">
           <span class="info-label">문제 등급</span>
-          <span :class="['grade-badge', selectedItem.grade.toLowerCase()]">
+          <span v-if="selectedItem.grade" :class="['grade-badge', selectedItem.grade.toLowerCase()]">
             {{ selectedItem.grade }}
           </span>
+          <span v-else class="grade-badge">미지정</span>
         </div>
         <div class="info-row">
           <span class="info-label">푼 횟수</span>

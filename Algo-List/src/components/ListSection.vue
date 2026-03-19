@@ -76,11 +76,50 @@ function openSearchModal() {
   problemSearchQuery.value = ''
 }
 
+// closeSearchModal도 수정
 function closeSearchModal() {
   isSearchModalOpen.value = false
   problemSearchQuery.value = ''
+  searchResults.value = []
+  hasSearched.value = false
 }
 
+// 2. 검색 함수: 8080 포트로 GET 요청
+const searchResults = ref([])
+const hasSearched = ref(false)
+
+async function searchProblem() {
+  if (!problemSearchQuery.value) return
+  try {
+    const response = await fetch(`http://localhost:8080/api/search?query=${problemSearchQuery.value}`)
+    searchResults.value = await response.json()
+    hasSearched.value = true
+  } catch (error) {
+    console.error('검색 실패:', error)
+  }
+}
+
+// 검색 결과 선택 시
+function selectSearchResult(result) {
+  const maxId = items.value.length > 0
+    ? Math.max(...items.value.map(item => item.id))
+    : 0
+  const newItem = {
+    id: maxId + 1,
+    title: result.title,
+    number: result.number,
+    difficulty: result.difficulty,
+    category: result.category || ['미분류'],
+    site: result.site,
+    link: result.link,
+    grade: null,
+    solveCount: 0,
+    lastSolvedDate: null,
+  }
+  items.value.push(newItem)
+  emit('select-item', newItem)
+  closeSearchModal()
+}
 
 // 개별 삭제
 function deleteItem(item) {
@@ -211,8 +250,22 @@ function editItem(item) {
             class="modal-search-input"
             placeholder="문제 번호 또는 제목을 입력하세요"
           />
-          <button class="modal-search-button">검색</button>
+          <button class="modal-search-button" @click="searchProblem">검색</button>
         </div>
+        <!-- 검색 결과 목록은 여기! modal-search-bar 바깥 -->
+        <ul v-if="searchResults.length > 0" class="search-results">
+          <li
+            v-for="result in searchResults"
+            :key="result.number"
+            class="search-result-item"
+            @click="selectSearchResult(result)"
+          >
+            <img :src="`/icons/${result.site}.png`" :alt="result.site" class="result-site-icon" />
+            <span>[{{ result.number }}] {{ result.title }}</span>
+            <span class="result-difficulty">{{ result.difficulty }}</span>
+          </li>
+        </ul>
+        <p v-else-if="hasSearched" class="no-results">검색 결과가 없습니다.</p>
         <button class="modal-close-button" @click="closeSearchModal">취소</button>
       </div>
     </div>
@@ -220,6 +273,52 @@ function editItem(item) {
 </template>
 
 <style scoped>
+/* 검색 결과 */
+.search-results {
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f0f4ff;
+}
+
+.result-site-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.result-difficulty {
+  margin-left: auto;
+  font-size: 12px;
+  color: #888;
+}
+
+.no-results {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  padding: 16px 0;
+}
+
 /* 모달 */
 .modal-overlay {
   position: fixed;
