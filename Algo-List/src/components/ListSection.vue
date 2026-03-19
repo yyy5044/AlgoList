@@ -11,34 +11,7 @@ const currentTab = ref('문제')
 const searchQuery = ref('')
 
 // 리스트 데이터
-const items = ref([
-  {
-    id: 1,
-    // 외부 API에서 받는 데이터
-    title: '게리맨더링',
-    number: '17471',
-    difficulty: 'gold3',
-    category: ['수학', '그래프 이론', '그래프 탐색', 'BFS'],
-    site: 'BOJ',
-    link: 'https://www.acmicpc.net/problem/17471',
-    // 내부에서 관리하는 데이터
-    grade: 'RED',
-    solveCount: 3,
-    lastSolvedDate: '2026-03-19',
-  },
-  {
-    id: 2,
-    title: '활주로 건설',
-    number: '4014',
-    difficulty: 'gold3',
-    category: ['DP', '시뮬레이션'],
-    site: 'SWEA',
-    link: 'https://swexpertacademy.com/main/code/problem/problemDetail.do?contestProbId=AWIeW7FakkUDFAVH',
-    grade: 'GREEN',
-    solveCount: 1,
-    lastSolvedDate: '2026-03-15',
-  },
-])
+const items = ref([]) // 빈 리스트
 
 // 선택 / 메뉴
 const selectedItem = ref(null)
@@ -66,7 +39,7 @@ const filteredItems = computed(() => {
 })
 
 // 요소 추가 로직
-// 1. 문제 검색 
+// 1. 문제 검색
 // 검색 모달
 const isSearchModalOpen = ref(false)
 const problemSearchQuery = ref('') // 문제 검색어
@@ -85,16 +58,19 @@ function closeSearchModal() {
 }
 
 // 2. 검색 함수: 8080 포트로 GET 요청
-const searchResults = ref([])
-const hasSearched = ref(false)
+const searchResults = ref([]) // 검색 결과를 받는 리스트
+const hasSearched = ref(false) // ?
+const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
 
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
+    searchError.value = ''
     const response = await fetch(`http://localhost:8080/api/search?query=${problemSearchQuery.value}`)
     searchResults.value = await response.json()
     hasSearched.value = true
   } catch (error) {
+    searchError.value = '검색 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('검색 실패:', error)
   }
 }
@@ -267,12 +243,25 @@ function editItem(item) {
         </ul>
         <p v-else-if="hasSearched" class="no-results">검색 결과가 없습니다.</p>
         <button class="modal-close-button" @click="closeSearchModal">취소</button>
+        <p v-if="searchError" class="search-error">{{ searchError }}</p>
       </div>
     </div>
   </Teleport>
 </template>
 
 <style scoped>
+
+/* 검색 실패 시 메세지 */
+.search-error {
+  text-align: center;
+  color: #d32f2f;
+  font-size: 13px;
+  background-color: #fde8e8;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
 /* 검색 결과 */
 .search-results {
   list-style: none;
