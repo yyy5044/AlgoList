@@ -65,20 +65,22 @@ const filteredItems = computed(() => {
   )
 })
 
-// 추가
-function addItem() {
-  const maxId = items.value.length > 0
-    ? Math.max(...items.value.map(item => item.id))
-    : 0
-  const newItem = {
-    id: maxId + 1,
-    category: ['미분류'],
-    number: '0000',
-    title: '새 문제',
-    site: 'BOJ',
-  }
-  items.value.push(newItem)
+// 요소 추가 로직
+// 1. 문제 검색 
+// 검색 모달
+const isSearchModalOpen = ref(false)
+const problemSearchQuery = ref('')
+
+function openSearchModal() {
+  isSearchModalOpen.value = true
+  problemSearchQuery.value = ''
 }
+
+function closeSearchModal() {
+  isSearchModalOpen.value = false
+  problemSearchQuery.value = ''
+}
+
 
 // 개별 삭제
 function deleteItem(item) {
@@ -155,7 +157,7 @@ function editItem(item) {
 
     <!-- 액션 버튼 -->
     <div class="action-bar">
-      <button class="action-button add" @click="addItem" v-if="!isDeleteMode">+</button>
+      <button class="action-button add" @click="openSearchModal" v-if="!isDeleteMode">+</button>
       <button class="action-button trash" @click="enterDeleteMode" v-if="!isDeleteMode">🗑</button>
       <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">삭제</button>
       <button class="action-button cancel" @click="cancelDeleteMode" v-if="isDeleteMode">취소</button>
@@ -195,9 +197,104 @@ function editItem(item) {
       <button class="setting-button">⚙</button>
     </div>
   </div>
+
+  <!-- 검색 모달 -->
+  <Teleport to ="body">
+    <div v-if="isSearchModalOpen" class="modal-overlay" @click.self="closeSearchModal">
+      <div class="modal-content">
+        <h3 class="modal-title">문제 검색</h3>
+        <div class="modal-search-bar">
+          <input
+            v-model="problemSearchQuery"
+            type="text"
+            class="modal-search-input"
+            placeholder="문제 번호 또는 제목을 입력하세요"
+          />
+          <button class="modal-search-button">검색</button>
+        </div>
+        <button class="modal-close-button" @click="closeSearchModal">취소</button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
+/* 모달 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 400px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modal-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.modal-search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.modal-search-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.modal-search-input:focus {
+  border-color: #1a56db;
+}
+
+.modal-search-button {
+  padding: 10px 20px;
+  background-color: #1a56db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.modal-search-button:hover {
+  background-color: #1544b5;
+}
+
+.modal-close-button {
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.modal-close-button:hover {
+  background-color: #f5f5f5;
+}
+
 .list-section {
   width: 300px;
   border-left: 1px solid #e0e0e0;
