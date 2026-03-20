@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const emit = defineEmits(['select-item'])
 
@@ -11,7 +11,16 @@ const currentTab = ref('문제')
 const searchQuery = ref('')
 
 // 리스트 데이터
-const items = ref([]) // 빈 리스트
+const items = ref([])
+
+onMounted(async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/problems')
+    items.value = await response.json()
+  } catch (error) {
+    console.error('목록 조회 실패:', error)
+  }
+})
 
 // 선택 / 메뉴
 const selectedItem = ref(null)
