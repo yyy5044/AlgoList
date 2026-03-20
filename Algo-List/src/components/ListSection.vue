@@ -7,13 +7,14 @@ const emit = defineEmits(['select-item'])
 const tabs = ['문제', '분류', 'Git']
 const currentTab = ref('문제')
 
-// 검색
+// 문제 리스트 필터링용 검색어 변수
 const searchQuery = ref('')
 
-// 리스트 데이터
+// 문제 리스트 변수
 const items = ref([])
 
 onMounted(async () => {
+  // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
   try {
     const response = await fetch('http://localhost:8080/api/problems')
     items.value = await response.json()
@@ -23,8 +24,8 @@ onMounted(async () => {
 })
 
 // 선택 / 메뉴
-const selectedItem = ref(null)
-const openMenuId = ref(null)
+const selectedItem = ref(null) // 리스트 내에서 문제를 선택하기 위한 변수
+const openMenuId = ref(null) // 드롭다운 메뉴가 열린 항목의 id
 
 function selectItem(item) {
   selectedItem.value = item
@@ -36,22 +37,23 @@ function toggleMenu(item) {
   openMenuId.value = openMenuId.value === item.id ? null : item.id
 }
 
-// 검색 필터
+// 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
 const filteredItems = computed(() => {
   if (!searchQuery.value) return items.value
   const query = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.title.toLowerCase().includes(query) ||
-    item.number.includes(query) ||
-    item.category.some(cat => cat.toLowerCase().includes(query))
+  return items.value.filter(
+    (item) =>
+      item.title.toLowerCase().includes(query) ||
+      item.number.includes(query) ||
+      item.category.some((cat) => cat.toLowerCase().includes(query)),
   )
 })
 
 // 요소 추가 로직
 // 1. 문제 검색
 // 검색 모달
-const isSearchModalOpen = ref(false)
-const problemSearchQuery = ref('') // 문제 검색어
+const isSearchModalOpen = ref(false) // 모달이 열려 있으면 true, 닫혀 있으면 false
+const problemSearchQuery = ref('') // 모달에 있는 검색창에 들어오는 입력은 problemSearchQuery에 할당됨
 
 function openSearchModal() {
   isSearchModalOpen.value = true
@@ -68,14 +70,17 @@ function closeSearchModal() {
 
 // 2. 검색 함수: 8080 포트로 GET 요청
 const searchResults = ref([]) // 검색 결과를 받는 리스트
-const hasSearched = ref(false) // ?
+const hasSearched = ref(false) // "검색 결과 없음"을 표시하기 위한 변수, searchResults가 0인데 hasSeared는 true일 때 -> 검색 결과 없음
 const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
 
+// 문제 검색 함수
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
     searchError.value = ''
-    const response = await fetch(`http://localhost:8080/api/search?query=${problemSearchQuery.value}`)
+    const response = await fetch(
+      `http://localhost:8080/api/search?query=${problemSearchQuery.value}`,
+    )
     searchResults.value = await response.json()
     hasSearched.value = true
   } catch (error) {
@@ -84,13 +89,13 @@ async function searchProblem() {
   }
 }
 
-// 검색 결과 선택 시
+// 검색 결과 중에서 문제 선택할 때 호출되는 함수
 async function selectSearchResult(result) {
   try {
     const response = await fetch('http://localhost:8080/api/problems', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(result)
+      body: JSON.stringify(result),
     })
     const savedProblem = await response.json()
     savedProblem.category = result.category
@@ -106,9 +111,9 @@ async function selectSearchResult(result) {
 async function deleteItem(item) {
   try {
     await fetch(`http://localhost:8080/api/problems/${item.id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     })
-    items.value = items.value.filter(i => i.id !== item.id)
+    items.value = items.value.filter((i) => i.id !== item.id)
     if (selectedItem.value?.id === item.id) {
       selectedItem.value = null
       emit('select-item', null)
@@ -135,7 +140,7 @@ function cancelDeleteMode() {
 
 function toggleCheck(id) {
   if (checkedIds.value.includes(id)) {
-    checkedIds.value = checkedIds.value.filter(i => i !== id)
+    checkedIds.value = checkedIds.value.filter((i) => i !== id)
   } else {
     checkedIds.value.push(id)
   }
@@ -145,10 +150,10 @@ async function deleteChecked() {
   try {
     for (const id of checkedIds.value) {
       await fetch(`http://localhost:8080/api/problems/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
     }
-    items.value = items.value.filter(item => !checkedIds.value.includes(item.id))
+    items.value = items.value.filter((item) => !checkedIds.value.includes(item.id))
     if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
       selectedItem.value = null
       emit('select-item', null)
@@ -195,8 +200,12 @@ function editItem(item) {
     <div class="action-bar">
       <button class="action-button add" @click="openSearchModal" v-if="!isDeleteMode">+</button>
       <button class="action-button trash" @click="enterDeleteMode" v-if="!isDeleteMode">🗑</button>
-      <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">삭제</button>
-      <button class="action-button cancel" @click="cancelDeleteMode" v-if="isDeleteMode">취소</button>
+      <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">
+        삭제
+      </button>
+      <button class="action-button cancel" @click="cancelDeleteMode" v-if="isDeleteMode">
+        취소
+      </button>
     </div>
 
     <!-- 리스트 -->
@@ -235,7 +244,7 @@ function editItem(item) {
   </div>
 
   <!-- 검색 모달 -->
-  <Teleport to ="body">
+  <Teleport to="body">
     <!--검은색 배경(modal-overlay) 먼저 그리고, 검은색 배경을 클릭하면 closeSearchModal 호출-->
     <div v-if="isSearchModalOpen" class="modal-overlay" @click.self="closeSearchModal">
       <div class="modal-content">
@@ -271,7 +280,6 @@ function editItem(item) {
 </template>
 
 <style scoped>
-
 /* 검색 실패 시 메세지 */
 .search-error {
   text-align: center;
