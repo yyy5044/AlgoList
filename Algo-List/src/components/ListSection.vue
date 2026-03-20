@@ -94,13 +94,20 @@ async function selectSearchResult(result) {
 }
 
 // 개별 삭제
-function deleteItem(item) {
-  items.value = items.value.filter(i => i.id !== item.id)
-  if (selectedItem.value?.id === item.id) {
-    selectedItem.value = null
-    emit('select-item', null)
+async function deleteItem(item) {
+  try {
+    await fetch(`http://localhost:8080/api/problems/${item.id}`, {
+      method: 'DELETE'
+    })
+    items.value = items.value.filter(i => i.id !== item.id)
+    if (selectedItem.value?.id === item.id) {
+      selectedItem.value = null
+      emit('select-item', null)
+    }
+    openMenuId.value = null
+  } catch (error) {
+    console.error('삭제 실패:', error)
   }
-  openMenuId.value = null
 }
 
 // 다중 삭제 모드
@@ -125,13 +132,22 @@ function toggleCheck(id) {
   }
 }
 
-function deleteChecked() {
-  items.value = items.value.filter(item => !checkedIds.value.includes(item.id))
-  if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
-    selectedItem.value = null
-    emit('select-item', null)
+async function deleteChecked() {
+  try {
+    for (const id of checkedIds.value) {
+      await fetch(`http://localhost:8080/api/problems/${id}`, {
+        method: 'DELETE'
+      })
+    }
+    items.value = items.value.filter(item => !checkedIds.value.includes(item.id))
+    if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
+      selectedItem.value = null
+      emit('select-item', null)
+    }
+    cancelDeleteMode()
+  } catch (error) {
+    console.error('다중 삭제 실패:', error)
   }
-  cancelDeleteMode()
 }
 
 // 수정
