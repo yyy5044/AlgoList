@@ -15,8 +15,8 @@ public class ProblemController {
     private final RestTemplate restTemplate = new RestTemplate();
 
     @GetMapping("/api/search")
-    public List<Map<String, Object>> searchProblem(@RequestParam String query) {
-        List<Map<String, Object>> results = new ArrayList<>();
+    public List<ProblemDto> searchProblem(@RequestParam String query) {
+        List<ProblemDto> results = new ArrayList<>();
 
         try {
             String url = "https://solved.ac/api/v3/search/problem?query=" + query;
@@ -27,13 +27,6 @@ public class ProblemController {
                 List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
 
                 for (Map<String, Object> item : items) {
-                    Map<String, Object> problem = new HashMap<>();
-                    problem.put("title", item.get("titleKo"));
-                    problem.put("number", String.valueOf(item.get("problemId")));
-                    problem.put("difficulty", convertLevel((int) item.get("level")));
-                    problem.put("site", "BOJ");
-                    problem.put("link", "https://www.acmicpc.net/problem/" + item.get("problemId"));
-
                     // 알고리즘 태그 추출
                     List<String> categories = new ArrayList<>();
                     List<Map<String, Object>> tags = (List<Map<String, Object>>) item.get("tags");
@@ -47,7 +40,15 @@ public class ProblemController {
                             }
                         }
                     }
-                    problem.put("category", categories.isEmpty() ? List.of("미분류") : categories);
+
+                    ProblemDto problem = new ProblemDto(
+                        (String) item.get("titleKo"),
+                        String.valueOf(item.get("problemId")),
+                        convertLevel((int) item.get("level")),
+                        "BOJ",
+                        "https://www.acmicpc.net/problem/" + item.get("problemId"),
+                        categories.isEmpty() ? List.of("미분류") : categories
+                    );
 
                     results.add(problem);
                 }
