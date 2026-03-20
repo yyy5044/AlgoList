@@ -73,7 +73,7 @@ const searchResults = ref([]) // 검색 결과를 받는 리스트
 const hasSearched = ref(false) // "검색 결과 없음"을 표시하기 위한 변수, searchResults가 0인데 hasSeared는 true일 때 -> 검색 결과 없음
 const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
 
-// 문제 검색 함수
+// 검색 모달에서 문제 검색 함수
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
@@ -98,9 +98,9 @@ async function selectSearchResult(result) {
       body: JSON.stringify(result),
     })
     const savedProblem = await response.json()
-    savedProblem.category = result.category
+    savedProblem.category = result.category // <- 백에서 완전한 데이터 주도록 수정할 것
     items.value.push(savedProblem)
-    emit('select-item', savedProblem)
+    emit('select-item', savedProblem) // <- 리스트에 문제 추가할 때는 DetailSection으로 정보 넘길 필요 없음.
     closeSearchModal()
   } catch (error) {
     console.error('문제 저장 실패:', error)
