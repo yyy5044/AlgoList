@@ -76,25 +76,21 @@ async function searchProblem() {
 }
 
 // 검색 결과 선택 시
-function selectSearchResult(result) {
-  const maxId = items.value.length > 0
-    ? Math.max(...items.value.map(item => item.id))
-    : 0
-  const newItem = {
-    id: maxId + 1,
-    title: result.title,
-    number: result.number,
-    difficulty: result.difficulty,
-    category: result.category || ['미분류'],
-    site: result.site,
-    link: result.link,
-    grade: null,
-    solveCount: 0,
-    lastSolvedDate: null,
+async function selectSearchResult(result) {
+  try {
+    const response = await fetch('http://localhost:8080/api/problems', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(result)
+    })
+    const savedProblem = await response.json()
+    savedProblem.category = result.category
+    items.value.push(savedProblem)
+    emit('select-item', savedProblem)
+    closeSearchModal()
+  } catch (error) {
+    console.error('문제 저장 실패:', error)
   }
-  items.value.push(newItem)
-  emit('select-item', newItem)
-  closeSearchModal()
 }
 
 // 개별 삭제
