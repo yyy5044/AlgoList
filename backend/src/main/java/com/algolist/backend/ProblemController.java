@@ -1,5 +1,7 @@
 package com.algolist.backend;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,6 +15,11 @@ import java.util.*;
 public class ProblemController {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    
+    @Autowired
+    private ProblemMapper problemMapper;
+
+    private final Long TEMP_USER_ID = 1L; // 임시 사용자 ID
 
     @GetMapping("/api/search")
     public List<ProblemDto> searchProblem(@RequestParam String query) {
@@ -64,6 +71,38 @@ public class ProblemController {
         }
         
         return results;
+    }
+    
+    // 사용자의 문제 목록 조회
+    @GetMapping("/api/problems")
+    public List<ProblemDto> getProblems() {
+        List<ProblemDto> problems = problemMapper.getAllProblems(TEMP_USER_ID);
+        // 각 문제에 카테고리 붙여주기
+        for (ProblemDto problem : problems) {
+            List<String> categories = problemMapper.getCategoriesByProblemId(problem.getId());
+            problem.setCategory(categories.isEmpty() ? List.of("미분류") : categories);
+        }
+        return problems;
+    }
+    
+    // 문제 저장
+    @PostMapping("/api/problems")
+    public ProblemDto addProblem(@RequestBody ProblemDto problem) {
+        problem.setUserId(TEMP_USER_ID);
+        problem.setSolveCount(0);
+        problemMapper.insertProblem(problem);
+        // 카테고리 저장
+        if (problem.getCategory() != null) {
+            for (String category : problem.getCategory()) {
+                problemMapper.insertCategory(problem.getId(), category);
+            }
+        }
+        return problem;
+    }
+
+    @DeleteMapping("/api/problems/{id}")
+    public void deleteProblem(@PathVariable Long id) {
+        problemMapper.deleteProblem(id, TEMP_USER_ID);
     }
 
     private String convertLevel(int level) {

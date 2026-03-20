@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.algolist.backend.ProblemMapper">
+
+	<!-- 문제 전체 조회 (사용자별) -->
+	<select id="getAllProblems" resultType="com.algolist.backend.ProblemDto">
+	    SELECT id, title, number, difficulty, site, link,
+	           grade, solve_count AS solveCount, last_solved_date AS lastSolvedDate
+	    FROM problems
+	    WHERE user_id = #{userId}
+	</select>
+
+	<!-- 문제 추가 -->
+	<insert id="insertProblem" parameterType="com.algolist.backend.ProblemDto" useGeneratedKeys="true" keyProperty="id">
+	    INSERT INTO problems (title, number, difficulty, site, link, grade, solve_count, last_solved_date, user_id)
+	    VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{grade}, #{solveCount}, #{lastSolvedDate}, #{userId})
+	</insert>
+
+	<delete id="deleteProblem">
+	    DELETE FROM problems WHERE id = #{id} AND user_id = #{userId}
+	</delete>
+
+    <!-- 카테고리 추가 -->
+    <insert id="insertCategory">
+        INSERT INTO problem_categories (problem_id, category_name)
+        VALUES (#{param1}, #{param2})
+    </insert>
+
+    <!-- 특정 문제의 카테고리 조회 -->
+    <select id="getCategoriesByProblemId" parameterType="Long" resultType="String">
+        SELECT category_name FROM problem_categories WHERE problem_id = #{problemId}
+    </select>
+
+</mapper>
