@@ -98,7 +98,7 @@ async function selectSearchResult(result) {
       body: JSON.stringify(result),
     })
     const savedProblem = await response.json()
-    savedProblem.category = result.category // <- 백에서 완전한 데이터 주도록 수정할 것
+    // console.log(savedProblem) // 디버깅용: 응답 json이 잘 채워져 있는지
     items.value.push(savedProblem)
     emit('select-item', savedProblem) // <- 리스트에 문제 추가할 때는 DetailSection으로 정보 넘길 필요 없음.
     closeSearchModal()
