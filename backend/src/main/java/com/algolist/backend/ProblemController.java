@@ -21,6 +21,7 @@ public class ProblemController {
 
     private final Long TEMP_USER_ID = 1L; // 임시 사용자 ID
 
+    // 검색 모달에서 문제 검색
     @GetMapping("/api/search")
     public List<ProblemDto> searchProblem(@RequestParam String query) {
         List<ProblemDto> results = new ArrayList<>();
@@ -64,11 +65,11 @@ public class ProblemController {
             System.out.println("검색 실패: " + e.getMessage());
         }
 
-        // solved.ac에서 온 응답 출력 코드
-        System.out.println("검색 결과 수: " + results.size());
-        for (ProblemDto p : results) {
-            System.out.println(p.getNumber() + " | " + p.getTitle() + " | " + p.getDifficulty());
-        }
+//        // solved.ac에서 온 응답 출력 코드
+//        System.out.println("검색 결과 수: " + results.size());
+//        for (ProblemDto p : results) {
+//            System.out.println(p.getNumber() + " | " + p.getTitle() + " | " + p.getDifficulty());
+//        }
         
         return results;
     }
@@ -100,6 +101,7 @@ public class ProblemController {
         return problem;
     }
 
+    // 문제 삭제
     @DeleteMapping("/api/problems/{id}")
     public void deleteProblem(@PathVariable Long id) {
         problemMapper.deleteProblem(id, TEMP_USER_ID);
