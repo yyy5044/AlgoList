@@ -28,4 +28,14 @@ CREATE TABLE IF NOT EXISTS problem_categories (
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS solutions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    algorithm VARCHAR(50) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    language VARCHAR(50) NOT NULL,
+    code TEXT NOT NULL,
+    problem_id BIGINT NOT NULL,
+    FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
+);
+
 INSERT IGNORE INTO users (id, username, password) VALUES (1, 'admin', '1234');
