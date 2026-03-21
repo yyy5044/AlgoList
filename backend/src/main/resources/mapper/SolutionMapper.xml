@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.algolist.backend.SolutionMapper">
+
+    <!-- 소스코드 저장 -->
+    <insert id="insertSolution" parameterType="com.algolist.backend.SolutionDto" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO solutions (algorithm, type, language, code, problem_id)
+        VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{problemId})
+    </insert>
+
+    <!-- 특정 문제의 풀이 목록 조회 (code 제외) -->
+    <select id="getSolutionsByProblemId" resultType="com.algolist.backend.SolutionDto">
+        SELECT id, algorithm, type, language, problem_id AS problemId
+        FROM solutions
+        WHERE problem_id = #{problemId}
+    </select>
+
+    <!-- 특정 풀이 상세 조회 -->
+    <select id="getSolution" resultType="com.algolist.backend.SolutionDto">
+        SELECT id, algorithm, type, language, code, problem_id AS problemId
+        FROM solutions
+        WHERE id = #{id}
+    </select>
+
+    <!-- 풀이 삭제 -->
+    <delete id="deleteSolution">
+        DELETE FROM solutions WHERE id = #{id}
+    </delete>
+
+</mapper>
