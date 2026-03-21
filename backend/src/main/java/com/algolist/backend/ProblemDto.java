@@ -30,7 +30,7 @@ public class ProblemDto {
         this.category = category;
     }
     
-    // 사용자 식별
+    // 사용자 식별(id)
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     

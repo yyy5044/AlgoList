@@ -58,6 +58,11 @@ defineProps({
       <p>오른쪽 리스트에서 항목을 선택해주세요.</p>
     </div>
   </div>
+
+  <!--SolutionManager 컴포넌트-->
+  <div class="solution-manager">
+
+  </div>
 </template>
 
 <style scoped>

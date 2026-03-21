@@ -148,6 +148,7 @@ function toggleCheck(id) {
   }
 }
 
+// 다중 삭제 함수
 async function deleteChecked() {
   try {
     for (const id of checkedIds.value) {
