@@ -1,4 +1,6 @@
 <script setup>
+import SolutionManager from './SolutionManager.vue'
+
 defineProps({
   selectedItem: Object
 })
@@ -60,9 +62,7 @@ defineProps({
   </div>
 
   <!--SolutionManager 컴포넌트-->
-  <div class="solution-manager">
-
-  </div>
+  <SolutionManager :selectedItem="selectedItem" />
 </template>
 
 <style scoped>
