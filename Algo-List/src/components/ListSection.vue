@@ -100,7 +100,9 @@ async function selectSearchResult(result) {
     const savedProblem = await response.json()
     // console.log(savedProblem) // 디버깅용: 응답 json이 잘 채워져 있는지
     items.value.push(savedProblem)
-    emit('select-item', savedProblem) // <- 리스트에 문제 추가할 때는 DetailSection으로 정보 넘길 필요 없음.
+    openMenuId.value = null
+    selectedItem.value = savedProblem // 문제 추가하고 나서 추가된 문제 선택
+    emit('select-item', savedProblem)
     closeSearchModal()
   } catch (error) {
     console.error('문제 저장 실패:', error)
