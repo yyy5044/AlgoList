@@ -59,10 +59,9 @@ defineProps({
     <div v-else class="detail-placeholder">
       <p>오른쪽 리스트에서 항목을 선택해주세요.</p>
     </div>
+    <!--SolutionManager 컴포넌트-->
+    <SolutionManager :selectedItem="selectedItem" />
   </div>
-
-  <!--SolutionManager 컴포넌트-->
-  <SolutionManager :selectedItem="selectedItem" />
 </template>
 
 <style scoped>
