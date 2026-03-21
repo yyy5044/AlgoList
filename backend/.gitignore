@@ -31,6 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### Backend ###
-backend/src/main/resources/application.properties
