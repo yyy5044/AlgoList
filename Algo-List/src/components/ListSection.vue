@@ -276,6 +276,7 @@ function editItem(item) {
             type="text"
             class="modal-search-input"
             placeholder="문제 번호 또는 제목을 입력하세요"
+            @keyup.enter="searchProblem"
           />
           <button class="modal-search-button" @click="searchProblem">검색</button>
         </div>
