@@ -33,7 +33,8 @@ public class AuthController {
         System.out.println(username+"님이 로그인했습니다.");
         return ResponseEntity.ok(Map.of("username", user.get("username")));
     }
-
+    
+    // 로그아웃
     @PostMapping("/api/logout")
     public ResponseEntity<?> logout(HttpSession session) {
         String username = (String) session.getAttribute("username");
