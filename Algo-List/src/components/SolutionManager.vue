@@ -18,7 +18,9 @@ const language = ref('java')
 watch(() => props.selectedItem, async (newItem) => {
   if (newItem) {
     try {
-      const response = await fetch(`http://localhost:8080/api/solutions/${newItem.id}`)
+      const response = await fetch(`http://localhost:8080/api/solutions/${newItem.id}`, {
+        credentials: 'include' // 세션 쿠키
+      })
       solutions.value = await response.json()
     } catch (error) {
       console.error('풀이 목록 조회 실패:', error)
@@ -47,7 +49,8 @@ async function uploadFile(event) {
     const response = await fetch('http://localhost:8080/api/solutions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(solution)
+      body: JSON.stringify(solution),
+      credentials: 'include' // 세션 쿠키
     })
     const saved = await response.json()
     solutions.value.push(saved)
@@ -64,7 +67,8 @@ async function uploadFile(event) {
 async function deleteSolution(id) {
   try {
     await fetch(`http://localhost:8080/api/solutions/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      credentials: 'include' // 세션 쿠키
     })
     solutions.value = solutions.value.filter(s => s.id !== id)
   } catch (error) {

@@ -16,7 +16,9 @@ const items = ref([])
 onMounted(async () => {
   // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
   try {
-    const response = await fetch('http://localhost:8080/api/problems')
+    const response = await fetch('http://localhost:8080/api/problems', {
+      credentials: 'include' // 세션 쿠키
+    })
     items.value = await response.json()
   } catch (error) {
     console.error('목록 조회 실패:', error)
@@ -79,7 +81,9 @@ async function searchProblem() {
   try {
     searchError.value = ''
     const response = await fetch(
-      `http://localhost:8080/api/search?query=${problemSearchQuery.value}`,
+      `http://localhost:8080/api/search?query=${problemSearchQuery.value}`, {
+        credentials: 'include' // 세션 쿠키
+      }
     )
     searchResults.value = await response.json()
     hasSearched.value = true
@@ -96,6 +100,7 @@ async function selectSearchResult(result) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(result),
+      credentials: 'include' // 세션 쿠키
     })
     const savedProblem = await response.json()
     // console.log(savedProblem) // 디버깅용: 응답 json이 잘 채워져 있는지
@@ -114,6 +119,7 @@ async function deleteItem(item) {
   try {
     await fetch(`http://localhost:8080/api/problems/${item.id}`, {
       method: 'DELETE',
+      credentials: 'include' // 세션 쿠키
     })
     items.value = items.value.filter((i) => i.id !== item.id)
     if (selectedItem.value?.id === item.id) {
@@ -154,6 +160,7 @@ async function deleteChecked() {
     for (const id of checkedIds.value) {
       await fetch(`http://localhost:8080/api/problems/${id}`, {
         method: 'DELETE',
+        credentials: 'include' // 세션 쿠키
       })
     }
     items.value = items.value.filter((item) => !checkedIds.value.includes(item.id))
