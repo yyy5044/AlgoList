@@ -81,7 +81,7 @@ async function searchProblem() {
   try {
     searchError.value = ''
     const response = await fetch(
-      `/search?query=${problemSearchQuery.value}`, {
+      `/api/search?query=${problemSearchQuery.value}`, {
         credentials: 'include' // 세션 쿠키
       }
     )
