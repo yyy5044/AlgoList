@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS problems (
     solve_count INT DEFAULT 0,
     last_solved_date DATE,
     user_id BIGINT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS problem_categories (
@@ -37,5 +37,3 @@ CREATE TABLE IF NOT EXISTS solutions (
     problem_id BIGINT NOT NULL,
     FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
 );
-
-INSERT IGNORE INTO users (id, username, password) VALUES (1, 'admin', '1234');
