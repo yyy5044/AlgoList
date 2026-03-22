@@ -1,2 +1,2 @@
-### Backend ###
 backend/src/main/resources/application.properties
+backend/app.log
