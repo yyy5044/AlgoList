@@ -1,5 +1,6 @@
 package com.algolist.backend;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,8 +19,6 @@ public class ProblemController {
     
     @Autowired
     private ProblemMapper problemMapper;
-
-    private final Long TEMP_USER_ID = 1L; // 임시 사용자 ID
 
     // 검색 모달에서 문제 검색
     @GetMapping("/api/search")
@@ -76,9 +75,9 @@ public class ProblemController {
     
     // 사용자의 문제 목록 조회
     @GetMapping("/api/problems")
-    public List<ProblemDto> getProblems() {
-        List<ProblemDto> problems = problemMapper.getAllProblems(TEMP_USER_ID);
-        // 각 문제에 카테고리 붙여주기
+    public List<ProblemDto> getProblems(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        List<ProblemDto> problems = problemMapper.getAllProblems(userId);
         for (ProblemDto problem : problems) {
             List<String> categories = problemMapper.getCategoriesByProblemId(problem.getId());
             problem.setCategory(categories.isEmpty() ? List.of("미분류") : categories);
@@ -88,11 +87,11 @@ public class ProblemController {
     
     // 문제 저장
     @PostMapping("/api/problems")
-    public ProblemDto addProblem(@RequestBody ProblemDto problem) {
-        problem.setUserId(TEMP_USER_ID);
+    public ProblemDto addProblem(@RequestBody ProblemDto problem, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        problem.setUserId(userId);
         problem.setSolveCount(0);
         problemMapper.insertProblem(problem);
-        // 카테고리 저장
         if (problem.getCategory() != null) {
             for (String category : problem.getCategory()) {
                 problemMapper.insertCategory(problem.getId(), category);
@@ -103,8 +102,9 @@ public class ProblemController {
 
     // 문제 삭제
     @DeleteMapping("/api/problems/{id}")
-    public void deleteProblem(@PathVariable Long id) {
-        problemMapper.deleteProblem(id, TEMP_USER_ID);
+    public void deleteProblem(@PathVariable Long id, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        problemMapper.deleteProblem(id, userId);
     }
 
     private String convertLevel(int level) {
