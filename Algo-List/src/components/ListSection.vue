@@ -77,13 +77,16 @@ const hasSearched = ref(false) // "검색 결과 없음"을 표시하기 위한 
 const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
 
 // 검색 모달에서 문제 검색 함수
+const isSearching = ref(false) // 검색 후 로딩 표시용 변수
+
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
+    isSearching.value = true
     searchError.value = ''
     const response = await fetch(
       `/api/search?query=${problemSearchQuery.value}`, {
-        credentials: 'include' // 세션 쿠키
+        credentials: 'include'
       }
     )
     searchResults.value = await response.json()
@@ -91,6 +94,8 @@ async function searchProblem() {
   } catch (error) {
     searchError.value = '검색 중 오류가 발생했습니다. 다시 시도해주세요.'
     console.error('검색 실패:', error)
+  } finally {
+    isSearching.value = false
   }
 }
 
@@ -293,7 +298,8 @@ function editItem(item) {
             <span class="result-difficulty">{{ result.difficulty }}</span>
           </li>
         </ul>
-        <p v-else-if="hasSearched" class="no-results">검색 결과가 없습니다.</p>
+        <p v-if="isSearching" class="no-results">검색 중...</p>
+        <p v-else-if="hasSearched && searchResults.length === 0" class="no-results">검색 결과가 없습니다.</p>
         <button class="modal-close-button" @click="closeSearchModal">취소</button>
         <p v-if="searchError" class="search-error">{{ searchError }}</p>
         <p v-if="duplicateMessage" class="search-error">{{ duplicateMessage }}</p>
