@@ -16,7 +16,7 @@ const items = ref([])
 onMounted(async () => {
   // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
   try {
-    const response = await fetch('http://localhost:8080/api/problems', {
+    const response = await fetch('/api/problems', {
       credentials: 'include' // 세션 쿠키
     })
     items.value = await response.json()
@@ -81,7 +81,7 @@ async function searchProblem() {
   try {
     searchError.value = ''
     const response = await fetch(
-      `http://localhost:8080/api/search?query=${problemSearchQuery.value}`, {
+      `/search?query=${problemSearchQuery.value}`, {
         credentials: 'include' // 세션 쿠키
       }
     )
@@ -96,7 +96,7 @@ async function searchProblem() {
 // 검색 결과 중에서 문제 선택할 때 호출되는 함수
 async function selectSearchResult(result) {
   try {
-    const response = await fetch('http://localhost:8080/api/problems', {
+    const response = await fetch('/api/problems', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(result),
@@ -117,7 +117,7 @@ async function selectSearchResult(result) {
 // 개별 삭제
 async function deleteItem(item) {
   try {
-    await fetch(`http://localhost:8080/api/problems/${item.id}`, {
+    await fetch(`/api/problems/${item.id}`, {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })
@@ -158,7 +158,7 @@ function toggleCheck(id) {
 async function deleteChecked() {
   try {
     for (const id of checkedIds.value) {
-      await fetch(`http://localhost:8080/api/problems/${id}`, {
+      await fetch(`/api/problems/${id}`, {
         method: 'DELETE',
         credentials: 'include' // 세션 쿠키
       })

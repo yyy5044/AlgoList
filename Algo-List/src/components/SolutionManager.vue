@@ -18,7 +18,7 @@ const language = ref('java')
 watch(() => props.selectedItem, async (newItem) => {
   if (newItem) {
     try {
-      const response = await fetch(`http://localhost:8080/api/solutions/${newItem.id}`, {
+      const response = await fetch(`/api/solutions/${newItem.id}`, {
         credentials: 'include' // 세션 쿠키
       })
       solutions.value = await response.json()
@@ -46,7 +46,7 @@ async function uploadFile(event) {
   }
 
   try {
-    const response = await fetch('http://localhost:8080/api/solutions', {
+    const response = await fetch('/api/solutions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(solution),
@@ -66,7 +66,7 @@ async function uploadFile(event) {
 // 풀이 삭제
 async function deleteSolution(id) {
   try {
-    await fetch(`http://localhost:8080/api/solutions/${id}`, {
+    await fetch(`/api/solutions/${id}`, {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })

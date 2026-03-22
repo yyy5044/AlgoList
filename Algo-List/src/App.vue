@@ -11,7 +11,7 @@ const selectedItem = ref(null)
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/me', {
+    const response = await fetch('/api/me', {
       credentials: 'include'
     })
     if (response.ok) {
@@ -31,7 +31,7 @@ function onLoginSuccess(username) {
 
 async function logout() {
   try {
-    await fetch('http://localhost:8080/api/logout', {
+    await fetch('/api/logout', {
       method: 'POST',
       credentials: 'include'
     })
