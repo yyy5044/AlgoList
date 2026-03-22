@@ -29,14 +29,16 @@ public class AuthController {
         // 세션에 사용자 정보 저장
         session.setAttribute("userId", user.get("id"));
         session.setAttribute("username", user.get("username"));
-
+        
+        System.out.println(username+"님이 로그인했습니다.");
         return ResponseEntity.ok(Map.of("username", user.get("username")));
     }
 
-    // 로그아웃
     @PostMapping("/api/logout")
     public ResponseEntity<?> logout(HttpSession session) {
+        String username = (String) session.getAttribute("username");
         session.invalidate();
+        System.out.println(username + "님이 로그아웃 했습니다.");
         return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
     }
 
