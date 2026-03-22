@@ -50,14 +50,16 @@ function onSelectItem(item) {
 
 <template>
   <LoginPage v-if="!isLoggedIn" @login-success="onLoginSuccess" />
-  <div v-else class="app-container">
-    <div class="top-bar">
-      <span>{{ currentUser }}님 환영합니다</span>
-      <button @click="logout" class="logout-btn">로그아웃</button>
-    </div>
-    <div class="main-content">
-      <DetailSection :selectedItem="selectedItem" />
-      <ListSection @select-item="onSelectItem" />
+  <div v-else class="outer-container">
+    <div class="app-container">
+      <div class="top-bar">
+        <span>{{ currentUser }}님 환영합니다</span>
+        <button @click="logout" class="logout-btn">로그아웃</button>
+      </div>
+      <div class="main-content">
+        <DetailSection :selectedItem="selectedItem" />
+        <ListSection @select-item="onSelectItem" />
+      </div>
     </div>
   </div>
 </template>
@@ -73,6 +75,7 @@ function onSelectItem(item) {
 
 .app-container {
   display: flex;
+  flex-direction: column;
   width: 90vw;
   height: 85vh;
   max-width: 1500px;
@@ -80,6 +83,12 @@ function onSelectItem(item) {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
   overflow: hidden;
 }
 
