@@ -68,6 +68,7 @@ function closeSearchModal() {
   problemSearchQuery.value = ''
   searchResults.value = []
   hasSearched.value = false
+  duplicateMessage.value = ''
 }
 
 // 2. 검색 함수: 8080 포트로 GET 요청
@@ -94,7 +95,17 @@ async function searchProblem() {
 }
 
 // 검색 결과 중에서 문제 선택할 때 호출되는 함수
+const duplicateMessage = ref('') // 문제 중복 추가 시도 시 메세지
 async function selectSearchResult(result) {
+    // 중복 체크: 같은 사이트 + 같은 문제 번호
+  const isDuplicate = items.value.some(
+    item => item.site === result.site && item.number === result.number
+  )
+  if (isDuplicate) {
+    duplicateMessage.value = '이미 추가된 문제입니다.'
+    return
+  }
+
   try {
     const response = await fetch('/api/problems', {
       method: 'POST',
@@ -284,6 +295,7 @@ function editItem(item) {
         <p v-else-if="hasSearched" class="no-results">검색 결과가 없습니다.</p>
         <button class="modal-close-button" @click="closeSearchModal">취소</button>
         <p v-if="searchError" class="search-error">{{ searchError }}</p>
+        <p v-if="duplicateMessage" class="search-error">{{ duplicateMessage }}</p>
       </div>
     </div>
   </Teleport>
