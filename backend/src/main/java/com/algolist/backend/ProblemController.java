@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class ProblemController {
 
     private final RestTemplate restTemplate = new RestTemplate();
