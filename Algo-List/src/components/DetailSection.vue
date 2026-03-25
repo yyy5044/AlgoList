@@ -2,7 +2,8 @@
 import SolutionManager from './SolutionManager.vue'
 
 defineProps({
-  selectedItem: Object
+  selectedItem: Object,
+  username: String
 })
 </script>
 
@@ -60,7 +61,7 @@ defineProps({
       <p>오른쪽 리스트에서 항목을 선택해주세요.</p>
     </div>
     <!--SolutionManager 컴포넌트-->
-    <SolutionManager :selectedItem="selectedItem" />
+    <SolutionManager :selected-item="selectedItem" :username="username" />
   </div>
 </template>
 

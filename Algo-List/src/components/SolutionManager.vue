@@ -2,7 +2,8 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps({
-  selectedItem: Object
+  selectedItem: Object,
+  username: String
 })
 
 // 풀이 목록
@@ -116,7 +117,7 @@ async function deleteSolution(id) {
     <div v-if="solutions.length > 0" class="solution-list">
       <div v-for="sol in solutions" :key="sol.id" class="solution-item">
         <span class="solution-info">
-          Main_{{ sol.problemId }}_{{  }} ({{ sol.language }})
+          Main_{{ sol.problemNumber }}_{{ username }}_{{ sol.algorithm }}_{{ sol.type === 'FIRST' ? '첫시도' : sol.type === 'RECAP' ? '복습' : '최적화' }}.{{ sol.language === 'java' ? 'java' : sol.language === 'python' ? 'py' : 'cpp' }}
         </span>
         <button class="delete-btn" @click="deleteSolution(sol.id)">삭제</button>
       </div>

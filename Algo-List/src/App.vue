@@ -57,7 +57,7 @@ function onSelectItem(item) {
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
       <div class="main-content">
-        <DetailSection :selectedItem="selectedItem" />
+        <DetailSection :selected-item="selectedItem" :username="username" />
         <ListSection @select-item="onSelectItem" />
       </div>
     </div>
