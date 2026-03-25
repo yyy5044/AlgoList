@@ -9,12 +9,13 @@
         VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{problemId})
     </insert>
 
-    <!-- 특정 문제의 풀이 목록 조회 (code 제외) -->
-    <select id="getSolutionsByProblemId" resultType="com.algolist.backend.SolutionDto">
-        SELECT id, algorithm, type, language, problem_id AS problemId
-        FROM solutions
-        WHERE problem_id = #{problemId}
-    </select>
+	<select id="getSolutionsByProblemId" resultType="com.algolist.backend.SolutionDto">
+	    SELECT s.id, s.algorithm, s.type, s.language, s.problem_id AS problemId,
+	           p.number AS problemNumber
+	    FROM solutions s
+	    JOIN problems p ON s.problem_id = p.id
+	    WHERE s.problem_id = #{problemId}
+	</select>
 
     <!-- 특정 풀이 상세 조회 -->
     <select id="getSolution" resultType="com.algolist.backend.SolutionDto">

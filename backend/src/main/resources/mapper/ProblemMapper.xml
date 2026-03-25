@@ -31,5 +31,9 @@
     <select id="getCategoriesByProblemId" parameterType="Long" resultType="String">
         SELECT category_name FROM problem_categories WHERE problem_id = #{problemId}
     </select>
-
+    
+    <!--문제 번호 조회-->
+    <select id="getNumberById" parameterType="Long" resultType="Long">
+    	SELECT number FROM problems WHERE id = #{id}
+	</select>
 </mapper>

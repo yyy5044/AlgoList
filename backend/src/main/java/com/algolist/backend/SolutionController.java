@@ -11,10 +11,14 @@ public class SolutionController {
     @Autowired
     private SolutionMapper solutionMapper;
 
-    // 소스코드 저장
+    @Autowired
+    private ProblemMapper problemMapper; // 문제 번호 가져오기용
+
     @PostMapping("/api/solutions")
     public SolutionDto addSolution(@RequestBody SolutionDto solution) {
         solutionMapper.insertSolution(solution);
+        Long problemNumber = problemMapper.getNumberById(solution.getProblemId());
+        solution.setProblemNumber(problemNumber);
         return solution;
     }
 

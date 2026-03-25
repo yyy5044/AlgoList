@@ -116,7 +116,7 @@ async function deleteSolution(id) {
     <div v-if="solutions.length > 0" class="solution-list">
       <div v-for="sol in solutions" :key="sol.id" class="solution-item">
         <span class="solution-info">
-          [{{ sol.type }}] {{ sol.algorithm }} ({{ sol.language }})
+          Main_{{ sol.problemId }}_{{  }} ({{ sol.language }})
         </span>
         <button class="delete-btn" @click="deleteSolution(sol.id)">삭제</button>
       </div>

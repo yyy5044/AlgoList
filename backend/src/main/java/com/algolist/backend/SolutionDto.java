@@ -7,6 +7,7 @@ public class SolutionDto {
     private String language;
     private String code;
     private Long problemId;
+    private Long problemNumber;
 
     // 기본 생성자 (MyBatis 매핑용)
     public SolutionDto() {}
@@ -33,5 +34,7 @@ public class SolutionDto {
     public void setCode(String code) { this.code = code; }
     public Long getProblemId() { return problemId; }
     public void setProblemId(Long problemId) { this.problemId = problemId; }
+    public Long getProblemNumber() { return problemNumber; }
+    public void setProblemNumber(Long problemNumber) { this.problemNumber = problemNumber; }
     
 }
