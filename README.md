@@ -98,42 +98,36 @@ AlgoList는 알고리즘 학습자들을 위한 종합 관리 플랫폼입니다
 ## 기술 스택
 
 ### Frontend
-- React / Vue.js
-- TypeScript
-- Tailwind CSS
-- Redux / Pinia
+- Vue.js
 
 ### Backend
-- Node.js / Python / Java
-- Express / Flask / Spring Boot
+- Java
+- Spring Boot
 - JWT 인증
 - REST API
 
 ### Database
-- PostgreSQL / MySQL
-- Redis (캐싱)
+- MySQL
 
 ### External API
 - GitHub API
 - 알고리즘 문제 데이터 API
 
 ### DevOps & Tools
-- Docker
 - Git/GitHub
-- CI/CD Pipeline
 
 ---
 
 ## 요구사항 정의
 
 ### Must Have (필수 기능)
-- [x] 회원 인증 및 관리 (AUTH-001, AUTH-002)
-- [x] 회원정보 조회/수정/탈퇴 (MEM-001, MEM-002, MEM-003, MEM-004)
-- [x] 문제 검색/추가/수정/삭제 (PROB-001, PROB-002, PROB-003, PROB-004)
-- [x] 소스코드 추가/조회/수정/삭제 (SRC-001, SRC-002, SRC-003, SRC-004)
-- [x] 오답노트 추가/조회/수정/삭제 (NOTE-001, NOTE-002, NOTE-003, NOTE-004)
-- [x] 복습 추적 기능 (REV-001, REV-002)
-- [x] GitHub 연동 (GIT-001, GIT-002, GIT-003)
+- [ ] 회원 인증 및 관리 (AUTH-001, AUTH-002)
+- [ ] 회원정보 조회/수정/탈퇴 (MEM-001, MEM-002, MEM-003, MEM-004)
+- [ ] 문제 검색/추가/수정/삭제 (PROB-001, PROB-002, PROB-003, PROB-004)
+- [ ] 소스코드 추가/조회/수정/삭제 (SRC-001, SRC-002, SRC-003, SRC-004)
+- [ ] 오답노트 추가/조회/수정/삭제 (NOTE-001, NOTE-002, NOTE-003, NOTE-004)
+- [ ] 복습 추적 기능 (REV-001, REV-002)
+- [ ] GitHub 연동 (GIT-001, GIT-002, GIT-003)
 
 ### Should Have (추가 기능)
 - [ ] AI 기반 문제 추천
@@ -170,39 +164,6 @@ npm run dev
 # 프로덕션 빌드
 npm run build
 ```
-
-### GitHub 연동 설정
-
-1. GitHub에서 OAuth App 등록
-2. `.env` 파일에 `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` 추가
-3. 애플리케이션 재실행
-
----
-
-## 문서
-
-- [API 문서](./docs/api.md)
-- [데이터베이스 스키마](./docs/schema.md)
-- [개발 가이드](./docs/development.md)
-- [배포 가이드](./docs/deployment.md)
-
----
-
-## 기여하기
-
-AlgoList 개선에 참여하고 싶으신 가요? 아래 단계를 따라주세요.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 있습니다. [LICENSE](./LICENSE) 파일을 참고하세요.
 
 ---
 
