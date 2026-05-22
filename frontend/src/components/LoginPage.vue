@@ -14,14 +14,15 @@ async function login() {
   }
 
   try {
+    const formData = new URLSearchParams()
+    formData.append('username', username.value)
+    formData.append('password', password.value)
+
     const response = await fetch('/api/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       credentials: 'include',
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value
-      })
+      body: formData
     })
 
     if (response.ok) {
