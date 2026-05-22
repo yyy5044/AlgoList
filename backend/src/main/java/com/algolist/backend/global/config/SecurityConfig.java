@@ -31,7 +31,7 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()) // REST API라 세션 기반 CSRF 토큰이 없으므로 끈다 (안 끄면 POST/DELETE가 403)
-			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/login", "api/users", "api/me").permitAll()
+			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/login", "/api/users", "/api/me").permitAll()
 			.anyRequest().authenticated()) // 로그인을 제외한 나머지 요청들은 로그인해야 가능하도록 설정
 		.formLogin(login -> login.loginProcessingUrl("/api/login") // 로그인 요청은 /api/login 요청일 때
 		.successHandler((request, response, authenticaiton) -> { // 로그인 성공 시 실행할 로직
