@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
+import UserListPage from './components/UserListPage.vue'
 import UserPasswordEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
@@ -12,6 +13,7 @@ const currentUser = ref('test-user') // 개발용: 임시 사용자
 const selectedItem = ref(null)
 const authPage = ref('login')
 const mainPage = ref('problems')
+const isUserListPath = ref(window.location.pathname === '/users')
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
@@ -69,6 +71,10 @@ function showLoginPage() {
 
 function showProblemPage() {
   mainPage.value = 'problems'
+  if (isUserListPath.value) {
+    window.history.pushState({}, '', '/')
+    isUserListPath.value = false
+  }
 }
 
 function showUserDetailPage() {
@@ -89,8 +95,9 @@ function showUserPasswordEditPage() {
         <button class="user-link" @click="showUserDetailPage">{{ currentUser }}님 환영합니다</button>
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
+      <UserListPage v-if="isUserListPath" @back="showProblemPage" />
       <UserDetailPage
-        v-if="mainPage === 'user-detail'"
+        v-else-if="mainPage === 'user-detail'"
         :username="currentUser"
         @back="showProblemPage"
         @edit-password="showUserPasswordEditPage"
