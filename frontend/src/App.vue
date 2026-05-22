@@ -1,12 +1,19 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import LoginPage from './components/LoginPage.vue'
+import SignupPage from './components/SignupPage.vue'
+import UserDetailPage from './components/UserDetailPage.vue'
+import UserListPage from './components/UserListPage.vue'
+import UserPasswordEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
 
 const isLoggedIn = ref(true) // 개발용: 초기값 true로 메인페이지 노출
 const currentUser = ref('test-user') // 개발용: 임시 사용자
 const selectedItem = ref(null)
+const authPage = ref('login')
+const mainPage = ref('problems')
+const isUserListPath = ref(window.location.pathname === '/users')
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
@@ -30,6 +37,8 @@ onMounted(async () => {
 function onLoginSuccess(username) {
   isLoggedIn.value = true
   currentUser.value = username
+  authPage.value = 'login'
+  mainPage.value = 'problems'
 }
 
 async function logout() {
@@ -44,22 +53,61 @@ async function logout() {
   isLoggedIn.value = false
   currentUser.value = ''
   selectedItem.value = null
+  authPage.value = 'login'
+  mainPage.value = 'problems'
 }
 
 function onSelectItem(item) {
   selectedItem.value = item
 }
+
+function showSignupPage() {
+  authPage.value = 'signup'
+}
+
+function showLoginPage() {
+  authPage.value = 'login'
+}
+
+function showProblemPage() {
+  mainPage.value = 'problems'
+  if (isUserListPath.value) {
+    window.history.pushState({}, '', '/')
+    isUserListPath.value = false
+  }
+}
+
+function showUserDetailPage() {
+  mainPage.value = 'user-detail'
+}
+
+function showUserPasswordEditPage() {
+  mainPage.value = 'user-password-edit'
+}
 </script>
 
 <template>
-  <LoginPage v-if="!isLoggedIn" @login-success="onLoginSuccess" />
+  <SignupPage v-if="!isLoggedIn && authPage === 'signup'" @back-to-login="showLoginPage" />
+  <LoginPage v-else-if="!isLoggedIn" @login-success="onLoginSuccess" @signup-click="showSignupPage" />
   <div v-else class="outer-container">
     <div class="app-container">
       <div class="top-bar">
-        <span>{{ currentUser }}님 환영합니다</span>
+        <button class="user-link" @click="showUserDetailPage">{{ currentUser }}님 환영합니다</button>
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
-      <div class="main-content">
+      <UserListPage v-if="isUserListPath" @back="showProblemPage" />
+      <UserDetailPage
+        v-else-if="mainPage === 'user-detail'"
+        :username="currentUser"
+        @back="showProblemPage"
+        @edit-password="showUserPasswordEditPage"
+      />
+      <UserPasswordEditPage
+        v-else-if="mainPage === 'user-password-edit'"
+        :username="currentUser"
+        @back="showUserDetailPage"
+      />
+      <div v-else class="main-content">
         <DetailSection :selected-item="selectedItem" :username="currentUser" />
         <ListSection @select-item="onSelectItem" />
       </div>
@@ -115,6 +163,19 @@ function onSelectItem(item) {
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+}
+
+.user-link {
+  padding: 4px 0;
+  background: none;
+  color: #666;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.user-link:hover {
+  color: #1a56db;
 }
 
 </style>
