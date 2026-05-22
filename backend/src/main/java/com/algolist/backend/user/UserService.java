@@ -14,5 +14,4 @@ public interface UserService {
 	
 	public boolean deleteUser(String username);
 	
-	public UserDto login(String username, String password);
 }
