@@ -4,12 +4,14 @@ import LoginPage from './components/LoginPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
 
-const isLoggedIn = ref(false)
-const currentUser = ref('')
+const isLoggedIn = ref(true) // 개발용: 초기값 true로 메인페이지 노출
+const currentUser = ref('test-user') // 개발용: 임시 사용자
 const selectedItem = ref(null)
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
+  // TODO: 백엔드 로그인 구현 후 주석 해제
+  /*
   try {
     const response = await fetch('/api/me', {
       credentials: 'include'
@@ -22,6 +24,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('로그인 상태 확인 실패:', error)
   }
+  */
 })
 
 function onLoginSuccess(username) {
@@ -57,7 +60,7 @@ function onSelectItem(item) {
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
       <div class="main-content">
-        <DetailSection :selected-item="selectedItem" :username="username" />
+        <DetailSection :selected-item="selectedItem" :username="currentUser" />
         <ListSection @select-item="onSelectItem" />
       </div>
     </div>
