@@ -5,11 +5,11 @@
 
 <mapper namespace="com.algolist.backend.problem.ProblemDao">
 	<!-- ProblemDto용 resultMap -->
-	<resultMap id="problemMap" type="ProblemDto">
-		<id column="problem_id" property="id"/>
-		<result column="solve_count" property="solveCount"/>
-		<result column="last_solved_date" property="lastSolvedDate"/>
-		<result column="user_id" property="userId"/>
+	<resultMap id="problemMap" type="ProblemDto" autoMapping="true">
+	    <id     column="problem_id"        property="id"/>
+	    <result column="solve_count"       property="solveCount"/>
+	    <result column="last_solved_date"  property="lastSolvedDate"/>
+	    <result column="user_id"           property="userId"/>
 		
 		<!-- 1:N 매핑 -->
 		<collection property="category" ofType="string">
