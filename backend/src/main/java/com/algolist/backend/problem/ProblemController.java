@@ -33,13 +33,6 @@ public class ProblemController {
 		return ResponseEntity.ok().body(list);
 	}
 	
-	// 개별 문제 조회: GET /api/problems/{id}
-	@GetMapping("/{id}")
-	public ResponseEntity<?> select() {
-		
-		return ResponseEntity.ok().body(list);
-	}
-
 	// 문제 추가: POST /api/problems
 	// 프론트의 selectSearchResult가 보낸 result 객체를 받아 저장하고, 저장된 문제를 반환한다.
 	@PostMapping
