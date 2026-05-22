@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace는 ProblemDao 인터페이스의 풀패키지명과 정확히 일치해야 한다 -->
+<mapper namespace="com.algolist.backend.problem.ProblemDao">
+
+	<!-- 문제 생성: problems에 1행 INSERT -->
+	<!-- useGeneratedKeys로 auto_increment된 problem_id를 ProblemDto.id에 채워준다 -->
+	<insert id="insertProblem" parameterType="com.algolist.backend.problem.ProblemDto"
+	        useGeneratedKeys="true" keyProperty="id" keyColumn="problem_id">
+		INSERT INTO problems (title, number, difficulty, site, link, user_id)
+		VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{userId})
+		<!-- grade, solve_count, last_solved_date는 넣지 않아 DB DEFAULT(solve_count=0 등)가 적용된다 -->
+	</insert>
+
+	<!-- 카테고리 N행 INSERT: foreach로 (problem_id, category_name) 묶음을 콤마로 이어붙인다 -->
+	<insert id="insertCategories">
+		INSERT INTO problem_categories (problem_id, category_name)
+		VALUES
+		<foreach collection="categories" item="cat" separator=",">
+			(#{problemId}, #{cat})
+		</foreach>
+	</insert>
+
+</mapper>
