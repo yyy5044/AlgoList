@@ -14,4 +14,11 @@ public interface ProblemDao {
 	int insertCategories(@Param("problemId") Long problemId,
 	                     @Param("categories") List<String> categories);
 	
+	
+	// 문제 삭제
+	int deleteProblem(@Param("userId") Long userId,
+					  @Param("problemId") Long problemId);
+	
+	// 문제 전체 조회
+	List<ProblemDto> selectAll(Long userId);
 }
