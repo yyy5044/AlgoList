@@ -24,8 +24,8 @@ public class UserController {
 
 	@PostMapping
 	// 회원가입 요청
-	public ResponseEntity<?> regist(String username, String password) {
-		boolean success = userService.insertUser(username, password);
+	public ResponseEntity<?> regist(@RequestBody CreateRequestDto request) {
+		boolean success = userService.insertUser(request.getUsername(), request.getPassword());
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.CREATED).build(); // 생성 성공 시 CREATED(201) 반환
