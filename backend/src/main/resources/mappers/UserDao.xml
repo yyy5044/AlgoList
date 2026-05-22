@@ -15,8 +15,15 @@
 		FROM users
 	</select>
 	
-	<!-- 특정 username을 가진 유저만 반환 -->
+	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
 	<select id="selectUser" resultMap="UserDtoMap">
+		SELECT user_id, username, role
+		FROM users
+		WHERE username = #{username}
+	</select>
+	
+	<!-- 특정 username을 가진 유저만 반환(비밀번호 포함) -->
+	<select id="selectUserForAuth" resultMap="UserDtoMap">
 		SELECT user_id, username, password, role
 		FROM users
 		WHERE username = #{username}

@@ -8,8 +8,8 @@ import UserPasswordEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
 
-const isLoggedIn = ref(true) // 개발용: 초기값 true로 메인페이지 노출
-const currentUser = ref('test-user') // 개발용: 임시 사용자
+const isLoggedIn = ref(false)
+const currentUser = ref('')
 const selectedItem = ref(null)
 const authPage = ref('login')
 const mainPage = ref('problems')
@@ -17,21 +17,24 @@ const isUserListPath = ref(window.location.pathname === '/users')
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
-  // TODO: 백엔드 로그인 구현 후 주석 해제
-  /*
   try {
     const response = await fetch('/api/me', {
       credentials: 'include'
     })
+
     if (response.ok) {
       const data = await response.json()
       isLoggedIn.value = true
       currentUser.value = data.username
+    } else {
+      isLoggedIn.value = false
+      currentUser.value = ''
     }
   } catch (error) {
     console.error('로그인 상태 확인 실패:', error)
+    isLoggedIn.value = false
+    currentUser.value = ''
   }
-  */
 })
 
 function onLoginSuccess(username) {
@@ -101,6 +104,7 @@ function showUserPasswordEditPage() {
         :username="currentUser"
         @back="showProblemPage"
         @edit-password="showUserPasswordEditPage"
+        @delete-success="logout"
       />
       <UserPasswordEditPage
         v-else-if="mainPage === 'user-password-edit'"
