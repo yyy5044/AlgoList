@@ -2,6 +2,7 @@ package com.algolist.backend.user;
 
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class UserServiceImpl implements UserService {
 
 	private final UserDao userDao;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public List<UserDto> selectAllUsers() {
@@ -72,7 +74,7 @@ public class UserServiceImpl implements UserService {
 			return null;
 		}
 
-		if (!password.equals(user.getPassword())) {
+		if (!passwordEncoder.matches(password, user.getPassword())) {
 			return null;
 		}
 
