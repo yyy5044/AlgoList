@@ -1,5 +1,5 @@
 package com.algolist.backend.solution;
 
-public interface SolutionMapper {
+public interface SolutionDao {
 
 }
