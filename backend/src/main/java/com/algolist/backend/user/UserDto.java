@@ -1,5 +1,5 @@
 package com.algolist.backend.user;
 
-public class User {
+public class UserDto {
 
 }
