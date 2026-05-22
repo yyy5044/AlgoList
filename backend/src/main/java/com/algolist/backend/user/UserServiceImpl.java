@@ -24,6 +24,14 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public boolean insertUser(String username, String password) {
+		UserDto user = userDao.selectUser(username);
+		
+		// 중복된 ID를 사용하고 있는지 확인
+		if(user != null) {
+			return false;
+		}
+		
+		// 유저 생성 시 1개의 행이 생성되므로 result가 1이여야만 정상 동작으로 간주
 		int result = userDao.insertUser(username, password);
 
 		if (result != 1) {
@@ -54,20 +62,4 @@ public class UserServiceImpl implements UserService {
 			return true;
 		}
 	}
-
-	@Override
-	public UserDto login(String username, String password) {
-		UserDto user = userDao.selectUser(username);
-
-		if (user == null) {
-			return null;
-		}
-
-		if (!password.equals(user.getPassword())) {
-			return null;
-		}
-
-		return user;
-	}
-
 }
