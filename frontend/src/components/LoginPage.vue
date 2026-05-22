@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const emit = defineEmits(['login-success'])
+const emit = defineEmits(['login-success', 'signup-click'])
 
 const username = ref('')
 const password = ref('')
@@ -50,6 +50,7 @@ async function login() {
       </div>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       <button @click="login">로그인</button>
+      <button class="signup-link" @click="emit('signup-click')">회원가입</button>
     </div>
   </div>
 </template>
@@ -115,5 +116,16 @@ button {
 
 button:hover {
   background: #3a7bc8;
+}
+
+.signup-link {
+  margin-top: 10px;
+  background: white;
+  color: #4a90d9;
+  border: 1px solid #4a90d9;
+}
+
+.signup-link:hover {
+  background: #f0f6fd;
 }
 </style>

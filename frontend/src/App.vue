@@ -1,12 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import LoginPage from './components/LoginPage.vue'
+import SignupPage from './components/SignupPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
 
 const isLoggedIn = ref(true) // 개발용: 초기값 true로 메인페이지 노출
 const currentUser = ref('test-user') // 개발용: 임시 사용자
 const selectedItem = ref(null)
+const authPage = ref('login')
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
@@ -30,6 +32,7 @@ onMounted(async () => {
 function onLoginSuccess(username) {
   isLoggedIn.value = true
   currentUser.value = username
+  authPage.value = 'login'
 }
 
 async function logout() {
@@ -44,15 +47,25 @@ async function logout() {
   isLoggedIn.value = false
   currentUser.value = ''
   selectedItem.value = null
+  authPage.value = 'login'
 }
 
 function onSelectItem(item) {
   selectedItem.value = item
 }
+
+function showSignupPage() {
+  authPage.value = 'signup'
+}
+
+function showLoginPage() {
+  authPage.value = 'login'
+}
 </script>
 
 <template>
-  <LoginPage v-if="!isLoggedIn" @login-success="onLoginSuccess" />
+  <SignupPage v-if="!isLoggedIn && authPage === 'signup'" @back-to-login="showLoginPage" />
+  <LoginPage v-else-if="!isLoggedIn" @login-success="onLoginSuccess" @signup-click="showSignupPage" />
   <div v-else class="outer-container">
     <div class="app-container">
       <div class="top-bar">
