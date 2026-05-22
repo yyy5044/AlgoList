@@ -1,6 +1,6 @@
 # README.md
 
-더 많은 문서: [Notion 페이지](https://moored-bookcase-a10.notion.site/README-md-368b855637d980aca92ac9938b200355)
+더 많은 문서: [Notion 페이지](https://moored-bookcase-a10.notion.site/AlgoList-361b855637d9803ea173c8d15cc1e005)
 
 ## 프로젝트 소개
 
