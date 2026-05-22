@@ -1,9 +1,12 @@
-package com.algolist.backend.user;
+package com.algolist.backend.auth;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import com.algolist.backend.user.UserDao;
+import com.algolist.backend.user.UserDto;
 
 import lombok.RequiredArgsConstructor;
 

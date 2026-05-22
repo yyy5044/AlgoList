@@ -1,4 +1,4 @@
-package com.algolist.backend.user;
+package com.algolist.backend.auth;
 
 import java.util.Collection;
 import java.util.List;
@@ -7,6 +7,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.algolist.backend.user.UserDto;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
