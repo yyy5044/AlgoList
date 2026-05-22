@@ -4,10 +4,21 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.algolist.backend.problem.ProblemDao">
+	<!-- ProblemDto용 resultMap -->
+	<resultMap id="problemMap" type="ProblemDto">
+		<id column="problem_id" property="id"/>
+		<result column="solve_count" property="solveCount"/>
+		<result column="last_solved_date" property="lastSolvedDate"/>
+		<result column="user_id" property="userId"/>
+		
+		<!-- 1:N 매핑 -->
+		<collection property="category" ofType="string">
+			<result column="category_name"/>			
+		</collection>
+	</resultMap>
 
 	<!-- 문제 생성: problems에 1행 INSERT -->
-	<insert id="insertProblem" parameterType="ProblemDto"
-	        useGeneratedKeys="true" keyProperty="id" keyColumn="problem_id">
+	<insert id="insertProblem" useGeneratedKeys="true" keyProperty="id" keyColumn="problem_id">
 		INSERT INTO problems (title, number, difficulty, site, link, user_id)
 		VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{userId})
 		<!-- grade, solve_count, last_solved_date는 넣지 않아 DB DEFAULT(solve_count=0 등)가 적용된다 -->
@@ -21,5 +32,22 @@
 			(#{problemId}, #{cat})
 		</foreach>
 	</insert>
-
+	
+	<!-- 문제 삭제 -->
+	<delete id="deleteProblem">
+		DELETE FROM problems
+		WHERE user_id=#{userId}
+		AND problem_id=#{problemId}
+	</delete>
+	
+	<!-- 문제 전체 조회 -->
+	<select id="selectAll" resultMap="problemMap">
+	    SELECT p.problem_id, p.title, p.number, p.difficulty, p.site, p.link,
+	           p.grade, p.solve_count, p.last_solved_date, p.user_id,
+	           c.category_name
+	    FROM problems p
+	    LEFT JOIN problem_categories c ON p.problem_id = c.problem_id
+	    WHERE p.user_id = #{userId}
+	</select>
+	
 </mapper>
