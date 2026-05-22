@@ -4,6 +4,8 @@ import java.util.Map;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,8 +33,12 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(csrf -> csrf.disable()) // REST API라 세션 기반 CSRF 토큰이 없으므로 끈다 (안 끄면 POST/DELETE가 403)
-			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/login", "/api/users", "/api/me").permitAll()
+			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/login").permitAll() // 로그인 요청은 모두 가능
+			.requestMatchers(HttpMethod.POST, "/api/users").permitAll() // POST 요청으로 오는 /api/users(회원가입) 요청은 모두 가능
 			.anyRequest().authenticated()) // 로그인을 제외한 나머지 요청들은 로그인해야 가능하도록 설정
+		.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> { // 인증되지 않은 요청이 들어올 시 가장 먼저 처리하는 지점
+			response.setStatus(401); // UNAUTHORIZED(401) 응답 보내기
+		}))
 		.formLogin(login -> login.loginProcessingUrl("/api/login") // 로그인 요청은 /api/login 요청일 때
 		.successHandler((request, response, authenticaiton) -> { // 로그인 성공 시 실행할 로직
 			response.setStatus(200); // 성공 시 OK 설정

@@ -15,7 +15,7 @@ public class CustomUserDetailService implements UserDetailsService {
 	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException { // username 기반으로 받아온 객체가 존재하는지 확인
-		UserDto user = userDao.selectUser(username);
+		UserDto user = userDao.selectUserForAuth(username);
 		if(user == null) {
 			throw new UsernameNotFoundException(username);
 		}
