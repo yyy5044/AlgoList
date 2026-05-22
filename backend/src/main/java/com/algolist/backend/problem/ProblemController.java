@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.algolist.backend.auth.CustomUserDetails;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -27,7 +28,8 @@ public class ProblemController {
 
 	// 초기 목록 조회: GET /api/problems
 	@GetMapping
-	public ResponseEntity<?> selectAll(@AuthenticationPrincipal CustomUserDetails userDetails) {
+	@Operation(summary = "문제 전체 조회")
+	public ResponseEntity<List<ProblemDto>> selectAll(@AuthenticationPrincipal CustomUserDetails userDetails) {
 		Long userId = userDetails.getUser().getUserId(); // 세션에서 userId 꺼내기
 		
 		List<ProblemDto> list = service.selectAll(userId);
@@ -38,8 +40,9 @@ public class ProblemController {
 	// 문제 추가: POST /api/problems
 	// 프론트의 selectSearchResult가 보낸 result 객체를 받아 저장하고, 저장된 문제를 반환한다.
 	@PostMapping
-	public ResponseEntity<?> add(@AuthenticationPrincipal CustomUserDetails userDetails,
-								 @RequestBody ProblemDto problem) {
+	@Operation(summary = "문제 추가")
+	public ResponseEntity<ProblemDto> add(@AuthenticationPrincipal CustomUserDetails userDetails,
+								 		  @RequestBody ProblemDto problem) {
 		Long userId = userDetails.getUser().getUserId();
 		
 	    ProblemDto saved = service.addProblem(userId, problem);
@@ -54,8 +57,9 @@ public class ProblemController {
 
 	// 개별 삭제: DELETE /api/problems/{id}
 	@DeleteMapping("/{id}")
-	public ResponseEntity<?> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
-								    @PathVariable Long id) {
+	@Operation(summary = "문제 삭제")
+	public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
+								       @PathVariable Long id) {
 		Long userId = userDetails.getUser().getUserId();
 		
 		boolean deleted = service.deleteProblem(userId, id);
