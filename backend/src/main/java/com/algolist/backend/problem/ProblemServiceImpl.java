@@ -26,9 +26,11 @@ public class ProblemServiceImpl implements ProblemService{
 		if (categories != null && !categories.isEmpty()) {
 			dao.insertCategories(problem.getId(), categories);
 		}
-
-		// id까지 채워진 problem을 그대로 반환 → 프론트가 리스트에 추가
-		return problem;
+		
+		ProblemDto result = dao.selectById(problem.getId());
+		
+		// 방금 저장된 행을 재조회 → solve_count·grade 등 DB 기본값까지 채워 반환
+		return result;
 	}
 
 	@Override

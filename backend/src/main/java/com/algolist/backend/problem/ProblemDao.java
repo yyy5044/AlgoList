@@ -21,4 +21,7 @@ public interface ProblemDao {
 	
 	// 문제 전체 조회
 	List<ProblemDto> selectAll(Long userId);
+	
+	// 문제 단일 조회
+	ProblemDto selectById(Long problemId);
 }

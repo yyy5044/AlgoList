@@ -50,4 +50,13 @@
 	    WHERE p.user_id = #{userId}
 	</select>
 	
+	<!-- 문제 단일 조회 -->
+	<select id="selectById" resultMap="problemMap">
+	    SELECT p.problem_id, p.title, p.number, p.difficulty, p.site, p.link,
+	           p.grade, p.solve_count, p.last_solved_date, p.user_id,
+	           c.category_name
+	    FROM problems p
+	    LEFT JOIN problem_categories c ON p.problem_id = c.problem_id
+	    WHERE p.problem_id = #{problemId}
+	</select>
 </mapper>
