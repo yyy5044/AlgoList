@@ -25,7 +25,8 @@
 		<association property="problem" resultMap="problemMap"/>
 	</resultMap>
 	
-	<sql id="selectUserProblem">
+	<!-- user_problem 테이블 전체 컬럼 조회 sql 조각 -->
+	<sql id="userProblemJoin">
 		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
 				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
 		FROM user_problems up
@@ -35,7 +36,7 @@
 		USING (problem_id)
 	</sql>
 	
-	<!--  -->
+	<!-- 문제 검색 (띄어쓰기 상관 없이 검색 가능하도록 REPLACE 함수 적용) -->
 	<select id="searchProblem" resultMap="problemMap">
 		SELECT problem_id, title, number, difficulty, site, link, category_name
 		FROM problems
@@ -45,21 +46,25 @@
 		OR (number LIKE CONCAT('%', #{query}, '%'))
 	</select>
 	
+	<!-- 유저의 전체 문제 조회 -->
 	<select id="selectAllByUserId" resultMap="userProblemMap">
-		<include refid="selectUserProblem" />
+		<include refid="userProblemJoin" />
 		WHERE up.user_id = #{userId}
 	</select>
 	
+	<!-- 문제 추가 -->
 	<insert id="insertUserProblem">
 		INSERT INTO user_problems (user_id, problem_id)
 		VALUES (#{userId}, #{problemId})
 	</insert>
 	
+	<!-- 문제 추가 후 추가한 행 조회 -->
 	<select id="selectOne" resultMap="userProblemMap">
-		<include refid="selectUserProblem"/>
+		<include refid="userProblemJoin"/>
 		WHERE (up.user_id = #{userId}) AND (up.problem_id = #{problemId}) 
 	</select>
 	
+	<!-- 문제 삭제 -->
 	<delete id="deleteUserProblem">
 		DELETE FROM user_problems
 		WHERE (user_id = #{userId}) AND (problem_id = #{problemId})
