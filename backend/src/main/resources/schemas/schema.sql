@@ -4,10 +4,40 @@ USE algolist;
 # 유저 테이블
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
     username VARCHAR(50) NOT NULL UNIQUE,
+    nickname VARCHAR(50),
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'USER'
+    role VARCHAR(20) NOT NULL DEFAULT 'USER',
+
+    profile_image_url VARCHAR(500),
+    bio VARCHAR(500),
+
+    account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME NULL
 );
+
+# 정지 이력 기록 테이블
+CREATE TABLE IF NOT EXISTS user_suspensions (
+    suspension_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id BIGINT NOT NULL,
+    reason VARCHAR(255),
+    suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    suspended_until DATETIME NOT NULL,
+    suspended_by BIGINT NULL,
+
+    released_at DATETIME NULL,
+    released_by BIGINT NULL,
+    release_reason VARCHAR(255) NULL,
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (suspended_by) REFERENCES users(user_id),
+    FOREIGN KEY (released_by) REFERENCES users(user_id)
+);
+
 
 # 문제 테이블
 CREATE TABLE IF NOT EXISTS problems (
