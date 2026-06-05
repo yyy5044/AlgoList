@@ -15,8 +15,7 @@ public class UserAspect {
 
 	private final PasswordEncoder passwordEncoder;
 
-	@Around("execution(* com.algolist.backend.user.UserService.insertUser(String, String))"
-			+ " || execution(* com.algolist.backend.user.UserService.updateUser(String, String))")
+	@Around("execution(* com.algolist.backend.user.UserService.insertUser(String, String))")
 	public Object encodePassword(ProceedingJoinPoint joinPoint) throws Throwable {
 		Object[] args = joinPoint.getArgs();
 

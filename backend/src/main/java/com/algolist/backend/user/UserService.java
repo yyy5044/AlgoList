@@ -10,7 +10,7 @@ public interface UserService {
 	
 	public boolean insertUser(String username, String password);
 	
-	public boolean updateUser(String username, String password);
+	public boolean updateUser(String username, UpdateRequestDto request);
 	
 	public boolean deleteUser(String username);
 	

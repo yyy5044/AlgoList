@@ -7,8 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,18 +34,6 @@ public class AdminUserController {
 
 		if (user != null) {
 			return ResponseEntity.status(HttpStatus.OK).body(user);
-		} else {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
-		}
-	}
-
-	@PutMapping("/{username}/password")
-	// 유저 정보 수정 요청(현재는 비밀번호만)
-	public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody UpdateRequestDto request) {
-		boolean success = userService.updateUser(username, request.getPassword());
-
-		if (success) {
-			return ResponseEntity.status(HttpStatus.OK).build();
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
 		}

@@ -1,6 +1,7 @@
 package com.algolist.backend.user;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,15 +51,15 @@ public class UserController {
 		}
 	}
 
-	@PutMapping("/{username}/password")
-	// 유저 정보 수정 요청(현재는 비밀번호만)
-	public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody UpdateRequestDto request, Authentication authentication) {
+	@PutMapping(value = "/{username}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	// 유저 프로필 수정 요청
+	public ResponseEntity<?> updateUser(@PathVariable String username, @ModelAttribute UpdateRequestDto request, Authentication authentication) {
 		if (!isCurrentUser(username, authentication)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
-		boolean success = userService.updateUser(username, request.getPassword());
-		
+		boolean success = userService.updateUser(username, request);
+
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();
 		} else {

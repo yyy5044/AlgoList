@@ -20,8 +20,12 @@ public interface UserDao {
 	// username, password로 유저 추가
 	public int insertUser(@Param("username") String username, @Param("password") String password);
 	
-	// 유저 수정(지금은 password만)
-	public int updateUser(@Param("username") String username, @Param("password") String password);
+	// 유저 수정
+	public int updateUser(@Param("username") String username,
+			@Param("nickname") String nickname,
+			@Param("password") String password,
+			@Param("bio") String bio,
+			@Param("profileImageUrl") String profileImageUrl);
 	
 	// 유저 삭제(Soft Delete)
 	public int deleteUser(@Param("username") String username);
