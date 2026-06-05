@@ -36,7 +36,7 @@ function selectItem(item) {
 }
 
 function toggleMenu(item) {
-  openMenuId.value = openMenuId.value === item.id ? null : item.id
+  openMenuId.value = openMenuId.value === item.problemId ? null : item.problemId
 }
 
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
@@ -133,12 +133,12 @@ async function selectSearchResult(result) {
 // 개별 삭제
 async function deleteItem(item) {
   try {
-    await fetch(`/api/problems/${item.id}`, {
+    await fetch(`/api/problems/${item.problemId}`, {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })
-    items.value = items.value.filter((i) => i.id !== item.id)
-    if (selectedItem.value?.id === item.id) {
+    items.value = items.value.filter((i) => i.id !== item.problemId)
+    if (selectedItem.value?.id === item.problemId) {
       selectedItem.value = null
       emit('select-item', null)
     }
@@ -179,7 +179,7 @@ async function deleteChecked() {
         credentials: 'include' // 세션 쿠키
       })
     }
-    items.value = items.value.filter((item) => !checkedIds.value.includes(item.id))
+    items.value = items.value.filter((item) => !checkedIds.value.includes(item.problemId))
     if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
       selectedItem.value = null
       emit('select-item', null)
@@ -238,15 +238,15 @@ function editItem(item) {
     <ul class="list">
       <li
         v-for="item in filteredItems"
-        :key="item.id"
-        :class="['list-item', { active: selectedItem?.id === item.id }]"
+        :key="item.problemId"
+        :class="['list-item', { active: selectedItem?.id === item.problemId }]"
         @click="selectItem(item)"
       >
         <input
           v-if="isDeleteMode"
           type="checkbox"
-          :checked="checkedIds.includes(item.id)"
-          @click.stop="toggleCheck(item.id)"
+          :checked="checkedIds.includes(item.problemId)"
+          @click.stop="toggleCheck(item.problemId)"
           class="delete-checkbox"
         />
         <div class="item-info">
@@ -256,7 +256,7 @@ function editItem(item) {
         <button v-if="!isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
 
         <!-- 드롭다운 메뉴 -->
-        <div v-if="openMenuId === item.id" class="dropdown-menu">
+        <div v-if="openMenuId === item.problemId" class="dropdown-menu">
           <button @click.stop="editItem(item)">수정</button>
           <button @click.stop="deleteItem(item)">삭제</button>
         </div>
