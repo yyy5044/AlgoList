@@ -12,6 +12,7 @@ const isLoggedIn = ref(false)
 const currentUser = ref('')
 const currentUserRole = ref('')
 const selectedItem = ref(null)
+const selectedAdminUsername = ref('') // 어드민이 조회한 유저의 이름
 const authPage = ref('login')
 const mainPage = ref('problems')
 const isUserListPath = ref(window.location.pathname === '/users')
@@ -21,7 +22,7 @@ const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
 onMounted(async () => {
   try {
     const response = await fetch('/api/me', {
-      credentials: 'include'
+      credentials: 'include',
     })
 
     if (response.ok) {
@@ -60,7 +61,7 @@ async function logout() {
   try {
     await fetch('/api/logout', {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
     })
   } catch (error) {
     console.error('로그아웃 실패:', error)
@@ -69,6 +70,7 @@ async function logout() {
   currentUser.value = ''
   currentUserRole.value = ''
   selectedItem.value = null
+  selectedAdminUsername.value = ''
   authPage.value = 'login'
   mainPage.value = 'problems'
 }
@@ -87,6 +89,7 @@ function showLoginPage() {
 
 function showProblemPage() {
   mainPage.value = 'problems'
+  selectedAdminUsername.value = ''
   if (isUserListPath.value) {
     window.history.pushState({}, '', '/')
     isUserListPath.value = false
@@ -100,8 +103,13 @@ function showUserDetailPage() {
 function showUserListPage() {
   if (!isAdmin.value) return
 
+  selectedAdminUsername.value = ''
   window.history.pushState({}, '', '/users')
   isUserListPath.value = true
+}
+
+function showAdminUserDetailPage(username) {
+  selectedAdminUsername.value = username
 }
 
 function showUserPasswordEditPage() {
@@ -111,15 +119,32 @@ function showUserPasswordEditPage() {
 
 <template>
   <SignupPage v-if="!isLoggedIn && authPage === 'signup'" @back-to-login="showLoginPage" />
-  <LoginPage v-else-if="!isLoggedIn" @login-success="onLoginSuccess" @signup-click="showSignupPage" />
+  <LoginPage
+    v-else-if="!isLoggedIn"
+    @login-success="onLoginSuccess"
+    @signup-click="showSignupPage"
+  />
   <div v-else class="outer-container">
     <div class="app-container">
       <div class="top-bar">
         <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
-        <button class="user-link" @click="showUserDetailPage">{{ currentUser }}님 환영합니다</button>
+        <button class="user-link" @click="showUserDetailPage">
+          {{ currentUser }}님 환영합니다
+        </button>
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
-      <UserListPage v-if="isUserListPath && isAdmin" @back="showProblemPage" />
+      <UserDetailPage
+        v-if="isUserListPath && isAdmin && selectedAdminUsername"
+        :username="selectedAdminUsername"
+        api-base-path="/api/admin/users"
+        :show-actions="false"
+        @back="showUserListPage"
+      />
+      <UserListPage
+        v-else-if="isUserListPath && isAdmin"
+        @back="showProblemPage"
+        @select-user="showAdminUserDetailPage"
+      />
       <UserDetailPage
         v-else-if="mainPage === 'user-detail'"
         :username="currentUser"
@@ -202,7 +227,6 @@ function showUserPasswordEditPage() {
 .user-link:hover {
   color: #1a56db;
 }
-
 </style>
 
 <style>

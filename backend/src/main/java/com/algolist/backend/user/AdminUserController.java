@@ -31,8 +31,8 @@ public class AdminUserController {
 
 	@GetMapping("/{username}")
 	// 특정 유저 상세정보 조회 요청
-	public ResponseEntity<UserDto> selectUser(@PathVariable String username) {
-		UserDto user = userService.selectUser(username);
+	public ResponseEntity<UserDetailDto> selectUser(@PathVariable String username) {
+		UserDetailDto user = userService.selectUser(username);
 
 		if (user != null) {
 			return ResponseEntity.status(HttpStatus.OK).body(user);

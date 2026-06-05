@@ -5,13 +5,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserDto {
-	private Long userId;
+public class UserDetailDto {
 	private String username;
 	private String nickname;
-	private String password;
+	private String profileImageUrl;
+	private String bio;
 	private String role;
-	private String accountStatus;
-	private String createdAt;
-	private String deletedAt;
 }

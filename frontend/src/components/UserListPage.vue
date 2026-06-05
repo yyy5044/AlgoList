@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'select-user'])
 
 const users = ref([])
 const errorMessage = ref('')
@@ -9,6 +9,11 @@ const isLoading = ref(false)
 
 function userKey(user) {
   return user.id ?? user.userId ?? user.username
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  return String(value).replace('T', ' ').slice(0, 19)
 }
 
 async function loadUsers() {
@@ -55,17 +60,29 @@ onMounted(loadUsers)
             <tr>
               <th>ID</th>
               <th>아이디</th>
+              <th>닉네임</th>
               <th>권한</th>
+              <th>생성일</th>
+              <th>삭제일</th>
+              <th>계정 상태</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="user in users" :key="userKey(user)">
               <td>{{ user.id ?? user.userId ?? '-' }}</td>
-              <td>{{ user.username }}</td>
+              <td>
+                <button class="username-button" @click="emit('select-user', user.username)">
+                  {{ user.username }}
+                </button>
+              </td>
+              <td>{{ user.nickname || '-' }}</td>
               <td>{{ user.role || 'USER' }}</td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>{{ formatDate(user.deletedAt) }}</td>
+              <td>{{ user.accountStatus || 'ACTIVE' }}</td>
             </tr>
             <tr v-if="!isLoading && users.length === 0">
-              <td colspan="3" class="empty-message">조회된 회원이 없습니다.</td>
+              <td colspan="7" class="empty-message">조회된 회원이 없습니다.</td>
             </tr>
           </tbody>
         </table>
@@ -129,6 +146,7 @@ onMounted(loadUsers)
 
 table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
@@ -157,6 +175,20 @@ tbody tr:last-child td {
 .empty-message {
   text-align: center;
   color: #999;
+}
+
+.username-button {
+  padding: 0;
+  background: none;
+  color: #4a90d9;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.username-button:hover {
+  color: #1a56db;
+  text-decoration: underline;
 }
 
 .back-button {

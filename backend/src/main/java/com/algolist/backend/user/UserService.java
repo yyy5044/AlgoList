@@ -6,7 +6,7 @@ public interface UserService {
 	
 	public List<UserDto> selectAllUsers();
 	
-	public UserDto selectUser(String username);
+	public UserDetailDto selectUser(String username);
 	
 	public boolean insertUser(String username, String password);
 	

@@ -12,7 +12,7 @@ public interface UserDao {
 	public List<UserDto> selectAllUsers();
 	
 	// username으로 특정 유저 찾기(비밀번호 미포함)
-	public UserDto selectUser(@Param("username") String username);
+	public UserDetailDto selectUser(@Param("username") String username);
 	
 	// username으로 로그인을 위해 특정 유저 찾기(비밀번호 포함)
 	public UserDto selectUserForAuth(@Param("username") String username);

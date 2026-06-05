@@ -35,12 +35,12 @@ public class UserController {
 
 	@GetMapping("/{username}")
 	// 특정 유저 상세정보 조회 요청
-	public ResponseEntity<UserDto> selectUser(@PathVariable String username, Authentication authentication) {
+	public ResponseEntity<UserDetailDto> selectUser(@PathVariable String username, Authentication authentication) {
 		if (!isCurrentUser(username, authentication)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
-		UserDto user = userService.selectUser(username);
+		UserDetailDto user = userService.selectUser(username);
 
 		if (user != null) {
 			return ResponseEntity.status(HttpStatus.OK).body(user);

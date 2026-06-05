@@ -18,13 +18,13 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDto selectUser(String username) {
+	public UserDetailDto selectUser(String username) {
 		return userDao.selectUser(username);
 	}
 
 	@Override
 	public boolean insertUser(String username, String password) {
-		UserDto user = userDao.selectUser(username);
+		UserDetailDto user = userDao.selectUser(username);
 		
 		// 중복된 ID를 사용하고 있는지 확인
 		if(user != null) {

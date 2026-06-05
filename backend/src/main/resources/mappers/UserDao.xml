@@ -8,17 +8,23 @@
 	<resultMap type="UserDto" id="UserDtoMap" autoMapping="true">
 		<id column="user_id" property="userId"/>
 		<result column="account_status" property="accountStatus"/>
+		<result column="created_at" property="createdAt"/>
+		<result column="deleted_at" property="deletedAt"/>
+	</resultMap>
+
+	<resultMap type="UserDetailDto" id="UserDetailDtoMap" autoMapping="true">
+		<result column="profile_image_url" property="profileImageUrl"/>
 	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
 	<select id="selectAllUsers" resultMap="UserDtoMap">
-		SELECT user_id, username, role
+		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
 		FROM users
 	</select>
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
-	<select id="selectUser" resultMap="UserDtoMap">
-		SELECT user_id, username, role
+	<select id="selectUser" resultMap="UserDetailDtoMap">
+		SELECT username, nickname, profile_image_url, bio, role
 		FROM users
 		WHERE username = #{username}
 	</select>
