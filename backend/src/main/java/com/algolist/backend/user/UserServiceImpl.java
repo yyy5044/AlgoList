@@ -119,6 +119,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	// 이미지 형식이 올바른지 확인하는 메서드(이미지 파일 형식, 이미지 파일 픽셀 크기)
 	private void validateProfileImage(MultipartFile profileImage) throws IOException {
 		if (!ALLOWED_PROFILE_IMAGE_TYPES.contains(profileImage.getContentType())) {
 			throw new IllegalArgumentException("프로필 이미지는 jpg, png, webp, gif 형식만 가능합니다.");
