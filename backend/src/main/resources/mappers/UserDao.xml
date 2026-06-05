@@ -7,45 +7,112 @@
 	<!-- 컬럼의 user_id와 UserDao의 userId가 일치하지 않으므로 이름 맞춰주기 -->
 	<resultMap type="UserDto" id="UserDtoMap" autoMapping="true">
 		<id column="user_id" property="userId"/>
+		<result column="account_status" property="accountStatus"/>
+		<result column="created_at" property="createdAt"/>
+		<result column="deleted_at" property="deletedAt"/>
+	</resultMap>
+
+	<resultMap type="UserDetailDto" id="UserDetailDtoMap" autoMapping="true">
+		<result column="profile_image_url" property="profileImageUrl"/>
 	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
 	<select id="selectAllUsers" resultMap="UserDtoMap">
-		SELECT user_id, username, role
+		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
 		FROM users
+	</select>
+
+	<!-- 조건에 맞는 유저 목록 반환 -->
+	<select id="selectUsers" resultMap="UserDtoMap">
+		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
+		FROM users
+		<where>
+			<if test="accountStatus != null">
+				account_status = #{accountStatus}
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		ORDER BY user_id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<!-- 조건에 맞는 유저 수 반환 -->
+	<select id="countUsers" resultType="long">
+		SELECT COUNT(*)
+		FROM users
+		<where>
+			<if test="accountStatus != null">
+				account_status = #{accountStatus}
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
 	</select>
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
-	<select id="selectUser" resultMap="UserDtoMap">
-		SELECT user_id, username, role
+	<select id="selectUser" resultMap="UserDetailDtoMap">
+		SELECT username, nickname, profile_image_url, bio, role
 		FROM users
 		WHERE username = #{username}
 	</select>
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 포함) -->
 	<select id="selectUserForAuth" resultMap="UserDtoMap">
-		SELECT user_id, username, password, role
+		SELECT user_id, username, password, role, account_status
 		FROM users
 		WHERE username = #{username}
 	</select>
 	
 	<!-- username, password 기반으로 새 유저 INSERT(user_id, role은 자동 생성) -->
 	<insert id="insertUser">
-		INSERT INTO users(username, password)
-		VALUES(#{username}, #{password})
+		INSERT INTO users(username, password, nickname, profile_image_url)
+		VALUES(#{username}, #{password}, #{nickname}, #{profileImageUrl})
 	</insert>
 	
 	<!-- username 기반으로 유저 UPDATE -->
 	<update id="updateUser">
 		UPDATE users
-		SET password = #{password}
+		<set>
+			<if test="nickname != null">
+				nickname = #{nickname},
+			</if>
+			<if test="password != null">
+				password = #{password},
+			</if>
+			<if test="bio != null">
+				bio = #{bio},
+			</if>
+			<if test="profileImageUrl != null">
+				profile_image_url = #{profileImageUrl},
+			</if>
+		</set>
 		WHERE username = #{username}
 	</update>
 	
-	<!-- username 기반으로 유저 DELETE -->
-	<delete id="deleteUser">
-		DELETE FROM users
+	<!-- username 기반으로 유저 Soft Delete -->
+	<update id="deleteUser">
+		UPDATE users
+		SET account_status = 'DELETED',
+			deleted_at = CURRENT_TIMESTAMP
 		WHERE username = #{username}
-	</delete>
+		  AND account_status != 'DELETED'
+	</update>
 	
 </mapper>

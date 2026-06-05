@@ -10,19 +10,38 @@ public interface UserDao {
 
 	// 모든 유저 리스트 반환
 	public List<UserDto> selectAllUsers();
+
+	// 조건에 맞는 유저 리스트 반환
+	public List<UserDto> selectUsers(@Param("accountStatus") String accountStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword,
+			@Param("size") int size,
+			@Param("offset") int offset);
+
+	// 조건에 맞는 유저 수 반환
+	public long countUsers(@Param("accountStatus") String accountStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword);
 	
 	// username으로 특정 유저 찾기(비밀번호 미포함)
-	public UserDto selectUser(@Param("username") String username);
+	public UserDetailDto selectUser(@Param("username") String username);
 	
 	// username으로 로그인을 위해 특정 유저 찾기(비밀번호 포함)
 	public UserDto selectUserForAuth(@Param("username") String username);
 	
-	// username, password로 유저 추가
-	public int insertUser(@Param("username") String username, @Param("password") String password);
+	// username, password, nickname, profileImageUrl로 유저 추가
+	public int insertUser(@Param("username") String username,
+			@Param("password") String password,
+			@Param("nickname") String nickname,
+			@Param("profileImageUrl") String profileImageUrl);
 	
-	// 유저 수정(지금은 password만)
-	public int updateUser(@Param("username") String username, @Param("password") String password);
+	// 유저 수정
+	public int updateUser(@Param("username") String username,
+			@Param("nickname") String nickname,
+			@Param("password") String password,
+			@Param("bio") String bio,
+			@Param("profileImageUrl") String profileImageUrl);
 	
-	// 유저 삭제
+	// 유저 삭제(Soft Delete)
 	public int deleteUser(@Param("username") String username);
 }

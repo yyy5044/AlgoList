@@ -27,7 +27,7 @@ async function login() {
 
     if (response.ok) {
       const data = await response.json()
-      emit('login-success', data.username)
+      emit('login-success', data)
     } else {
       errorMessage.value = '아이디 또는 비밀번호가 틀렸습니다.'
     }

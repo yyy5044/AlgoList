@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     bio VARCHAR(500),
 
     account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-	
+
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL
 );
@@ -63,7 +63,9 @@ CREATE TABLE IF NOT EXISTS user_problems (
     user_problem_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     problem_id BIGINT NOT NULL,
+
     grade VARCHAR(20) NOT NULL DEFAULT 'YELLOW',
+
     solve_count INT DEFAULT 0,
     last_solved_date DATE,
     # 한 유저가 같은 문제를 중복으로 담지 못하게

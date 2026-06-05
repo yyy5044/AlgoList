@@ -1,20 +1,35 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps({
   username: String,
+  apiBasePath: {
+    type: String,
+    default: '/api/users',
+  },
+  showActions: {
+    type: Boolean,
+    default: true,
+  },
 })
 
-const emit = defineEmits(['back', 'edit-password', 'delete-success'])
+const emit = defineEmits(['back', 'edit-profile', 'delete-success'])
 
 const user = ref({
   username: props.username,
+  nickname: '',
+  profileImageUrl: '',
+  bio: '',
   role: '',
 })
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
 const isDeleting = ref(false)
+const imageLoadFailed = ref(false)
+
+const displayName = computed(() => user.value.nickname || user.value.username || '사용자')
+const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
 
 async function loadUser() {
   if (!props.username) return
@@ -22,12 +37,13 @@ async function loadUser() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch(`/api/users/${encodeURIComponent(props.username)}`, {
+    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       credentials: 'include',
     })
 
     if (response.ok) {
       user.value = await response.json()
+      imageLoadFailed.value = false
     } else {
       errorMessage.value = '회원 정보를 불러오지 못했습니다.'
     }
@@ -49,7 +65,7 @@ async function deleteUser() {
     isDeleting.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`/api/users/${encodeURIComponent(props.username)}`, {
+    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -79,21 +95,39 @@ async function deleteUser() {
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       <p v-if="successMessage" class="success">{{ successMessage }}</p>
 
-      <div class="info-list">
-        <div class="info-row">
-          <span class="info-label">아이디</span>
-          <span class="info-value">{{ user.username }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">권한</span>
-          <span class="info-value">{{ user.role || 'USER' }}</span>
+      <div class="profile-summary">
+        <img
+          v-if="user.profileImageUrl && !imageLoadFailed"
+          class="profile-image"
+          :src="user.profileImageUrl"
+          :alt="`${displayName} 프로필 이미지`"
+          @error="imageLoadFailed = true"
+        />
+        <div v-else class="profile-placeholder">{{ profileInitial }}</div>
+        <div class="profile-name-wrap">
+          <strong class="profile-name">{{ displayName }}</strong>
+          <span class="profile-username">@{{ user.username }}</span>
         </div>
       </div>
 
-      <button @click="emit('edit-password')">수정</button>
-      <button class="delete-button" @click="deleteUser" :disabled="isDeleting">
-        {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
-      </button>
+      <div class="info-list">
+        <div class="info-row">
+          <span class="info-label">권한</span>
+          <span class="role-badge">{{ user.role || 'USER' }}</span>
+        </div>
+      </div>
+
+      <div class="bio-section">
+        <span class="bio-label">자기소개</span>
+        <p class="bio-text">{{ user.bio || '등록된 자기소개가 없습니다.' }}</p>
+      </div>
+
+      <template v-if="showActions">
+        <button @click="emit('edit-profile')">수정</button>
+        <button class="delete-button" @click="deleteUser" :disabled="isDeleting">
+          {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
+        </button>
+      </template>
       <button class="back-button" @click="emit('back')">뒤로가기</button>
     </div>
   </div>
@@ -103,17 +137,21 @@ async function deleteUser() {
 .user-page {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
+  min-height: 0;
+  padding: 32px;
+  overflow: auto;
   background: #f5f5f5;
 }
 
 .user-panel {
   background: white;
-  padding: 40px;
+  margin: auto 0;
+  padding: 36px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: 360px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
+  width: min(100%, 520px);
   text-align: center;
 }
 
@@ -146,10 +184,58 @@ async function deleteUser() {
   margin-bottom: 12px;
 }
 
+.profile-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 24px;
+}
+
+.profile-image,
+.profile-placeholder {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+}
+
+.profile-image {
+  object-fit: cover;
+  border: 3px solid #eef2f7;
+}
+
+.profile-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef5fc;
+  color: #2f6fab;
+  border: 3px solid #dbeafe;
+  font-size: 42px;
+  font-weight: 700;
+}
+
+.profile-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.profile-name {
+  color: #222;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.profile-username {
+  color: #888;
+  font-size: 13px;
+}
+
 .info-list {
   border: 1px solid #eee;
   border-radius: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   overflow: hidden;
 }
 
@@ -172,6 +258,39 @@ async function deleteUser() {
 .info-value {
   color: #333;
   font-weight: 600;
+}
+
+.role-badge {
+  padding: 4px 10px;
+  background: #f2f7fd;
+  color: #2f6fab;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.bio-section {
+  padding: 18px;
+  margin-bottom: 18px;
+  min-height: 128px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.bio-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #888;
+  font-size: 13px;
+}
+
+.bio-text {
+  color: #333;
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 button {
