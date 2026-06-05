@@ -40,4 +40,9 @@ public class CustomUserDetails implements UserDetails { // UserDetail 객체 생
 		return user.getUsername();
 	}
 
+	@Override
+	public boolean isEnabled() {
+		return "ACTIVE".equals(user.getAccountStatus());
+	}
+
 }

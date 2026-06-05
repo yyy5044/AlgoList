@@ -7,6 +7,7 @@
 	<!-- 컬럼의 user_id와 UserDao의 userId가 일치하지 않으므로 이름 맞춰주기 -->
 	<resultMap type="UserDto" id="UserDtoMap" autoMapping="true">
 		<id column="user_id" property="userId"/>
+		<result column="account_status" property="accountStatus"/>
 	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
@@ -24,7 +25,7 @@
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 포함) -->
 	<select id="selectUserForAuth" resultMap="UserDtoMap">
-		SELECT user_id, username, password, role
+		SELECT user_id, username, password, role, account_status
 		FROM users
 		WHERE username = #{username}
 	</select>
@@ -42,10 +43,13 @@
 		WHERE username = #{username}
 	</update>
 	
-	<!-- username 기반으로 유저 DELETE -->
-	<delete id="deleteUser">
-		DELETE FROM users
+	<!-- username 기반으로 유저 Soft Delete -->
+	<update id="deleteUser">
+		UPDATE users
+		SET account_status = 'DELETED',
+			deleted_at = CURRENT_TIMESTAMP
 		WHERE username = #{username}
-	</delete>
+		  AND account_status != 'DELETED'
+	</update>
 	
 </mapper>

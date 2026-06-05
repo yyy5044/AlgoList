@@ -23,6 +23,6 @@ public interface UserDao {
 	// 유저 수정(지금은 password만)
 	public int updateUser(@Param("username") String username, @Param("password") String password);
 	
-	// 유저 삭제
+	// 유저 삭제(Soft Delete)
 	public int deleteUser(@Param("username") String username);
 }
