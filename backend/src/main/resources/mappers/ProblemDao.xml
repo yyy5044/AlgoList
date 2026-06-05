@@ -25,6 +25,17 @@
 		<association property="problem" resultMap="problemMap"/>
 	</resultMap>
 	
+	<sql id="selectUserProblem">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+	</sql>
+	
+	<!--  -->
 	<select id="searchProblem" resultMap="problemMap">
 		SELECT problem_id, title, number, difficulty, site, link, category_name
 		FROM problems
@@ -35,13 +46,7 @@
 	</select>
 	
 	<select id="selectAllByUserId" resultMap="userProblemMap">
-		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
-				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
-		FROM user_problems up
-		LEFT JOIN problems p
-		USING (problem_id)
-		LEFT JOIN problem_categories pc
-		USING (problem_id)
+		<include refid="selectUserProblem" />
 		WHERE up.user_id = #{userId}
 	</select>
 	
@@ -51,13 +56,7 @@
 	</insert>
 	
 	<select id="selectOne" resultMap="userProblemMap">
-		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
-				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
-		FROM user_problems up
-		LEFT JOIN problems p
-		USING (problem_id)
-		LEFT JOIN problem_categories pc
-		USING (problem_id)
+		<include refid="selectUserProblem"/>
 		WHERE (up.user_id = #{userId}) AND (up.problem_id = #{problemId}) 
 	</select>
 	

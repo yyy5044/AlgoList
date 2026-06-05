@@ -17,8 +17,8 @@ public interface ProblemDao {
 	int insertUserProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
 	
 	// 단일 행 조회 (문제 삽입 후 기본값 채워진 객체를 보내주기 위한 용도)
-	UserProblemDto selectOne(@Param("userId") Long user, @Param("problemId") Long problemId);
+	UserProblemDto selectOne(@Param("userId") Long userId, @Param("problemId") Long problemId);
 	
 	// 문제 삭제
-	int deleteUserProblem(@Param("userId") Long user, @Param("problemId") Long problemId);
+	int deleteUserProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
 }
