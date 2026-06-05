@@ -4,7 +4,7 @@ import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
 import UserListPage from './components/UserListPage.vue'
-import UserPasswordEditPage from './components/UserPasswordEditPage.vue'
+import UserProfileEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
 
@@ -112,7 +112,7 @@ function showAdminUserDetailPage(username) {
   selectedAdminUsername.value = username
 }
 
-function showUserPasswordEditPage() {
+function showUserProfileEditPage() {
   mainPage.value = 'user-password-edit'
 }
 </script>
@@ -149,10 +149,10 @@ function showUserPasswordEditPage() {
         v-else-if="mainPage === 'user-detail'"
         :username="currentUser"
         @back="showProblemPage"
-        @edit-password="showUserPasswordEditPage"
+        @edit-profile="showUserProfileEditPage"
         @delete-success="logout"
       />
-      <UserPasswordEditPage
+      <UserProfileEditPage
         v-else-if="mainPage === 'user-password-edit'"
         :username="currentUser"
         @back="showUserDetailPage"

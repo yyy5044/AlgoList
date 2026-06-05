@@ -1,5 +1,7 @@
 package com.algolist.backend.user;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -51,14 +53,19 @@ public class UserController {
 		}
 	}
 
-	@PutMapping(value = "/{username}/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PutMapping(value = "/{username}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	// 유저 프로필 수정 요청
 	public ResponseEntity<?> updateUser(@PathVariable String username, @ModelAttribute UpdateRequestDto request, Authentication authentication) {
 		if (!isCurrentUser(username, authentication)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
-		boolean success = userService.updateUser(username, request);
+		boolean success;
+		try {
+			success = userService.updateUser(username, request);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+		}
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();

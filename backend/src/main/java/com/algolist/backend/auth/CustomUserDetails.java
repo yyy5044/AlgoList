@@ -41,7 +41,7 @@ public class CustomUserDetails implements UserDetails { // UserDetail 객체 생
 	}
 
 	@Override
-	public boolean isEnabled() {
+	public boolean isEnabled() { // 유저 활성화 여부를 확인하기 위한 로직
 		return "ACTIVE".equals(user.getAccountStatus());
 	}
 

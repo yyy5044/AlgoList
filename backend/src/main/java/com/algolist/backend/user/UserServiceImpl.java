@@ -1,10 +1,13 @@
 package com.algolist.backend.user;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+
+import javax.imageio.ImageIO;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-	private static final Path PROFILE_IMAGE_DIR = Path.of("uploads", "profile-images");
-	private static final String PROFILE_IMAGE_URL_PREFIX = "/uploads/profile-images/";
+	private static final Path PROFILE_IMAGE_DIR = Path.of("uploads", "profile-images"); // 백엔드가 파일을 저장하는 실제 경로
+	private static final String PROFILE_IMAGE_URL_PREFIX = "/uploads/profile-images/"; // 프론트가 접근할 URL(WebConfig에 선언)
+	private static final List<String> ALLOWED_PROFILE_IMAGE_TYPES = List.of("image/jpeg", "image/png", "image/webp", "image/gif");
+	private static final int MAX_PROFILE_IMAGE_WIDTH = 1024;
+	private static final int MAX_PROFILE_IMAGE_HEIGHT = 1024;
 
 	private final UserDao userDao;
 	private final PasswordEncoder passwordEncoder;
@@ -53,6 +59,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	// 유저 정보 업데이트(프로필 이미지, 닉네임, 비밀번호, 자기소개)
 	public boolean updateUser(String username, UpdateRequestDto request) {
 		String profileImageUrl = saveProfileImage(request.getProfileImage());
 		String nickname = StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : null;
@@ -89,12 +96,15 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	// 받아온 이미지 파일을 저장하기 위한 메서드
 	private String saveProfileImage(MultipartFile profileImage) {
 		if (profileImage == null || profileImage.isEmpty()) {
 			return null;
 		}
 
 		try {
+			validateProfileImage(profileImage);
+
 			Files.createDirectories(PROFILE_IMAGE_DIR);
 			String extension = StringUtils.getFilenameExtension(profileImage.getOriginalFilename());
 			String fileName = UUID.randomUUID().toString();
@@ -106,6 +116,21 @@ public class UserServiceImpl implements UserService {
 			return PROFILE_IMAGE_URL_PREFIX + fileName;
 		} catch (IOException e) {
 			throw new IllegalStateException("프로필 이미지를 저장하지 못했습니다.", e);
+		}
+	}
+
+	private void validateProfileImage(MultipartFile profileImage) throws IOException {
+		if (!ALLOWED_PROFILE_IMAGE_TYPES.contains(profileImage.getContentType())) {
+			throw new IllegalArgumentException("프로필 이미지는 jpg, png, webp, gif 형식만 가능합니다.");
+		}
+
+		BufferedImage image = ImageIO.read(profileImage.getInputStream());
+		if (image == null) {
+			throw new IllegalArgumentException("올바른 이미지 파일이 아닙니다.");
+		}
+
+		if (image.getWidth() > MAX_PROFILE_IMAGE_WIDTH || image.getHeight() > MAX_PROFILE_IMAGE_HEIGHT) {
+			throw new IllegalArgumentException("프로필 이미지는 1024x1024 이하만 가능합니다.");
 		}
 	}
 }

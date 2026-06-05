@@ -13,7 +13,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['back', 'edit-password', 'delete-success'])
+const emit = defineEmits(['back', 'edit-profile', 'delete-success'])
 
 const user = ref({
   username: props.username,
@@ -123,7 +123,7 @@ async function deleteUser() {
       </div>
 
       <template v-if="showActions">
-        <button @click="emit('edit-password')">수정</button>
+        <button @click="emit('edit-profile')">수정</button>
         <button class="delete-button" @click="deleteUser" :disabled="isDeleting">
           {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
         </button>
@@ -137,14 +137,17 @@ async function deleteUser() {
 .user-page {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
+  min-height: 0;
   padding: 32px;
+  overflow: auto;
   background: #f5f5f5;
 }
 
 .user-panel {
   background: white;
+  margin: auto 0;
   padding: 36px;
   border-radius: 12px;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
