@@ -115,15 +115,14 @@ async function selectSearchResult(result) {
     const response = await fetch('/api/problems', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(result),
+      body: JSON.stringify({ problemId: result.problemId }),
       credentials: 'include' // 세션 쿠키
     })
-    const savedProblem = await response.json()
-    // console.log(savedProblem) // 디버깅용: 응답 json이 잘 채워져 있는지
-    items.value.push(savedProblem)
+    if (!response.ok) throw new Error('저장 실패')
+    items.value.push(result)
     openMenuId.value = null
-    selectedItem.value = savedProblem // 문제 추가하고 나서 추가된 문제 선택
-    emit('select-item', savedProblem)
+    selectedItem.value = result
+    emit('select-item', result)
     closeSearchModal()
   } catch (error) {
     console.error('문제 저장 실패:', error)
