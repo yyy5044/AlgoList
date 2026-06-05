@@ -85,7 +85,7 @@ async function searchProblem() {
     isSearching.value = true
     searchError.value = ''
     const response = await fetch(
-      `/api/search?query=${problemSearchQuery.value}`, {
+      `/api/problems/search?query=${encodeURIComponent(problemSearchQuery.value)}`, {
         credentials: 'include'
       }
     )

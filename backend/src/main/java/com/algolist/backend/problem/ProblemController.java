@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -26,6 +27,11 @@ public class ProblemController {
 
 	private final ProblemService service;
 
+	@GetMapping("/search")
+	public ResponseEntity<?> search(@RequestParam String query) {
+		return null;
+	}
+	
 	// 초기 목록 조회: GET /api/problems
 	@GetMapping
 	@Operation(summary = "문제 전체 조회")
@@ -68,4 +74,5 @@ public class ProblemController {
 				? ResponseEntity.noContent().build() // 204 No Content (성공)
 				: ResponseEntity.notFound().build(); // 404 Not Found (실패)
 	}
+	
 }
