@@ -42,13 +42,22 @@ async function signup() {
       password.value = ''
       passwordConfirm.value = ''
     } else {
-      errorMessage.value = '회원가입에 실패했습니다.'
+      errorMessage.value = await readErrorMessage(response, '회원가입에 실패했습니다.')
     }
   } catch (error) {
     console.log(error)
     errorMessage.value = '서버에 연결할 수 없습니다.'
   } finally {
     isSubmitting.value = false
+  }
+}
+
+async function readErrorMessage(response, fallbackMessage) {
+  try {
+    const data = await response.json()
+    return data.message || fallbackMessage
+  } catch {
+    return fallbackMessage
   }
 }
 </script>

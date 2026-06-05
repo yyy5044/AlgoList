@@ -28,12 +28,17 @@ public class UserController {
 	@PostMapping
 	// 회원가입 요청
 	public ResponseEntity<?> regist(@RequestBody CreateRequestDto request) {
-		boolean success = userService.insertUser(request.getUsername(), request.getPassword());
+		boolean success;
+		try {
+			success = userService.insertUser(request.getUsername(), request.getPassword());
+		} catch (IllegalArgumentException e) { // username 중복 오류가 발생하면 반환된 예외를 catch, message에 담아서 보냄
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+		}
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.CREATED).build(); // 생성 성공 시 CREATED(201) 반환
 		} else {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build(); // username 중복 등 오류 발생 시 CONFLICT(409) 에러
+			return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 오류 발생 시 CONFLICT(409) 에러
 		}
 	}
 

@@ -43,9 +43,9 @@ public class UserServiceImpl implements UserService {
 	public boolean insertUser(String username, String password) {
 		UserDetailDto user = userDao.selectUser(username);
 		
-		// 중복된 ID를 사용하고 있는지 확인
+		// 중복된 ID를 사용하고 있는지 확인, 중복이라면 예외 반환
 		if(user != null) {
-			return false;
+			throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
 		}
 		
 		// 유저 생성 시 1개의 행이 생성되므로 result가 1이여야만 정상 동작으로 간주
@@ -119,7 +119,7 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	// 이미지 형식이 올바른지 확인하는 메서드(이미지 파일 형식, 이미지 파일 픽셀 크기)
+	// 이미지 형식이 올바른지 확인하는 메서드(이미지 파일 형식, 이미지 파일 픽셀 크기), 올바르지 않다면 예외 반환
 	private void validateProfileImage(MultipartFile profileImage) throws IOException {
 		if (!ALLOWED_PROFILE_IMAGE_TYPES.contains(profileImage.getContentType())) {
 			throw new IllegalArgumentException("프로필 이미지는 jpg, png, webp, gif 형식만 가능합니다.");
