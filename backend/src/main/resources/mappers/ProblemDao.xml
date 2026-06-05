@@ -14,6 +14,17 @@
 		</collection>
 	</resultMap>
 	
+	<!-- UserProblemDto용 resultMap -->
+	<resultMap id="userProblemMap" type="UserProblemDto" autoMapping="true">
+		<id column="user_problem_id" property="userProblemId" />
+		<result column="user_id" property="userId"/>
+		<result column="solve_count" property="solveCount"/>
+		<result column="last_solved_date" property="lastSolvedDate"/>
+		
+		<!-- ProblemDto 매핑 -->
+		<association property="problem" resultMap="problemMap"/>
+	</resultMap>
+	
 	<select id="searchProblem" resultMap="problemMap">
 		SELECT problem_id, title, number, difficulty, site, link, category_name
 		FROM problems
@@ -23,6 +34,35 @@
 		OR (number LIKE CONCAT('%', #{query}, '%'))
 	</select>
 	
+	<select id="selectAllByUserId" resultMap="userProblemMap">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+		WHERE up.user_id = #{userId}
+	</select>
 	
+	<insert id="insertUserProblem">
+		INSERT INTO user_problems (user_id, problem_id)
+		VALUES (#{userId}, #{problemId})
+	</insert>
 	
+	<select id="selectOne" resultMap="userProblemMap">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+		WHERE (up.user_id = #{userId}) AND (up.problem_id = #{problemId}) 
+	</select>
+	
+	<delete id="deleteUserProblem">
+		DELETE FROM user_problems
+		WHERE (user_id = #{userId}) AND (problem_id = #{problemId})
+	</delete>
 </mapper>

@@ -7,21 +7,18 @@ import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface ProblemDao {
-	// 문제 생성: problems에 1행 INSERT. useGeneratedKeys로 생성된 problem_id를 problem.id에 채운다.
-	int insertProblem(ProblemDto problem);
-
-	// 문제의 카테고리들을 problem_categories에 N행 INSERT.
-	int insertCategories(@Param("problemId") Long problemId,
-	                     @Param("categories") List<String> categories);
+	// 초기에 유저 문제 전체 조회
+	List<UserProblemDto> selectAllByUserId(Long userId);
 	
+	// 문제 검색
+	List<ProblemDto> searchProblem(String query);
+	
+	// 문제 삽입
+	int insertUserProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
+	
+	// 단일 행 조회 (문제 삽입 후 기본값 채워진 객체를 보내주기 위한 용도)
+	UserProblemDto selectOne(@Param("userId") Long user, @Param("problemId") Long problemId);
 	
 	// 문제 삭제
-	int deleteProblem(@Param("userId") Long userId,
-					  @Param("problemId") Long problemId);
-	
-	// 문제 전체 조회
-	List<ProblemDto> selectAll(Long userId);
-	
-	// 문제 단일 조회
-	ProblemDto selectById(Long problemId);
+	int deleteUserProblem(@Param("userId") Long user, @Param("problemId") Long problemId);
 }

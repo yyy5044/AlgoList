@@ -12,41 +12,34 @@ import lombok.RequiredArgsConstructor;
 public class ProblemServiceImpl implements ProblemService{
 
 	private final ProblemDao dao;
+	
+	@Override
+	public List<UserProblemDto> selectAllByUserId(Long userId) {
+		return dao.selectAllByUserId(userId);
+	}
 
+	@Override
+	public List<ProblemDto> searchProblem(String query) {
+		return dao.searchProblem(query);
+	}
+	
 	@Override
 	@Transactional
-	public ProblemDto addProblem(Long userId, ProblemDto problem) {
-		problem.setUserId(userId);
-
-		// problems에 INSERT → useGeneratedKeys로 problem.id가 채워진다
-		dao.insertProblem(problem);
-
-		// 카테고리가 있으면 problem_categories에 N행 INSERT
-		List<String> categories = problem.getCategory();
-		if (categories != null && !categories.isEmpty()) {
-			dao.insertCategories(problem.getId(), categories);
-		}
+	public UserProblemDto insertUserProblem(Long userId, Long problemId) {
+		dao.insertUserProblem(userId, problemId);
 		
-		ProblemDto result = dao.selectById(problem.getId());
-		
-		// 방금 저장된 행을 재조회 → solve_count·grade 등 DB 기본값까지 채워 반환
-		return result;
+		return dao.selectOne(userId, problemId);
 	}
 
 	@Override
-	public boolean deleteProblem(Long userId, Long problemId) {
-		int affectedRows = dao.deleteProblem(userId, problemId);
-		boolean result = false;
-		
-		if (affectedRows > 0) result = true; 
-		
-		return result;
+	public int deleteUserProblem(Long userId, Long problemId) {
+		return dao.deleteUserProblem(userId, problemId);
 	}
 
-	@Override
-	public List<ProblemDto> selectAll(Long userId) {
-		// TODO: dao.selectAll이 실패하면 예외 -> 예외 핸들러 필요
-		return dao.selectAll(userId);
-	}
+	
+	
+
+
+
 	
 }
