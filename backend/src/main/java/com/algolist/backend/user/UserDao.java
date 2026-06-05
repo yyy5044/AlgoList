@@ -17,8 +17,11 @@ public interface UserDao {
 	// username으로 로그인을 위해 특정 유저 찾기(비밀번호 포함)
 	public UserDto selectUserForAuth(@Param("username") String username);
 	
-	// username, password로 유저 추가
-	public int insertUser(@Param("username") String username, @Param("password") String password);
+	// username, password, nickname, profileImageUrl로 유저 추가
+	public int insertUser(@Param("username") String username,
+			@Param("password") String password,
+			@Param("nickname") String nickname,
+			@Param("profileImageUrl") String profileImageUrl);
 	
 	// 유저 수정
 	public int updateUser(@Param("username") String username,

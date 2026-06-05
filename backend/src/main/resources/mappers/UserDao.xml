@@ -38,8 +38,8 @@
 	
 	<!-- username, password 기반으로 새 유저 INSERT(user_id, role은 자동 생성) -->
 	<insert id="insertUser">
-		INSERT INTO users(username, password)
-		VALUES(#{username}, #{password})
+		INSERT INTO users(username, password, nickname, profile_image_url)
+		VALUES(#{username}, #{password}, #{nickname}, #{profileImageUrl})
 	</insert>
 	
 	<!-- username 기반으로 유저 UPDATE -->

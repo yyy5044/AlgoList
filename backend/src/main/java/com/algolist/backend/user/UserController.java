@@ -8,13 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,13 +24,13 @@ public class UserController {
 
 	private final UserService userService;
 
-	@PostMapping
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	// 회원가입 요청
-	public ResponseEntity<?> regist(@RequestBody CreateRequestDto request) {
+	public ResponseEntity<?> regist(@ModelAttribute CreateRequestDto request) {
 		boolean success;
 		try {
-			success = userService.insertUser(request.getUsername(), request.getPassword());
-		} catch (IllegalArgumentException e) { // username 중복 오류가 발생하면 반환된 예외를 catch, message에 담아서 보냄
+			success = userService.insertUser(request);
+		} catch (IllegalArgumentException e) { // username 중복 등 오류가 발생하면 반환된 예외를 catch, message에 담아서 보냄
 			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
 		}
 

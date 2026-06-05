@@ -8,7 +8,7 @@ public interface UserService {
 	
 	public UserDetailDto selectUser(String username);
 	
-	public boolean insertUser(String username, String password);
+	public boolean insertUser(CreateRequestDto request);
 	
 	public boolean updateUser(String username, UpdateRequestDto request);
 	

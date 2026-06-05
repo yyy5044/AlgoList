@@ -40,16 +40,31 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public boolean insertUser(String username, String password) {
+	public boolean insertUser(CreateRequestDto request) {
+		String username = StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : null;
+		String password = request.getPassword();
+		String nickname = StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : null;
+
+		// username이나 password는 필수 값이므로 하나라도 없을 시 예외 반환
+		if (username == null || !StringUtils.hasText(password)) {
+			throw new IllegalArgumentException("아이디와 비밀번호를 모두 입력해주세요.");
+		}
+
+		password = password.trim();
+		validatePassword(password);
+		password = passwordEncoder.encode(password);
+
 		UserDetailDto user = userDao.selectUser(username);
 		
 		// 중복된 ID를 사용하고 있는지 확인, 중복이라면 예외 반환
 		if(user != null) {
 			throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
 		}
+
+		String profileImageUrl = saveProfileImage(request.getProfileImage());
 		
 		// 유저 생성 시 1개의 행이 생성되므로 result가 1이여야만 정상 동작으로 간주
-		int result = userDao.insertUser(username, password);
+		int result = userDao.insertUser(username, password, nickname, profileImageUrl);
 
 		if (result != 1) {
 			return false;
@@ -67,7 +82,9 @@ public class UserServiceImpl implements UserService {
 		String bio = request.getBio() == null ? null : request.getBio().trim();
 
 		if (StringUtils.hasText(password)) {
-			password = passwordEncoder.encode(password.trim());
+			password = password.trim();
+			validatePassword(password);
+			password = passwordEncoder.encode(password);
 		} else {
 			password = null;
 		}
@@ -93,6 +110,13 @@ public class UserServiceImpl implements UserService {
 			return false;
 		} else {
 			return true;
+		}
+	}
+
+	// 비밀번호 로직이 적합한지 확인하는 메서드
+	private void validatePassword(String password) {
+		if (password.length() < 8 || !password.matches(".*[A-Za-z].*") || !password.matches(".*\\d.*")) {
+			throw new IllegalArgumentException("비밀번호는 8자 이상이며 영어와 숫자를 모두 포함해야 합니다.");
 		}
 	}
 
