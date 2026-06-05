@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,7 +45,11 @@ public class UserController {
 
 	@GetMapping("/{username}")
 	// 특정 유저 상세정보 조회 요청
-	public ResponseEntity<UserDto> selectUser(@PathVariable String username) {
+	public ResponseEntity<UserDto> selectUser(@PathVariable String username, Authentication authentication) {
+		if (!isCurrentUser(username, authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+
 		UserDto user = userService.selectUser(username);
 
 		if (user != null) {
@@ -56,7 +61,11 @@ public class UserController {
 
 	@PutMapping("/{username}/password")
 	// 유저 정보 수정 요청(현재는 비밀번호만)
-	public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody UpdateRequestDto request) {
+	public ResponseEntity<?> updateUser(@PathVariable String username, @RequestBody UpdateRequestDto request, Authentication authentication) {
+		if (!isCurrentUser(username, authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+
 		boolean success = userService.updateUser(username, request.getPassword());
 		
 		if (success) {
@@ -68,7 +77,11 @@ public class UserController {
 	
 	@DeleteMapping("/{username}")
 	// 유저 삭제 요청
-	public ResponseEntity<?> deleteUser(@PathVariable String username) {
+	public ResponseEntity<?> deleteUser(@PathVariable String username, Authentication authentication) {
+		if (!isCurrentUser(username, authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+
 		boolean success = userService.deleteUser(username);
 		
 		if (success) {
@@ -76,6 +89,10 @@ public class UserController {
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
 		}
+	}
+
+	private boolean isCurrentUser(String username, Authentication authentication) {
+		return authentication != null && username.equals(authentication.getName());
 	}
 
 }
