@@ -10,6 +10,18 @@ public interface UserDao {
 
 	// 모든 유저 리스트 반환
 	public List<UserDto> selectAllUsers();
+
+	// 조건에 맞는 유저 리스트 반환
+	public List<UserDto> selectUsers(@Param("accountStatus") String accountStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword,
+			@Param("size") int size,
+			@Param("offset") int offset);
+
+	// 조건에 맞는 유저 수 반환
+	public long countUsers(@Param("accountStatus") String accountStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword);
 	
 	// username으로 특정 유저 찾기(비밀번호 미포함)
 	public UserDetailDto selectUser(@Param("username") String username);

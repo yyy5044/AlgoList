@@ -5,6 +5,8 @@ import java.util.List;
 public interface UserService {
 	
 	public List<UserDto> selectAllUsers();
+
+	public UserPageResponseDto selectUsers(int page, int size, String status, String searchType, String keyword);
 	
 	public UserDetailDto selectUser(String username);
 	

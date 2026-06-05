@@ -21,6 +21,50 @@
 		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
 		FROM users
 	</select>
+
+	<!-- 조건에 맞는 유저 목록 반환 -->
+	<select id="selectUsers" resultMap="UserDtoMap">
+		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
+		FROM users
+		<where>
+			<if test="accountStatus != null">
+				account_status = #{accountStatus}
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		ORDER BY user_id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<!-- 조건에 맞는 유저 수 반환 -->
+	<select id="countUsers" resultType="long">
+		SELECT COUNT(*)
+		FROM users
+		<where>
+			<if test="accountStatus != null">
+				account_status = #{accountStatus}
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
 	<select id="selectUser" resultMap="UserDetailDtoMap">

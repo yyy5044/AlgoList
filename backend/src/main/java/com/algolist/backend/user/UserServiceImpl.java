@@ -35,6 +35,28 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	// 페이징 처리를 위한 selectUsers 비즈니스 로직
+	public UserPageResponseDto selectUsers(int page, int size, String status, String searchType, String keyword) {
+		page = Math.max(page, 1); // 현재 페이지(최소는 1)
+		size = Math.min(Math.max(size, 1), 100); // 페이지마다 표시할 회원 수 (최소 1, 최대 100)
+		int offset = (page - 1) * size; // 몇 번째 회원부터 표시해야 할지 결정(page = 2, size = 10이라면 11번째 유저부터 보여주기)
+		String accountStatus = StringUtils.hasText(status) && !"ALL".equals(status) ? status.trim() : null; // 조건이 없으면 "ALL"
+		String searchTarget = "nickname".equals(searchType) ? "nickname" : "username"; // nickname과 username 중 무엇으로 보여줄 지 설정
+		String searchKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null; 
+
+		long totalCount = userDao.countUsers(accountStatus, searchTarget, searchKeyword); // 총 몇 명의 유저가 조회되었는지 확인
+		List<UserDto> users = userDao.selectUsers(accountStatus, searchTarget, searchKeyword, size, offset); // 현재 페이지에서의 유저 목록 확인
+
+		UserPageResponseDto response = new UserPageResponseDto(); // 객체에 값 할당
+		response.setUsers(users);
+		response.setPage(page);
+		response.setSize(size);
+		response.setTotalCount(totalCount);
+		response.setTotalPages((int) Math.ceil((double) totalCount / size));
+		return response;
+	}
+
+	@Override
 	public UserDetailDto selectUser(String username) {
 		return userDao.selectUser(username);
 	}

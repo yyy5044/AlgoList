@@ -1,12 +1,11 @@
 package com.algolist.backend.user;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,9 +19,14 @@ public class AdminUserController {
 	private final UserService userService;
 
 	@GetMapping
-	// 전체 회원 목록 조회 요청
-	public ResponseEntity<List<UserDto>> selectAllUsers() {
-		List<UserDto> users = userService.selectAllUsers();
+	// 전체 회원 목록 조회 요청(페이징)
+	public ResponseEntity<UserPageResponseDto> selectAllUsers(
+			@RequestParam(defaultValue = "1") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) String status,
+			@RequestParam(required = false) String searchType,
+			@RequestParam(required = false) String keyword) {
+		UserPageResponseDto users = userService.selectUsers(page, size, status, searchType, keyword);
 
 		return ResponseEntity.status(HttpStatus.OK).body(users);
 	}
