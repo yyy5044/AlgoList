@@ -119,7 +119,7 @@ async function selectSearchResult(result) {
       credentials: 'include' // 세션 쿠키
     })
     if (!response.ok) throw new Error('저장 실패')
-    const userProblem = { problem: result, grade: null, solveCount: 0, lastSolvedDate: null }
+    const userProblem = await response.json()
     items.value.push(userProblem)
     openMenuId.value = null
     selectedItem.value = userProblem

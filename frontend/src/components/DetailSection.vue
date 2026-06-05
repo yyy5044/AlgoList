@@ -12,9 +12,9 @@ defineProps({
     <div v-if="selectedItem" class="detail-content">
       <!-- 상단: 사이트 아이콘 + 문제 번호 + 제목 -->
       <div class="detail-header">
-        <img :src="`/icons/${selectedItem.site}.png`" :alt="selectedItem.site" class="detail-site-icon" />
-        <a :href="selectedItem.link" target="_blank" class="detail-title-link">
-          <h2>[{{ selectedItem.number }}] {{ selectedItem.title }}</h2>
+        <img :src="`/icons/${selectedItem.problem.site}.png`" :alt="selectedItem.problem.site" class="detail-site-icon" />
+        <a :href="selectedItem.problem.link" target="_blank" class="detail-title-link">
+          <h2>[{{ selectedItem.problem.number }}] {{ selectedItem.problem.title }}</h2>
         </a>
       </div>
 
@@ -22,16 +22,16 @@ defineProps({
       <div class="info-group">
         <div class="info-row">
           <span class="info-label">난이도</span>
-          <span class="info-value">{{ selectedItem.difficulty }}</span>
+          <span class="info-value">{{ selectedItem.problem.difficulty }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">사이트</span>
-          <span class="info-value">{{ selectedItem.site }}</span>
+          <span class="info-value">{{ selectedItem.problem.site }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">알고리즘 분류</span>
           <div class="category-tags">
-            <span v-for="cat in selectedItem.category" :key="cat" class="category-tag">
+            <span v-for="cat in selectedItem.problem.category" :key="cat" class="category-tag">
               {{ cat }}
             </span>
           </div>
