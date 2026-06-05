@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
@@ -10,10 +10,12 @@ import DetailSection from './components/DetailSection.vue'
 
 const isLoggedIn = ref(false)
 const currentUser = ref('')
+const currentUserRole = ref('')
 const selectedItem = ref(null)
 const authPage = ref('login')
 const mainPage = ref('problems')
 const isUserListPath = ref(window.location.pathname === '/users')
+const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
@@ -26,22 +28,32 @@ onMounted(async () => {
       const data = await response.json()
       isLoggedIn.value = true
       currentUser.value = data.username
+      currentUserRole.value = data.role || ''
+      if (isUserListPath.value && !isAdmin.value) {
+        showProblemPage()
+      }
     } else {
       isLoggedIn.value = false
       currentUser.value = ''
+      currentUserRole.value = ''
     }
   } catch (error) {
     console.error('로그인 상태 확인 실패:', error)
     isLoggedIn.value = false
     currentUser.value = ''
+    currentUserRole.value = ''
   }
 })
 
-function onLoginSuccess(username) {
+function onLoginSuccess(user) {
   isLoggedIn.value = true
-  currentUser.value = username
+  currentUser.value = user.username
+  currentUserRole.value = user.role || ''
   authPage.value = 'login'
   mainPage.value = 'problems'
+  if (isUserListPath.value && !isAdmin.value) {
+    showProblemPage()
+  }
 }
 
 async function logout() {
@@ -55,6 +67,7 @@ async function logout() {
   }
   isLoggedIn.value = false
   currentUser.value = ''
+  currentUserRole.value = ''
   selectedItem.value = null
   authPage.value = 'login'
   mainPage.value = 'problems'
@@ -84,6 +97,13 @@ function showUserDetailPage() {
   mainPage.value = 'user-detail'
 }
 
+function showUserListPage() {
+  if (!isAdmin.value) return
+
+  window.history.pushState({}, '', '/users')
+  isUserListPath.value = true
+}
+
 function showUserPasswordEditPage() {
   mainPage.value = 'user-password-edit'
 }
@@ -95,10 +115,11 @@ function showUserPasswordEditPage() {
   <div v-else class="outer-container">
     <div class="app-container">
       <div class="top-bar">
+        <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
         <button class="user-link" @click="showUserDetailPage">{{ currentUser }}님 환영합니다</button>
         <button @click="logout" class="logout-btn">로그아웃</button>
       </div>
-      <UserListPage v-if="isUserListPath" @back="showProblemPage" />
+      <UserListPage v-if="isUserListPath && isAdmin" @back="showProblemPage" />
       <UserDetailPage
         v-else-if="mainPage === 'user-detail'"
         :username="currentUser"

@@ -18,7 +18,11 @@ public class AuthController {
 		if(authentication == null || !authentication.isAuthenticated()) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(Map.of("username", authentication.getName()));
+		String role = authentication.getAuthorities().stream()
+			.findFirst()
+			.map(authority -> authority.getAuthority().replace("ROLE_", ""))
+			.orElse("");
+		return ResponseEntity.status(HttpStatus.OK).body(Map.of("username", authentication.getName(), "role", role));
 	}
 
 }
