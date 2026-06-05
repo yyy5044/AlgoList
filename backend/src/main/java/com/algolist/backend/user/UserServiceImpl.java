@@ -55,19 +55,21 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean updateUser(String username, UpdateRequestDto request) {
 		String profileImageUrl = saveProfileImage(request.getProfileImage());
+		String nickname = StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : null;
 		String password = request.getPassword();
+		String bio = request.getBio() == null ? null : request.getBio().trim();
 
 		if (StringUtils.hasText(password)) {
-			password = passwordEncoder.encode(password);
+			password = passwordEncoder.encode(password.trim());
 		} else {
 			password = null;
 		}
 
-		if (request.getNickname() == null && password == null && request.getBio() == null && profileImageUrl == null) {
+		if (nickname == null && password == null && bio == null && profileImageUrl == null) {
 			return userDao.selectUser(username) != null;
 		}
 
-		int result = userDao.updateUser(username, request.getNickname(), password, request.getBio(), profileImageUrl);
+		int result = userDao.updateUser(username, nickname, password, bio, profileImageUrl);
 
 		if (result != 1) {
 			return false;
