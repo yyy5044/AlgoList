@@ -15,7 +15,7 @@ async function loadUsers() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch('/api/users', {
+    const response = await fetch('/api/admin/users', {
       credentials: 'include',
     })
 
