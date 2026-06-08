@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS problems (
     difficulty VARCHAR(50),
     site VARCHAR(50),
     link VARCHAR(500),
-    description TEXT,
+    description MEDIUMTEXT,
     # (site, number)로 "DB에 있는지" 확인 & 중복 저장 방지. GitHub를 한 번만 호출하게 해주는 캐시 키.
     UNIQUE KEY uq_site_number (site, number)
 );
