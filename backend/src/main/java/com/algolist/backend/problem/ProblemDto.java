@@ -14,5 +14,6 @@ public class ProblemDto {
 	private String difficulty;
 	private String site;
 	private String link;
+	private String description;
 	private List<String> category;
 }

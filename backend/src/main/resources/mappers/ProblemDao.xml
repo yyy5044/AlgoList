@@ -28,7 +28,7 @@
 	<!-- user_problem 테이블 전체 컬럼 조회 sql 조각 -->
 	<sql id="userProblemJoin">
 		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
-				p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
+				p.title, p.number, p.difficulty, p.site, p.link, p.description, pc.category_name
 		FROM user_problems up
 		LEFT JOIN problems p
 		USING (problem_id)
