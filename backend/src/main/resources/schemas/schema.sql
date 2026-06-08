@@ -1,4 +1,6 @@
-CREATE DATABASE IF NOT EXISTS algolist;
+CREATE DATABASE IF NOT EXISTS algolist
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 USE algolist;
 
 # 유저 테이블
