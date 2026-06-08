@@ -222,8 +222,12 @@ public class DataCollector {
         PrintWriter pw = new PrintWriter(new FileWriter("problems_data.sql", StandardCharsets.UTF_8));
 
         for (Problem p : problems) {
-            String escapedTitle = p.title().replace("'", "''");
-            String escapedDesc = p.description().replace("'", "''").replace("\\", "\\\\");
+            String escapedTitle = p.title().replace("\\", "\\\\").replace("'", "\\'");
+            String escapedDesc = p.description()
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
 
             // problems 테이블 INSERT (중복이면 무시)
             pw.println("INSERT IGNORE INTO problems (title, number, difficulty, site, link, description) VALUES ('"
@@ -236,7 +240,7 @@ public class DataCollector {
 
             // problem_categories 테이블 INSERT
             for (String cat : p.categories()) {
-                String escapedCat = cat.replace("'", "''");
+                String escapedCat = cat.replace("\\", "\\\\").replace("'", "\\'");
                 pw.println("INSERT IGNORE INTO problem_categories (problem_id, category_name) "
                     + "SELECT problem_id, '" + escapedCat + "' FROM problems WHERE number='" + p.number() + "' AND site='" + p.site() + "';");
             }
