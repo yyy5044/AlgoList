@@ -12,4 +12,5 @@ public class UserDetailDto {
 	private String profileImageUrl;
 	private String bio;
 	private String role;
+	private String accountStatus;
 }

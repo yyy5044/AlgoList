@@ -1,13 +1,21 @@
 package com.algolist.backend.user;
 
+import java.util.Map;
+
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.algolist.backend.auth.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,6 +61,50 @@ public class AdminUserController {
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
 		}
+	}
+
+	@PostMapping("/{username}/suspensions")
+	// 유저 정지 요청
+	public ResponseEntity<?> suspendUser(@PathVariable String username, @RequestBody SuspendUserRequestDto request,
+			Authentication authentication) {
+		boolean success;
+		try {
+			success = userService.suspendUser(username, request, getCurrentUserId(authentication));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+		}
+
+		if (success) {
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	@PatchMapping("/{username}/suspensions/release")
+	// 유저 정지 해제 요청
+	public ResponseEntity<?> releaseUserSuspension(@PathVariable String username,
+			@RequestBody ReleaseSuspensionRequestDto request, Authentication authentication) {
+		boolean success;
+		try {
+			success = userService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+		}
+
+		if (success) {
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	private Long getCurrentUserId(Authentication authentication) {
+		if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+			return userDetails.getUser().getUserId();
+		}
+
+		return null;
 	}
 
 }

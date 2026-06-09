@@ -1,5 +1,6 @@
 package com.algolist.backend.user;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -44,4 +45,21 @@ public interface UserDao {
 	
 	// 유저 삭제(Soft Delete)
 	public int deleteUser(@Param("username") String username);
+
+	// 유저 정지
+	public int suspendUser(@Param("userId") Long userId);
+
+	// 유저 정지 이력 추가
+	public int insertUserSuspension(@Param("userId") Long userId,
+			@Param("reason") String reason,
+			@Param("suspendedUntil") LocalDateTime suspendedUntil,
+			@Param("suspendedBy") Long suspendedBy);
+
+	// 유저 정지 해제
+	public int releaseUserSuspension(@Param("userId") Long userId);
+
+	// 유저 정지 이력에 해제 정보 추가
+	public int updateUserSuspensionRelease(@Param("userId") Long userId,
+			@Param("releasedBy") Long releasedBy,
+			@Param("releaseReason") String releaseReason);
 }

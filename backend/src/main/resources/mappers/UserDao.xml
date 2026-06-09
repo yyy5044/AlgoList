@@ -14,6 +14,7 @@
 
 	<resultMap type="UserDetailDto" id="UserDetailDtoMap" autoMapping="true">
 		<result column="profile_image_url" property="profileImageUrl"/>
+		<result column="account_status" property="accountStatus"/>
 	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
@@ -68,7 +69,7 @@
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
 	<select id="selectUser" resultMap="UserDetailDtoMap">
-		SELECT username, nickname, profile_image_url, bio, role
+		SELECT username, nickname, profile_image_url, bio, role, account_status
 		FROM users
 		WHERE username = #{username}
 	</select>
@@ -113,6 +114,39 @@
 			deleted_at = CURRENT_TIMESTAMP
 		WHERE username = #{username}
 		  AND account_status != 'DELETED'
+	</update>
+
+	<!-- user_id 기반으로 유저 정지 -->
+	<update id="suspendUser">
+		UPDATE users
+		SET account_status = 'SUSPENDED'
+		WHERE user_id = #{userId}
+		  AND account_status = 'ACTIVE'
+		  AND role != 'ADMIN'
+	</update>
+
+	<!-- 유저 정지 이력 추가 -->
+	<insert id="insertUserSuspension">
+		INSERT INTO user_suspensions(user_id, reason, suspended_until, suspended_by)
+		VALUES(#{userId}, #{reason}, #{suspendedUntil}, #{suspendedBy})
+	</insert>
+
+	<!-- user_id 기반으로 유저 정지 해제 -->
+	<update id="releaseUserSuspension">
+		UPDATE users
+		SET account_status = 'ACTIVE'
+		WHERE user_id = #{userId}
+		  AND account_status = 'SUSPENDED'
+	</update>
+
+	<!-- 현재 활성 정지 이력에 해제 정보 추가 -->
+	<update id="updateUserSuspensionRelease">
+		UPDATE user_suspensions
+		SET released_at = CURRENT_TIMESTAMP,
+			released_by = #{releasedBy},
+			release_reason = #{releaseReason}
+		WHERE user_id = #{userId}
+		  AND released_at IS NULL
 	</update>
 	
 </mapper>

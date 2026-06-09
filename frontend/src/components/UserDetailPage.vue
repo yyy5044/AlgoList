@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
+import UserSuspensionForm from './UserSuspensionForm.vue'
 
 const props = defineProps({
   username: String,
@@ -11,9 +13,19 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  showAdminActions: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['back', 'edit-profile', 'delete-success'])
+const emit = defineEmits([
+  'back',
+  'edit-profile',
+  'delete-success',
+  'suspend-success',
+  'release-suspension-success',
+])
 
 const user = ref({
   username: props.username,
@@ -21,15 +33,46 @@ const user = ref({
   profileImageUrl: '',
   bio: '',
   role: '',
+  accountStatus: '',
 })
 const errorMessage = ref('')
 const successMessage = ref('')
 const isLoading = ref(false)
 const isDeleting = ref(false)
+const isReleasingSuspension = ref(false)
+const isSuspending = ref(false)
+const isReleaseFormOpen = ref(false)
+const isSuspensionFormOpen = ref(false)
 const imageLoadFailed = ref(false)
 
 const displayName = computed(() => user.value.nickname || user.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
+const subtitle = computed(() =>
+  props.showAdminActions ? '회원 정보를 확인하고 관리할 수 있습니다.' : '내 계정 정보를 확인할 수 있습니다.',
+)
+const canSuspend = computed(() => {
+  return (
+    props.showAdminActions &&
+    !isLoading.value &&
+    user.value.role !== 'ADMIN' &&
+    user.value.accountStatus !== 'SUSPENDED' &&
+    user.value.accountStatus !== 'DELETED'
+  )
+})
+const canReleaseSuspension = computed(() => {
+  return props.showAdminActions && !isLoading.value && user.value.accountStatus === 'SUSPENDED'
+})
+const suspendButtonText = computed(() => {
+  if (isLoading.value) return '회원 정보 확인 중'
+  if (user.value.role === 'ADMIN') return '관리자는 정지할 수 없음'
+  if (user.value.accountStatus === 'SUSPENDED') return '이미 정지된 회원'
+  if (user.value.accountStatus === 'DELETED') return '삭제된 회원'
+  return '회원 정지'
+})
+const releaseButtonText = computed(() => {
+  if (isLoading.value) return '회원 정보 확인 중'
+  return '정지 해제'
+})
 
 async function loadUser() {
   if (!props.username) return
@@ -83,13 +126,86 @@ async function deleteUser() {
     isDeleting.value = false
   }
 }
+
+async function suspendUser(payload) {
+  try {
+    isSuspending.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    })
+
+    if (response.ok) {
+      successMessage.value = '회원 정지가 완료되었습니다.'
+      isSuspensionFormOpen.value = false
+      await loadUser()
+      emit('suspend-success')
+    } else {
+      let message = '회원 정지에 실패했습니다.'
+      try {
+        const data = await response.json()
+        message = data.message || message
+      } catch (error) {
+        console.log(error)
+      }
+      errorMessage.value = message
+    }
+  } catch (error) {
+    console.log(error)
+    errorMessage.value = '서버에 연결할 수 없습니다.'
+  } finally {
+    isSuspending.value = false
+  }
+}
+
+async function releaseUserSuspension(payload) {
+  try {
+    isReleasingSuspension.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    const response = await fetch(
+      `${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions/release`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      },
+    )
+
+    if (response.ok) {
+      successMessage.value = '정지 해제가 완료되었습니다.'
+      isReleaseFormOpen.value = false
+      await loadUser()
+      emit('release-suspension-success')
+    } else {
+      let message = '정지 해제에 실패했습니다.'
+      try {
+        const data = await response.json()
+        message = data.message || message
+      } catch (error) {
+        console.log(error)
+      }
+      errorMessage.value = message
+    }
+  } catch (error) {
+    console.log(error)
+    errorMessage.value = '서버에 연결할 수 없습니다.'
+  } finally {
+    isReleasingSuspension.value = false
+  }
+}
 </script>
 
 <template>
   <div class="user-page">
     <div class="user-panel">
       <h2>회원 상세</h2>
-      <p class="user-subtitle">내 계정 정보를 확인할 수 있습니다.</p>
+      <p class="user-subtitle">{{ subtitle }}</p>
 
       <p v-if="isLoading" class="guide-message">회원 정보를 불러오는 중입니다.</p>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
@@ -115,6 +231,10 @@ async function deleteUser() {
           <span class="info-label">권한</span>
           <span class="role-badge">{{ user.role || 'USER' }}</span>
         </div>
+        <div class="info-row">
+          <span class="info-label">계정 상태</span>
+          <span class="status-badge">{{ user.accountStatus || 'ACTIVE' }}</span>
+        </div>
       </div>
 
       <div class="bio-section">
@@ -128,8 +248,42 @@ async function deleteUser() {
           {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
         </button>
       </template>
+      <template v-if="showAdminActions">
+        <button
+          v-if="user.accountStatus === 'SUSPENDED'"
+          class="release-button"
+          :disabled="!canReleaseSuspension || isReleasingSuspension"
+          @click="isReleaseFormOpen = true"
+        >
+          {{ isReleasingSuspension ? '해제 처리 중...' : releaseButtonText }}
+        </button>
+        <button
+          v-else
+          class="suspend-button"
+          :disabled="!canSuspend || isSuspending"
+          @click="isSuspensionFormOpen = true"
+        >
+          {{ isSuspending ? '정지 처리 중...' : suspendButtonText }}
+        </button>
+      </template>
       <button class="back-button" @click="emit('back')">뒤로가기</button>
     </div>
+
+    <UserSuspensionForm
+      v-if="isSuspensionFormOpen"
+      :username="user.username"
+      :is-submitting="isSuspending"
+      @close="isSuspensionFormOpen = false"
+      @submit="suspendUser"
+    />
+
+    <UserSuspensionReleaseForm
+      v-if="isReleaseFormOpen"
+      :username="user.username"
+      :is-submitting="isReleasingSuspension"
+      @close="isReleaseFormOpen = false"
+      @submit="releaseUserSuspension"
+    />
   </div>
 </template>
 
@@ -269,6 +423,15 @@ async function deleteUser() {
   font-weight: 700;
 }
 
+.status-badge {
+  padding: 4px 10px;
+  background: #f8f9fa;
+  color: #555;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .bio-section {
   padding: 18px;
   margin-bottom: 18px;
@@ -320,6 +483,24 @@ button:disabled {
 
 .delete-button:hover {
   background: #d43f30;
+}
+
+.suspend-button {
+  margin-top: 10px;
+  background: #e74c3c;
+}
+
+.suspend-button:hover {
+  background: #d43f30;
+}
+
+.release-button {
+  margin-top: 10px;
+  background: #2e7d32;
+}
+
+.release-button:hover {
+  background: #256628;
 }
 
 .back-button {

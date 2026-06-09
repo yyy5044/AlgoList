@@ -138,6 +138,7 @@ function showUserProfileEditPage() {
         :username="selectedAdminUsername"
         api-base-path="/api/admin/users"
         :show-actions="false"
+        :show-admin-actions="true"
         @back="showUserListPage"
       />
       <UserListPage

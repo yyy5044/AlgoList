@@ -15,5 +15,9 @@ public interface UserService {
 	public boolean updateUser(String username, UpdateRequestDto request);
 	
 	public boolean deleteUser(String username);
+
+	public boolean suspendUser(String username, SuspendUserRequestDto request, Long adminId);
+
+	public boolean releaseUserSuspension(String username, ReleaseSuspensionRequestDto request, Long adminId);
 	
 }

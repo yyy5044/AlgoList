@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import javax.imageio.ImageIO;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -133,6 +135,82 @@ public class UserServiceImpl implements UserService {
 		} else {
 			return true;
 		}
+	}
+
+	@Override
+	@Transactional
+	// 유저 정지, 테이블 2개를 수정해야 하므로 트랜잭션으로 구현
+	public boolean suspendUser(String username, SuspendUserRequestDto request, Long adminId) {
+		if (request == null || request.getSuspendedUntil() == null) {
+			throw new IllegalArgumentException("정지 종료일을 입력해주세요.");
+		}
+
+		if (!request.getSuspendedUntil().isAfter(LocalDateTime.now())) {
+			throw new IllegalArgumentException("정지 종료일은 현재 시간 이후여야 합니다.");
+		}
+
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return false;
+		}
+
+		if ("ADMIN".equals(user.getRole())) {
+			throw new IllegalArgumentException("관리자 계정은 정지할 수 없습니다.");
+		}
+
+		if ("DELETED".equals(user.getAccountStatus())) {
+			throw new IllegalArgumentException("삭제된 계정은 정지할 수 없습니다.");
+		}
+
+		if ("SUSPENDED".equals(user.getAccountStatus())) {
+			throw new IllegalArgumentException("이미 정지된 계정입니다.");
+		}
+
+		String reason = StringUtils.hasText(request.getReason()) ? request.getReason().trim() : null;
+		int updateResult = userDao.suspendUser(user.getUserId());
+		if (updateResult != 1) {
+			return false;
+		}
+
+		int insertResult = userDao.insertUserSuspension(user.getUserId(), reason, request.getSuspendedUntil(), adminId);
+		if (insertResult != 1) {
+			throw new IllegalStateException("정지 이력을 저장하지 못했습니다.");
+		}
+
+		return true;
+	}
+
+	@Override
+	@Transactional
+	// 유저 정지 해제, 계정 상태와 정지 이력을 함께 수정해야 하므로 트랜잭션으로 구현
+	public boolean releaseUserSuspension(String username, ReleaseSuspensionRequestDto request, Long adminId) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return false;
+		}
+
+		if ("DELETED".equals(user.getAccountStatus())) {
+			throw new IllegalArgumentException("삭제된 계정은 정지 해제할 수 없습니다.");
+		}
+
+		if (!"SUSPENDED".equals(user.getAccountStatus())) {
+			throw new IllegalArgumentException("정지된 계정만 해제할 수 있습니다.");
+		}
+
+		String releaseReason = request != null && StringUtils.hasText(request.getReleaseReason())
+				? request.getReleaseReason().trim()
+				: null;
+		int updateResult = userDao.releaseUserSuspension(user.getUserId());
+		if (updateResult != 1) {
+			return false;
+		}
+
+		int releaseResult = userDao.updateUserSuspensionRelease(user.getUserId(), adminId, releaseReason);
+		if (releaseResult < 1) {
+			throw new IllegalArgumentException("해제할 정지 이력을 찾을 수 없습니다.");
+		}
+
+		return true;
 	}
 
 	// 비밀번호 로직이 적합한지 확인하는 메서드
