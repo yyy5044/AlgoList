@@ -1,1 +1,28 @@
 /.metadata/
+
+# 빌드 결과물
+**/target/
+**/build/
+**/*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# 민감 정보 (GitHub 토큰 등)
+**/application-secret.properties
+
+# 프론트엔드
+**/node_modules/
+**/dist/
+
+# 데이터 수집 스크립트 산출물
+scripts/problems_data.sql
+
+# OS
+.DS_Store
+Thumbs.db
