@@ -148,5 +148,27 @@
 		WHERE user_id = #{userId}
 		  AND released_at IS NULL
 	</update>
+
+	<!-- 정지 기간이 만료된 정지 이력 자동 해제 -->
+	<update id="releaseExpiredSuspensionHistories">
+		UPDATE user_suspensions
+		SET released_at = CURRENT_TIMESTAMP,
+			release_reason = '정지 기간 만료'
+		WHERE released_at IS NULL
+		  AND suspended_until &lt;= CURRENT_TIMESTAMP
+	</update>
+
+	<!-- 활성 정지 이력이 없는 정지 유저 활성화 -->
+	<update id="activateUsersWithoutActiveSuspension">
+		UPDATE users u
+		SET u.account_status = 'ACTIVE'
+		WHERE u.account_status = 'SUSPENDED'
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM user_suspensions us
+			WHERE us.user_id = u.user_id
+			  AND us.released_at IS NULL
+		  )
+	</update>
 	
 </mapper>

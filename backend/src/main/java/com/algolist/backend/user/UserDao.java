@@ -62,4 +62,10 @@ public interface UserDao {
 	public int updateUserSuspensionRelease(@Param("userId") Long userId,
 			@Param("releasedBy") Long releasedBy,
 			@Param("releaseReason") String releaseReason);
+
+	// 정지 기간이 만료된 정지 이력 해제
+	public int releaseExpiredSuspensionHistories();
+
+	// 활성 정지 이력이 없는 정지 유저 활성화
+	public int activateUsersWithoutActiveSuspension();
 }

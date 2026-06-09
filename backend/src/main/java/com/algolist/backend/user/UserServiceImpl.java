@@ -4,12 +4,14 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -145,8 +147,8 @@ public class UserServiceImpl implements UserService {
 			throw new IllegalArgumentException("정지 종료일을 입력해주세요.");
 		}
 
-		if (!request.getSuspendedUntil().isAfter(LocalDateTime.now())) {
-			throw new IllegalArgumentException("정지 종료일은 현재 시간 이후여야 합니다.");
+		if (request.getSuspendedUntil().isBefore(LocalDate.now())) {
+			throw new IllegalArgumentException("정지 종료일은 오늘 또는 이후 날짜여야 합니다.");
 		}
 
 		UserDto user = userDao.selectUserForAuth(username);
@@ -167,12 +169,13 @@ public class UserServiceImpl implements UserService {
 		}
 
 		String reason = StringUtils.hasText(request.getReason()) ? request.getReason().trim() : null;
+		LocalDateTime suspendedUntil = request.getSuspendedUntil().plusDays(1).atStartOfDay();
 		int updateResult = userDao.suspendUser(user.getUserId());
 		if (updateResult != 1) {
 			return false;
 		}
 
-		int insertResult = userDao.insertUserSuspension(user.getUserId(), reason, request.getSuspendedUntil(), adminId);
+		int insertResult = userDao.insertUserSuspension(user.getUserId(), reason, suspendedUntil, adminId);
 		if (insertResult != 1) {
 			throw new IllegalStateException("정지 이력을 저장하지 못했습니다.");
 		}
@@ -211,6 +214,16 @@ public class UserServiceImpl implements UserService {
 		}
 
 		return true;
+	}
+
+	@Scheduled(cron = "0 5 0 * * *", zone = "Asia/Seoul")
+	@Transactional
+	// 매일 00:05에 정지 종료일이 지난 유저를 자동 해제
+	public void releaseExpiredSuspensions() {
+		int releaseCount = userDao.releaseExpiredSuspensionHistories();
+		if (releaseCount > 0) {
+			userDao.activateUsersWithoutActiveSuspension();
+		}
 	}
 
 	// 비밀번호 로직이 적합한지 확인하는 메서드

@@ -21,7 +21,7 @@ const validationMessage = ref('')
 const minSuspendedUntil = computed(() => {
   const now = new Date()
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
+  return now.toISOString().slice(0, 10)
 })
 
 watch(
@@ -41,8 +41,8 @@ function submitForm() {
     return
   }
 
-  if (new Date(suspendedUntil.value) <= new Date()) {
-    validationMessage.value = '정지 종료일은 현재 시간 이후여야 합니다.'
+  if (suspendedUntil.value < minSuspendedUntil.value) {
+    validationMessage.value = '정지 종료일은 오늘 또는 이후 날짜여야 합니다.'
     return
   }
 
@@ -70,7 +70,7 @@ function submitForm() {
         <span>정지 종료일</span>
         <input
           v-model="suspendedUntil"
-          type="datetime-local"
+          type="date"
           :min="minSuspendedUntil"
           :disabled="isSubmitting"
         />

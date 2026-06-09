@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
     account_status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL
+    deleted_at DATETIME NULL,
+
+    INDEX idx_users_account_status (account_status)
 );
 
 # 정지 이력 기록 테이블
@@ -32,6 +34,9 @@ CREATE TABLE IF NOT EXISTS user_suspensions (
     released_at DATETIME NULL,
     released_by BIGINT NULL,
     release_reason VARCHAR(255) NULL,
+
+    INDEX idx_user_suspensions_active_user (user_id, released_at),
+    INDEX idx_user_suspensions_expired (released_at, suspended_until),
 
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (suspended_by) REFERENCES users(user_id),
