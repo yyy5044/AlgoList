@@ -214,6 +214,16 @@ const descriptionHtml = computed(() =>
   margin: 8px 0;
 }
 
+.description-content :deep(ol),
+.description-content :deep(ul) {
+  padding-left: 2em;
+  margin: 4px 0;
+}
+
+.description-content :deep(li) {
+  margin: 2px 0;
+}
+
 .description-content :deep(pre) {
   background-color: #f5f5f5;
   padding: 12px;
