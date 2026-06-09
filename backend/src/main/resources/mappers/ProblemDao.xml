@@ -69,4 +69,16 @@
 		DELETE FROM user_problems
 		WHERE (user_id = #{userId}) AND (problem_id = #{problemId})
 	</delete>
+
+	<!-- problems 테이블에 문제 추가 (INSERT IGNORE로 중복이면 무시) -->
+	<insert id="insertProblem" useGeneratedKeys="true" keyProperty="problemId">
+		INSERT IGNORE INTO problems (title, number, difficulty, site, link, description)
+		VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{description})
+	</insert>
+
+	<!-- 카테고리 저장 -->
+	<insert id="insertCategory">
+		INSERT IGNORE INTO problem_categories (problem_id, category_name)
+		VALUES (#{problemId}, #{categoryName})
+	</insert>
 </mapper>
