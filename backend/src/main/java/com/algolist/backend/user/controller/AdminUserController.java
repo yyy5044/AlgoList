@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.algolist.backend.auth.CustomUserDetails;
 import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.UpdateRoleRequestDto;
 import com.algolist.backend.user.dto.UserDetailDto;
 import com.algolist.backend.user.dto.UserPageResponseDto;
 import com.algolist.backend.user.service.UserService;
@@ -93,6 +94,24 @@ public class AdminUserController {
 		boolean success;
 		try {
 			success = userService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+		}
+
+		if (success) {
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	@PatchMapping("/{username}/role")
+	// 유저 권한 변경 요청
+	public ResponseEntity<?> updateUserRole(@PathVariable String username, @RequestBody UpdateRoleRequestDto request,
+			Authentication authentication) {
+		boolean success;
+		try {
+			success = userService.updateUserRole(username, request, getCurrentUserId(authentication));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
 		}

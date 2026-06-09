@@ -22,6 +22,7 @@ import com.algolist.backend.user.dao.UserDao;
 import com.algolist.backend.user.dto.CreateRequestDto;
 import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.UpdateRoleRequestDto;
 import com.algolist.backend.user.dto.UpdateRequestDto;
 import com.algolist.backend.user.dto.UserDetailDto;
 import com.algolist.backend.user.dto.UserDto;
@@ -224,6 +225,38 @@ public class UserServiceImpl implements UserService {
 		}
 
 		return true;
+	}
+
+	@Override
+	public boolean updateUserRole(String username, UpdateRoleRequestDto request, Long adminId) {
+		if (request == null || !StringUtils.hasText(request.getRole())) {
+			throw new IllegalArgumentException("변경할 권한을 선택해주세요.");
+		}
+
+		String role = request.getRole().trim().toUpperCase();
+		if (!"USER".equals(role) && !"ADMIN".equals(role)) {
+			throw new IllegalArgumentException("권한은 USER 또는 ADMIN만 가능합니다.");
+		}
+
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return false;
+		}
+
+		if (adminId != null && adminId.equals(user.getUserId())) {
+			throw new IllegalArgumentException("자기 자신의 권한은 변경할 수 없습니다.");
+		}
+
+		if ("DELETED".equals(user.getAccountStatus())) {
+			throw new IllegalArgumentException("삭제된 계정의 권한은 변경할 수 없습니다.");
+		}
+
+		if (role.equals(user.getRole())) {
+			return true;
+		}
+
+		int result = userDao.updateUserRole(user.getUserId(), role);
+		return result == 1;
 	}
 
 	@Scheduled(cron = "0 5 0 * * *", zone = "Asia/Seoul")

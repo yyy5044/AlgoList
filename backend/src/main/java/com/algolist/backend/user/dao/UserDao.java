@@ -75,4 +75,7 @@ public interface UserDao {
 
 	// 현재 활성 정지 이력 조회
 	public UserSuspensionInfoDto selectActiveSuspension(@Param("userId") Long userId);
+
+	// 유저 권한 변경
+	public int updateUserRole(@Param("userId") Long userId, @Param("role") String role);
 }

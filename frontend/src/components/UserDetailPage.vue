@@ -5,6 +5,10 @@ import UserSuspensionForm from './UserSuspensionForm.vue'
 
 const props = defineProps({
   username: String,
+  currentUsername: {
+    type: String,
+    default: '',
+  },
   apiBasePath: {
     type: String,
     default: '/api/users',
@@ -40,10 +44,12 @@ const successMessage = ref('')
 const isLoading = ref(false)
 const isDeleting = ref(false)
 const isReleasingSuspension = ref(false)
+const isUpdatingRole = ref(false)
 const isSuspending = ref(false)
 const isReleaseFormOpen = ref(false)
 const isSuspensionFormOpen = ref(false)
 const imageLoadFailed = ref(false)
+const selectedRole = ref('')
 
 const displayName = computed(() => user.value.nickname || user.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -61,6 +67,24 @@ const canSuspend = computed(() => {
 })
 const canReleaseSuspension = computed(() => {
   return props.showAdminActions && !isLoading.value && user.value.accountStatus === 'SUSPENDED'
+})
+const canUpdateRole = computed(() => {
+  return (
+    props.showAdminActions &&
+    !isLoading.value &&
+    !isUpdatingRole.value &&
+    user.value.username !== props.currentUsername &&
+    user.value.accountStatus !== 'DELETED' &&
+    selectedRole.value &&
+    selectedRole.value !== user.value.role
+  )
+})
+const roleUpdateButtonText = computed(() => {
+  if (isLoading.value) return '회원 정보 확인 중'
+  if (user.value.username === props.currentUsername) return '내 권한 변경 불가'
+  if (user.value.accountStatus === 'DELETED') return '삭제된 회원'
+  if (selectedRole.value === user.value.role) return '현재 권한'
+  return '권한 변경'
 })
 const suspendButtonText = computed(() => {
   if (isLoading.value) return '회원 정보 확인 중'
@@ -86,6 +110,7 @@ async function loadUser() {
 
     if (response.ok) {
       user.value = await response.json()
+      selectedRole.value = user.value.role || 'USER'
       imageLoadFailed.value = false
     } else {
       errorMessage.value = '회원 정보를 불러오지 못했습니다.'
@@ -199,6 +224,39 @@ async function releaseUserSuspension(payload) {
     isReleasingSuspension.value = false
   }
 }
+
+async function updateUserRole() {
+  try {
+    isUpdatingRole.value = true
+    errorMessage.value = ''
+    successMessage.value = ''
+    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/role`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ role: selectedRole.value }),
+    })
+
+    if (response.ok) {
+      successMessage.value = '권한 변경이 완료되었습니다.'
+      await loadUser()
+    } else {
+      let message = '권한 변경에 실패했습니다.'
+      try {
+        const data = await response.json()
+        message = data.message || message
+      } catch (error) {
+        console.log(error)
+      }
+      errorMessage.value = message
+    }
+  } catch (error) {
+    console.log(error)
+    errorMessage.value = '서버에 연결할 수 없습니다.'
+  } finally {
+    isUpdatingRole.value = false
+  }
+}
 </script>
 
 <template>
@@ -249,6 +307,22 @@ async function releaseUserSuspension(payload) {
         </button>
       </template>
       <template v-if="showAdminActions">
+        <div class="admin-role-control">
+          <label>
+            <span>권한 변경</span>
+            <select v-model="selectedRole" :disabled="isLoading || isUpdatingRole">
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+          </label>
+          <button
+            class="role-update-button"
+            :disabled="!canUpdateRole"
+            @click="updateUserRole"
+          >
+            {{ isUpdatingRole ? '변경 중...' : roleUpdateButtonText }}
+          </button>
+        </div>
         <button
           v-if="user.accountStatus === 'SUSPENDED'"
           class="release-button"
@@ -492,6 +566,51 @@ button:disabled {
 
 .suspend-button:hover {
   background: #d43f30;
+}
+
+.admin-role-control {
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.admin-role-control label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.admin-role-control span {
+  color: #888;
+  font-size: 13px;
+}
+
+.admin-role-control select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  color: #333;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.admin-role-control select:disabled {
+  color: #999;
+  background: #f8f9fa;
+}
+
+.role-update-button {
+  background: #4a90d9;
+}
+
+.role-update-button:hover {
+  background: #3a7bc8;
 }
 
 .release-button {

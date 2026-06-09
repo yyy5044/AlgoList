@@ -136,6 +136,7 @@ function showUserProfileEditPage() {
       <UserDetailPage
         v-if="isUserListPath && isAdmin && selectedAdminUsername"
         :username="selectedAdminUsername"
+        :current-username="currentUser"
         api-base-path="/api/admin/users"
         :show-actions="false"
         :show-admin-actions="true"
