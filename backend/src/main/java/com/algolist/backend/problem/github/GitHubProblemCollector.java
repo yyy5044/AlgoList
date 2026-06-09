@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.algolist.backend.problem.ProblemDto;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +24,7 @@ public class GitHubProblemCollector {
     private final GitHubClient client;
     private final ReadmeParser parser;
     private final ImageConverter imageConverter;
+    private final ObjectMapper objectMapper;
 
     /**
      * 사용자 검색어를 기반으로 GitHub에서 문제를 찾아
@@ -66,14 +69,19 @@ public class GitHubProblemCollector {
     /** Search API 응답 JSON에서 파일의 Contents API URL을 추출한다 */
     private List<String> extractFileUrls(String json) {
         List<String> urls = new ArrayList<>();
-        int from = 0;
-        while (true) {
-            int idx = json.indexOf("\"url\":\"https://api.github.com/repositories", from);
-            if (idx == -1) break;
-            int start = json.indexOf("\"", idx + 6) + 1;
-            int end = json.indexOf("\"", start);
-            urls.add(json.substring(start, end));
-            from = end;
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode items = root.get("items");
+            if (items != null && items.isArray()) {
+                for (JsonNode item : items) {
+                    JsonNode urlNode = item.get("url");
+                    if (urlNode != null) {
+                        urls.add(urlNode.asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // JSON 파싱 실패 시 빈 리스트 반환
         }
         return urls;
     }
