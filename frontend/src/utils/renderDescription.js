@@ -5,18 +5,25 @@ import 'katex/dist/katex.min.css'
 /**
  * 문제 본문(description)을 화면에 표시할 HTML로 변환한다.
  *
- * 사이트마다 본문 형식이 다르다(BOJ는 MathJax HTML이 섞인 마크다운,
- * 프로그래머스는 순수 HTML 등). 그래서 단일 파이프라인을 거치되,
- * 각 단계는 "해당 패턴이 본문에 있을 때만" 동작하도록 설계했다.
- * 패턴이 없으면 그 단계는 입력을 그대로 통과시키므로(no-op),
- * 어떤 사이트의 본문이 들어와도 안전하게 처리된다.
+ * ── 설계 배경 ──
+ * 백준허브가 수집한 본문은 "이미 HTML"이다(<p>, <ol>, <li>, <table>…).
+ * 거기에 섞인 마크다운은 `### 입력` 같은 헤더 몇 개가 전부다.
  *
- * 단계: MathJax 복원 → LaTeX 렌더링 → 마크다운/HTML 변환
+ * 이 HTML을 통째로 마크다운 파서(marked)에 넣으면, 파서가 HTML 속
+ * 들여쓰기(탭)·빈 줄을 마크다운 문법으로 재해석해 버린다:
+ *   - 빈 줄 → HTML 블록을 끊음 → <ol>과 <li>가 분리되어 중첩 구조 붕괴
+ *   - 탭    → 들여쓴 코드 블록으로 인식 → 태그가 그대로 노출
+ * 따라서 HTML 본문에는 마크다운 파서를 "쓰지 않는다". 유일한 마크다운인
+ * 헤더만 직접 변환하고, 나머지 HTML은 손대지 않고 그대로 둔다.
+ *
+ * 순수 마크다운만 들어오는 사이트를 위해 marked 경로도 남겨두되,
+ * HTML이 감지되면 그 경로로 가지 않는다.
+ *
+ * 파이프라인: MathJax 복원 → LaTeX 렌더링 → (HTML이면) 헤더만 변환 / (마크다운이면) marked
  */
 
 // ── 1단계: 백준이 미리 렌더링해 둔 MathJax HTML을 원본 $..$ LaTeX로 되돌린다 ──
-// <mjx-container> 안에는 <span class="mjx-copytext">$(x_1, y_1)$</span> 형태로
-// 원본 수식이 들어있다. 거대한 MathJax 마크업을 이 원본으로 교체한다.
+// <mjx-container> 안 <span class="mjx-copytext">에 원본 수식이 들어있다.
 function restoreMathJaxSource(text) {
   if (!text.includes('mjx-container')) return text
   return text.replace(
@@ -26,12 +33,9 @@ function restoreMathJaxSource(text) {
 }
 
 // ── 2단계: $$..$$(블록), $..$(인라인) LaTeX를 KaTeX로 렌더링한다 ──
-// marked는 <p> 같은 HTML 블록 안의 $..$를 건드리지 않으므로,
-// 마크다운 변환 전에 KaTeX를 직접 호출해 수식부터 HTML로 만든다.
 function renderMath(text) {
   if (!text.includes('$')) return text
 
-  // 블록 수식 먼저 처리($$..$$가 $..$에 먼저 잡히지 않도록)
   text = text.replace(/\$\$([\s\S]*?)\$\$/g, (whole, tex) => {
     try {
       return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false })
@@ -40,7 +44,6 @@ function renderMath(text) {
     }
   })
 
-  // 인라인 수식
   text = text.replace(/\$([^$\n]+?)\$/g, (whole, tex) => {
     try {
       return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false })
@@ -52,9 +55,27 @@ function renderMath(text) {
   return text
 }
 
-// ── 3단계: 마크다운(### 입력 등)과 남은 HTML을 최종 HTML로 변환한다 ──
-function renderMarkdown(text) {
+// ── 3단계: 콘텐츠 성격에 맞게 변환한다 ──
+//   HTML 본문   → 헤더(### …)만 <h3> 등으로 변환, 나머지 HTML은 원형 보존
+//   순수 마크다운 → marked로 전체 변환
+function renderContent(text) {
+  if (containsBlockHtml(text)) {
+    return convertHeadersOnly(text)
+  }
   return marked.parse(text)
+}
+
+// 블록 레벨 HTML 태그가 하나라도 있으면 "HTML 본문"으로 본다.
+function containsBlockHtml(text) {
+  return /<(?:p|ol|ul|li|table|div|blockquote|pre|h[1-6])\b/i.test(text)
+}
+
+// 한 줄을 통째로 차지하는 `### 제목`만 헤더로 변환한다.
+function convertHeadersOnly(text) {
+  return text.replace(/^[ \t]*(#{1,6})[ \t]+(.+?)[ \t]*$/gm, (_, hashes, title) => {
+    const level = hashes.length
+    return `<h${level}>${title}</h${level}>`
+  })
 }
 
 /**
@@ -66,6 +87,6 @@ export function renderDescription(raw) {
   let html = raw
   html = restoreMathJaxSource(html)
   html = renderMath(html)
-  html = renderMarkdown(html)
+  html = renderContent(html)
   return html
 }
