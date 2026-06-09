@@ -16,6 +16,10 @@
 		<result column="profile_image_url" property="profileImageUrl"/>
 		<result column="account_status" property="accountStatus"/>
 	</resultMap>
+
+	<resultMap type="UserSuspensionInfoDto" id="UserSuspensionInfoDtoMap" autoMapping="true">
+		<result column="suspended_until" property="suspendedUntil"/>
+	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
 	<select id="selectAllUsers" resultMap="UserDtoMap">
@@ -170,5 +174,15 @@
 			  AND us.released_at IS NULL
 		  )
 	</update>
+
+	<!-- 현재 활성 정지 이력 조회 -->
+	<select id="selectActiveSuspension" resultMap="UserSuspensionInfoDtoMap">
+		SELECT reason, suspended_until
+		FROM user_suspensions
+		WHERE user_id = #{userId}
+		  AND released_at IS NULL
+		ORDER BY suspended_at DESC
+		LIMIT 1
+	</select>
 	
 </mapper>

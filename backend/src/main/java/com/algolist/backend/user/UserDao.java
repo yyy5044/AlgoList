@@ -68,4 +68,7 @@ public interface UserDao {
 
 	// 활성 정지 이력이 없는 정지 유저 활성화
 	public int activateUsersWithoutActiveSuspension();
+
+	// 현재 활성 정지 이력 조회
+	public UserSuspensionInfoDto selectActiveSuspension(@Param("userId") Long userId);
 }

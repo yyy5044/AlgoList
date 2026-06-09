@@ -19,5 +19,7 @@ public interface UserService {
 	public boolean suspendUser(String username, SuspendUserRequestDto request, Long adminId);
 
 	public boolean releaseUserSuspension(String username, ReleaseSuspensionRequestDto request, Long adminId);
+
+	public UserSuspensionInfoDto selectActiveSuspension(Long userId);
 	
 }

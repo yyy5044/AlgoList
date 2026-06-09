@@ -226,6 +226,11 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	@Override
+	public UserSuspensionInfoDto selectActiveSuspension(Long userId) {
+		return userDao.selectActiveSuspension(userId);
+	}
+
 	// 비밀번호 로직이 적합한지 확인하는 메서드
 	private void validatePassword(String password) {
 		if (password.length() < 8 || !password.matches(".*[A-Za-z].*") || !password.matches(".*\\d.*")) {

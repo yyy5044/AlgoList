@@ -1,6 +1,14 @@
 package com.algolist.backend.global.config;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import jakarta.servlet.http.HttpSession;
+
+import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.user.UserService;
+import com.algolist.backend.user.UserSuspensionInfoDto;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,8 +16,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import lombok.RequiredArgsConstructor;
@@ -22,11 +29,7 @@ public class SecurityConfig {
 
 	// handler에서 응답 시 body에 json 파일을 넣어주기 위한 ObjectMapper
 	private final ObjectMapper objectMapper;
-	
-	@Bean
-	PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+	private final UserService userService;
 
 	// ⚠️ 개발용 설정: 모든 요청 허용 + CSRF 비활성화.
 	// 로그인/회원 기능 구현 시, 아래를 인증 규칙(formLogin, authorizeHttpRequests 등)으로 교체할 것.
@@ -43,6 +46,28 @@ public class SecurityConfig {
 		}))
 		.formLogin(login -> login.loginProcessingUrl("/api/login") // 로그인 요청은 /api/login 요청일 때
 		.successHandler((request, response, authenticaiton) -> { // 로그인 성공 시 실행할 로직
+			if (authenticaiton.getPrincipal() instanceof CustomUserDetails userDetails
+					&& "SUSPENDED".equals(userDetails.getUser().getAccountStatus())) { // 로그인했는데 SUSPENDED인 계정이면
+				UserSuspensionInfoDto suspension = userService.selectActiveSuspension(userDetails.getUser().getUserId());
+				HttpSession session = request.getSession(false);
+				if (session != null) {
+					session.invalidate();
+				}
+				SecurityContextHolder.clearContext();
+
+				Map<String, Object> body = new LinkedHashMap<>();
+				body.put("message", "정지된 계정입니다.");
+				body.put("reason", suspension != null && suspension.getReason() != null && !suspension.getReason().isBlank()
+						? suspension.getReason()
+						: "등록된 정지 사유가 없습니다.");
+				body.put("suspendedUntilDate", getSuspendedUntilDate(suspension));
+
+				response.setStatus(403);
+				response.setContentType("application/json;charset=UTF-8");
+				objectMapper.writeValue(response.getWriter(), body);
+				return;
+			}
+
 			String role = authenticaiton.getAuthorities().stream()
 				.findFirst()
 				.map(authority -> authority.getAuthority().replace("ROLE_", ""))
@@ -63,5 +88,15 @@ public class SecurityConfig {
 		); 
 
 		return http.build();
+	}
+
+	// 정지 기간 포맷팅해서 전달하기
+	private String getSuspendedUntilDate(UserSuspensionInfoDto suspension) {
+		if (suspension == null || suspension.getSuspendedUntil() == null) {
+			return "";
+		}
+
+		LocalDate suspendedUntilDate = suspension.getSuspendedUntil().toLocalDate().minusDays(1);
+		return suspendedUntilDate.toString();
 	}
 }
