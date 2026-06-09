@@ -7,7 +7,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpSession;
 
 import com.algolist.backend.auth.CustomUserDetails;
-import com.algolist.backend.user.dto.UserSuspensionInfoDto;
+import com.algolist.backend.user.dto.response.UserSuspensionInfoDto;
 import com.algolist.backend.user.service.UserService;
 
 import org.springframework.context.annotation.Bean;

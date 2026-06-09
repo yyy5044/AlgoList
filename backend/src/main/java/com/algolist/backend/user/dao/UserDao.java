@@ -6,9 +6,9 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.algolist.backend.user.dto.UserDetailDto;
 import com.algolist.backend.user.dto.UserDto;
-import com.algolist.backend.user.dto.UserSuspensionInfoDto;
+import com.algolist.backend.user.dto.response.UserDetailDto;
+import com.algolist.backend.user.dto.response.UserSuspensionInfoDto;
 
 @Mapper
 public interface UserDao {

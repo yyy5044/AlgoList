@@ -1,4 +1,4 @@
-package com.algolist.backend.user.dto;
+package com.algolist.backend.user.dto.request;
 
 import java.time.LocalDate;
 

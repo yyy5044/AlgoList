@@ -1,4 +1,4 @@
-package com.algolist.backend.user.dto;
+package com.algolist.backend.user.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

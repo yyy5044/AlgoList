@@ -1,6 +1,8 @@
-package com.algolist.backend.user.dto;
+package com.algolist.backend.user.dto.response;
 
 import java.util.List;
+
+import com.algolist.backend.user.dto.UserDto;
 
 import lombok.Getter;
 import lombok.Setter;

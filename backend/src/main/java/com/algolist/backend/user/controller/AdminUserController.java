@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
-import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
-import com.algolist.backend.user.dto.SuspendUserRequestDto;
-import com.algolist.backend.user.dto.UpdateRoleRequestDto;
-import com.algolist.backend.user.dto.UserDetailDto;
-import com.algolist.backend.user.dto.UserPageResponseDto;
-import com.algolist.backend.user.service.UserService;
+import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
+import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
+import com.algolist.backend.user.dto.response.UserDetailDto;
+import com.algolist.backend.user.dto.response.UserPageResponseDto;
+import com.algolist.backend.user.service.AdminUserService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 
-	private final UserService userService;
+	private final AdminUserService adminUserService;
 
 	@GetMapping
 	// 전체 회원 목록 조회 요청(페이징)
@@ -40,7 +40,7 @@ public class AdminUserController {
 			@RequestParam(required = false) String status,
 			@RequestParam(required = false) String searchType,
 			@RequestParam(required = false) String keyword) {
-		UserPageResponseDto users = userService.selectUsers(page, size, status, searchType, keyword);
+		UserPageResponseDto users = adminUserService.selectUsers(page, size, status, searchType, keyword);
 
 		return ResponseEntity.status(HttpStatus.OK).body(users);
 	}
@@ -48,7 +48,7 @@ public class AdminUserController {
 	@GetMapping("/{username}")
 	// 특정 유저 상세정보 조회 요청
 	public ResponseEntity<UserDetailDto> selectUser(@PathVariable String username) {
-		UserDetailDto user = userService.selectUser(username);
+		UserDetailDto user = adminUserService.selectUser(username);
 
 		if (user != null) {
 			return ResponseEntity.status(HttpStatus.OK).body(user);
@@ -60,7 +60,7 @@ public class AdminUserController {
 	@DeleteMapping("/{username}")
 	// 유저 삭제 요청
 	public ResponseEntity<?> deleteUser(@PathVariable String username) {
-		boolean success = userService.deleteUser(username);
+		boolean success = adminUserService.deleteUser(username);
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.NO_CONTENT).build(); // 삭제 완료했으므로 NO_CONTENT(204) 반환
@@ -75,13 +75,13 @@ public class AdminUserController {
 			Authentication authentication) {
 		boolean success;
 		try {
-			success = userService.suspendUser(username, request, getCurrentUserId(authentication));
+			success = adminUserService.suspendUser(username, request, getCurrentUserId(authentication));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
 		}
 
 		if (success) {
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			return ResponseEntity.status(HttpStatus.OK).build();
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
@@ -93,13 +93,13 @@ public class AdminUserController {
 			@RequestBody ReleaseSuspensionRequestDto request, Authentication authentication) {
 		boolean success;
 		try {
-			success = userService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
+			success = adminUserService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
 		}
 
 		if (success) {
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			return ResponseEntity.status(HttpStatus.OK).build();
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
@@ -111,13 +111,13 @@ public class AdminUserController {
 			Authentication authentication) {
 		boolean success;
 		try {
-			success = userService.updateUserRole(username, request, getCurrentUserId(authentication));
+			success = adminUserService.updateUserRole(username, request, getCurrentUserId(authentication));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
 		}
 
 		if (success) {
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+			return ResponseEntity.status(HttpStatus.OK).build();
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}

@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.algolist.backend.user.dto.CreateRequestDto;
-import com.algolist.backend.user.dto.UpdateRequestDto;
-import com.algolist.backend.user.dto.UserDetailDto;
+import com.algolist.backend.user.dto.request.CreateRequestDto;
+import com.algolist.backend.user.dto.request.UpdateRequestDto;
+import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
