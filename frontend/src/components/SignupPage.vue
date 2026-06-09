@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
 
-const emit = defineEmits(['back-to-login'])
+const emit = defineEmits(['back-to-login', 'signup-success'])
 
 const form = ref({
   username: '',
@@ -15,7 +15,6 @@ const profile = ref({
   imageLoadFailed: false,
 })
 const errorMessage = ref('')
-const successMessage = ref('')
 const isSubmitting = ref(false)
 const fileInput = ref(null)
 
@@ -66,7 +65,6 @@ async function readErrorMessage(response, fallbackMessage) {
 
 async function signup() {
   errorMessage.value = ''
-  successMessage.value = ''
 
   if (!form.value.username.trim() || !form.value.password.trim() || !form.value.passwordConfirm.trim()) {
     errorMessage.value = '아이디와 비밀번호를 모두 입력해주세요.'
@@ -101,12 +99,7 @@ async function signup() {
     })
 
     if (response.ok) {
-      successMessage.value = '회원가입이 완료되었습니다. 로그인해주세요.'
-      form.value.username = ''
-      form.value.nickname = ''
-      form.value.password = ''
-      form.value.passwordConfirm = ''
-      clearProfileImageSelection()
+      emit('signup-success', '회원가입이 완료되었습니다. 로그인해주세요.')
     } else {
       errorMessage.value = await readErrorMessage(response, '회원가입에 실패했습니다.')
     }
@@ -161,17 +154,16 @@ function isValidPassword(password) {
       </div>
 
       <div class="form-section">
-        <label class="form-label" for="nickname">닉네임</label>
-        <input id="nickname" v-model="form.nickname" placeholder="닉네임" @keyup.enter="signup" />
-      </div>
-
-      <div class="form-section">
-        <label class="form-label" for="username">아이디</label>
+        <label class="form-label" for="username">
+          아이디 <span class="required-mark">*</span>
+        </label>
         <input id="username" v-model="form.username" placeholder="아이디" @keyup.enter="signup" />
       </div>
 
       <div class="form-section">
-        <label class="form-label" for="password">비밀번호</label>
+        <label class="form-label" for="password">
+          비밀번호 <span class="required-mark">*</span>
+        </label>
         <input
           id="password"
           v-model="form.password"
@@ -182,7 +174,9 @@ function isValidPassword(password) {
       </div>
 
       <div class="form-section">
-        <label class="form-label" for="passwordConfirm">비밀번호 확인</label>
+        <label class="form-label" for="passwordConfirm">
+          비밀번호 확인 <span class="required-mark">*</span>
+        </label>
         <input
           id="passwordConfirm"
           v-model="form.passwordConfirm"
@@ -191,8 +185,12 @@ function isValidPassword(password) {
           @keyup.enter="signup"
         />
       </div>
+
+      <div class="form-section">
+        <label class="form-label" for="nickname">닉네임</label>
+        <input id="nickname" v-model="form.nickname" placeholder="닉네임" @keyup.enter="signup" />
+      </div>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-      <p v-if="successMessage" class="success">{{ successMessage }}</p>
       <button @click="signup" :disabled="isSubmitting">
         {{ isSubmitting ? '가입 중...' : '회원가입' }}
       </button>
@@ -274,6 +272,10 @@ function isValidPassword(password) {
   font-weight: 600;
 }
 
+.required-mark {
+  color: #e74c3c;
+}
+
 input {
   width: 100%;
   padding: 10px 12px;
@@ -291,12 +293,6 @@ input {
 
 .error {
   color: #e74c3c;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.success {
-  color: #2e7d32;
   font-size: 13px;
   margin-bottom: 12px;
 }

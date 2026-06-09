@@ -16,6 +16,7 @@ const selectedAdminUsername = ref('') // 어드민이 조회한 유저의 이름
 const authPage = ref('login')
 const mainPage = ref('problems')
 const isUserListPath = ref(window.location.pathname === '/users')
+const loginSuccessMessage = ref('')
 const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
 
 // 페이지 로드 시 로그인 상태 확인
@@ -52,9 +53,16 @@ function onLoginSuccess(user) {
   currentUserRole.value = user.role || ''
   authPage.value = 'login'
   mainPage.value = 'problems'
+  loginSuccessMessage.value = ''
   if (isUserListPath.value && !isAdmin.value) {
     showProblemPage()
   }
+}
+
+function onSignupSuccess(message) {
+  isLoggedIn.value = false
+  authPage.value = 'login'
+  loginSuccessMessage.value = message
 }
 
 async function logout() {
@@ -73,6 +81,7 @@ async function logout() {
   selectedAdminUsername.value = ''
   authPage.value = 'login'
   mainPage.value = 'problems'
+  loginSuccessMessage.value = ''
 }
 
 function onSelectItem(item) {
@@ -81,6 +90,7 @@ function onSelectItem(item) {
 
 function showSignupPage() {
   authPage.value = 'signup'
+  loginSuccessMessage.value = ''
 }
 
 function showLoginPage() {
@@ -118,9 +128,14 @@ function showUserProfileEditPage() {
 </script>
 
 <template>
-  <SignupPage v-if="!isLoggedIn && authPage === 'signup'" @back-to-login="showLoginPage" />
+  <SignupPage
+    v-if="!isLoggedIn && authPage === 'signup'"
+    @back-to-login="showLoginPage"
+    @signup-success="onSignupSuccess"
+  />
   <LoginPage
     v-else-if="!isLoggedIn"
+    :success-message="loginSuccessMessage"
     @login-success="onLoginSuccess"
     @signup-click="showSignupPage"
   />

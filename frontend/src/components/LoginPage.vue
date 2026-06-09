@@ -2,6 +2,12 @@
 import { ref } from 'vue'
 
 const emit = defineEmits(['login-success', 'signup-click'])
+const props = defineProps({
+  successMessage: {
+    type: String,
+    default: '',
+  },
+})
 
 const username = ref('')
 const password = ref('')
@@ -59,6 +65,7 @@ async function login() {
     <div class="login-box">
       <h1>AlgoList</h1>
       <p class="login-subtitle">알고리즘 문제 관리 서비스</p>
+      <p v-if="props.successMessage" class="success">{{ props.successMessage }}</p>
       <div class="form-group">
         <input v-model="username" placeholder="아이디" @keyup.enter="login" />
       </div>
@@ -121,6 +128,12 @@ async function login() {
 
 .error {
   color: #e74c3c;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.success {
+  color: #2e7d32;
   font-size: 13px;
   margin-bottom: 12px;
 }
