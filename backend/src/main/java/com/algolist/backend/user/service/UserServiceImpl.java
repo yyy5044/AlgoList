@@ -1,4 +1,4 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.service;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -17,6 +17,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.algolist.backend.user.dao.UserDao;
+import com.algolist.backend.user.dto.CreateRequestDto;
+import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
+import com.algolist.backend.user.dto.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.UpdateRequestDto;
+import com.algolist.backend.user.dto.UserDetailDto;
+import com.algolist.backend.user.dto.UserDto;
+import com.algolist.backend.user.dto.UserPageResponseDto;
+import com.algolist.backend.user.dto.UserSuspensionInfoDto;
 
 import lombok.RequiredArgsConstructor;
 

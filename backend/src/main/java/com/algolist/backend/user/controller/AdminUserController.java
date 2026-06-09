@@ -1,4 +1,4 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.controller;
 
 import java.util.Map;
 
@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
+import com.algolist.backend.user.dto.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.UserDetailDto;
+import com.algolist.backend.user.dto.UserPageResponseDto;
+import com.algolist.backend.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 

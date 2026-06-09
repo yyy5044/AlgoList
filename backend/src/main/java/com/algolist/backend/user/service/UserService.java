@@ -1,6 +1,15 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.service;
 
 import java.util.List;
+
+import com.algolist.backend.user.dto.CreateRequestDto;
+import com.algolist.backend.user.dto.ReleaseSuspensionRequestDto;
+import com.algolist.backend.user.dto.SuspendUserRequestDto;
+import com.algolist.backend.user.dto.UpdateRequestDto;
+import com.algolist.backend.user.dto.UserDetailDto;
+import com.algolist.backend.user.dto.UserDto;
+import com.algolist.backend.user.dto.UserPageResponseDto;
+import com.algolist.backend.user.dto.UserSuspensionInfoDto;
 
 public interface UserService {
 	

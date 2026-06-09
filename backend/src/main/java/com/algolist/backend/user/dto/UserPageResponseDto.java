@@ -1,4 +1,4 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.dto;
 
 import java.util.List;
 

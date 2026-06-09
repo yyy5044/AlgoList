@@ -8,7 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.algolist.backend.user.UserDto;
+import com.algolist.backend.user.dto.UserDto;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

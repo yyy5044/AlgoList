@@ -1,10 +1,14 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.dao;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import com.algolist.backend.user.dto.UserDetailDto;
+import com.algolist.backend.user.dto.UserDto;
+import com.algolist.backend.user.dto.UserSuspensionInfoDto;
 
 @Mapper
 public interface UserDao {

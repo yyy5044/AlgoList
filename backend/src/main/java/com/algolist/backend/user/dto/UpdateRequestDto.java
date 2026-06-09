@@ -1,4 +1,4 @@
-package com.algolist.backend.user;
+package com.algolist.backend.user.dto;
 
 import org.springframework.web.multipart.MultipartFile;
 

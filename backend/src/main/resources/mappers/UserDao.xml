@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.algolist.backend.user.UserDao">
+<mapper namespace="com.algolist.backend.user.dao.UserDao">
 
 	<!-- 컬럼의 user_id와 UserDao의 userId가 일치하지 않으므로 이름 맞춰주기 -->
 	<resultMap type="UserDto" id="UserDtoMap" autoMapping="true">
