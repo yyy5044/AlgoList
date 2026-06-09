@@ -13,7 +13,7 @@ public interface ProblemDao {
 	// 문제 검색
 	List<ProblemDto> searchProblem(String query);
 	
-	// 문제 삽입
+	// 유저 문제 추가
 	int insertUserProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
 	
 	// 단일 행 조회 (문제 삽입 후 기본값 채워진 객체를 보내주기 위한 용도)
@@ -21,4 +21,10 @@ public interface ProblemDao {
 	
 	// 문제 삭제
 	int deleteUserProblem(@Param("userId") Long userId, @Param("problemId") Long problemId);
+
+	// 문제 추가
+	int insertProblem(ProblemDto problem);
+
+	// 문제 카테고리 추가 (문제 추가할 때 반드시 같이 실행되어야 함.)
+	int insertCategory(@Param("problemId") Long problemId, @Param("categoryName") String categoryName);
 }
