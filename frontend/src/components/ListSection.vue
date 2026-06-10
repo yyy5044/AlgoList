@@ -36,7 +36,7 @@ function selectItem(item) {
 }
 
 function toggleMenu(item) {
-  openMenuId.value = openMenuId.value === item.id ? null : item.id
+  openMenuId.value = openMenuId.value === item.problem.problemId ? null : item.problem.problemId
 }
 
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
@@ -45,9 +45,9 @@ const filteredItems = computed(() => {
   const query = searchQuery.value.toLowerCase()
   return items.value.filter(
     (item) =>
-      item.title.toLowerCase().includes(query) ||
-      item.number.includes(query) ||
-      item.category.some((cat) => cat.toLowerCase().includes(query)),
+      item.problem.title.toLowerCase().includes(query) ||
+      item.problem.number.includes(query) ||
+      item.problem.category?.some((cat) => cat.toLowerCase().includes(query)),
   )
 })
 
@@ -85,7 +85,7 @@ async function searchProblem() {
     isSearching.value = true
     searchError.value = ''
     const response = await fetch(
-      `/api/search?query=${problemSearchQuery.value}`, {
+      `/api/problems/search?query=${encodeURIComponent(problemSearchQuery.value)}`, {
         credentials: 'include'
       }
     )
@@ -104,7 +104,7 @@ const duplicateMessage = ref('') // 문제 중복 추가 시도 시 메세지
 async function selectSearchResult(result) {
     // 중복 체크: 같은 사이트 + 같은 문제 번호
   const isDuplicate = items.value.some(
-    item => item.site === result.site && item.number === result.number
+    item => item.problem.site === result.site && item.problem.number === result.number
   )
   if (isDuplicate) {
     duplicateMessage.value = '이미 추가된 문제입니다.'
@@ -115,15 +115,15 @@ async function selectSearchResult(result) {
     const response = await fetch('/api/problems', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(result),
+      body: JSON.stringify({ problemId: result.problemId }),
       credentials: 'include' // 세션 쿠키
     })
-    const savedProblem = await response.json()
-    // console.log(savedProblem) // 디버깅용: 응답 json이 잘 채워져 있는지
-    items.value.push(savedProblem)
+    if (!response.ok) throw new Error('저장 실패')
+    const userProblem = await response.json()
+    items.value.push(userProblem)
     openMenuId.value = null
-    selectedItem.value = savedProblem // 문제 추가하고 나서 추가된 문제 선택
-    emit('select-item', savedProblem)
+    selectedItem.value = userProblem
+    emit('select-item', userProblem)
     closeSearchModal()
   } catch (error) {
     console.error('문제 저장 실패:', error)
@@ -133,12 +133,12 @@ async function selectSearchResult(result) {
 // 개별 삭제
 async function deleteItem(item) {
   try {
-    await fetch(`/api/problems/${item.id}`, {
+    await fetch(`/api/problems/${item.problem.problemId}`, {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })
-    items.value = items.value.filter((i) => i.id !== item.id)
-    if (selectedItem.value?.id === item.id) {
+    items.value = items.value.filter((i) => i.problem.problemId !== item.problem.problemId)
+    if (selectedItem.value?.problem.problemId === item.problem.problemId) {
       selectedItem.value = null
       emit('select-item', null)
     }
@@ -179,8 +179,8 @@ async function deleteChecked() {
         credentials: 'include' // 세션 쿠키
       })
     }
-    items.value = items.value.filter((item) => !checkedIds.value.includes(item.id))
-    if (selectedItem.value && checkedIds.value.includes(selectedItem.value.id)) {
+    items.value = items.value.filter((item) => !checkedIds.value.includes(item.problem.problemId))
+    if (selectedItem.value && checkedIds.value.includes(selectedItem.value.problem.problemId)) {
       selectedItem.value = null
       emit('select-item', null)
     }
@@ -192,7 +192,7 @@ async function deleteChecked() {
 
 // 수정
 function editItem(item) {
-  item.title = item.title + ' (수정됨)'
+  item.problem.title = item.problem.title + ' (수정됨)'
   openMenuId.value = null
 }
 </script>
@@ -238,25 +238,25 @@ function editItem(item) {
     <ul class="list">
       <li
         v-for="item in filteredItems"
-        :key="item.id"
-        :class="['list-item', { active: selectedItem?.id === item.id }]"
+        :key="item.problem.problemId"
+        :class="['list-item', { active: selectedItem?.problem.problemId === item.problem.problemId }]"
         @click="selectItem(item)"
       >
         <input
           v-if="isDeleteMode"
           type="checkbox"
-          :checked="checkedIds.includes(item.id)"
-          @click.stop="toggleCheck(item.id)"
+          :checked="checkedIds.includes(item.problem.problemId)"
+          @click.stop="toggleCheck(item.problem.problemId)"
           class="delete-checkbox"
         />
         <div class="item-info">
-          <img :src="`/icons/${item.site}.png`" :alt="item.site" class="site-icon" />
-          <span class="item-title">[{{ item.number }}] {{ item.title }}</span>
+          <img :src="`/icons/${item.problem.site}.png`" :alt="item.problem.site" class="site-icon" />
+          <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
         </div>
         <button v-if="!isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
 
         <!-- 드롭다운 메뉴 -->
-        <div v-if="openMenuId === item.id" class="dropdown-menu">
+        <div v-if="openMenuId === item.problem.problemId" class="dropdown-menu">
           <button @click.stop="editItem(item)">수정</button>
           <button @click.stop="deleteItem(item)">삭제</button>
         </div>

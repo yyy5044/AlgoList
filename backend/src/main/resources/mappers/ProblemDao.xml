@@ -6,57 +6,79 @@
 <mapper namespace="com.algolist.backend.problem.ProblemDao">
 	<!-- ProblemDto용 resultMap -->
 	<resultMap id="problemMap" type="ProblemDto" autoMapping="true">
-	    <id     column="problem_id"        property="id"/>
-	    <result column="solve_count"       property="solveCount"/>
-	    <result column="last_solved_date"  property="lastSolvedDate"/>
-	    <result column="user_id"           property="userId"/>
+	    <id     column="problem_id"        property="problemId"/>
 		
 		<!-- 1:N 매핑 -->
 		<collection property="category" ofType="string">
 			<result column="category_name"/>			
 		</collection>
 	</resultMap>
-
-	<!-- 문제 생성: problems에 1행 INSERT -->
-	<insert id="insertProblem" useGeneratedKeys="true" keyProperty="id" keyColumn="problem_id">
-		INSERT INTO problems (title, number, difficulty, site, link, user_id)
-		VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{userId})
-		<!-- grade, solve_count, last_solved_date는 넣지 않아 DB DEFAULT(solve_count=0 등)가 적용된다 -->
+	
+	<!-- UserProblemDto용 resultMap -->
+	<resultMap id="userProblemMap" type="UserProblemDto" autoMapping="true">
+		<id column="user_problem_id" property="userProblemId" />
+		<result column="user_id" property="userId"/>
+		<result column="solve_count" property="solveCount"/>
+		<result column="last_solved_date" property="lastSolvedDate"/>
+		
+		<!-- ProblemDto 매핑 -->
+		<association property="problem" resultMap="problemMap"/>
+	</resultMap>
+	
+	<!-- user_problem 테이블 전체 컬럼 조회 sql 조각 -->
+	<sql id="userProblemJoin">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, p.description, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+	</sql>
+	
+	<!-- 문제 검색 (띄어쓰기 상관 없이 검색 가능하도록 REPLACE 함수 적용) -->
+	<select id="searchProblem" resultMap="problemMap">
+		SELECT problem_id, title, number, difficulty, site, link, category_name
+		FROM problems
+		LEFT JOIN problem_categories
+		USING (problem_id)
+		WHERE (REPLACE(title, ' ', '') LIKE CONCAT('%', REPLACE(#{query}, ' ', ''), '%'))
+		OR (number LIKE CONCAT('%', #{query}, '%'))
+	</select>
+	
+	<!-- 유저의 전체 문제 조회 -->
+	<select id="selectAllByUserId" resultMap="userProblemMap">
+		<include refid="userProblemJoin" />
+		WHERE up.user_id = #{userId}
+	</select>
+	
+	<!-- 문제 추가 -->
+	<insert id="insertUserProblem">
+		INSERT INTO user_problems (user_id, problem_id)
+		VALUES (#{userId}, #{problemId})
 	</insert>
-
-	<!-- 카테고리 N행 INSERT: foreach로 (problem_id, category_name) 묶음을 콤마로 이어붙인다 -->
-	<insert id="insertCategories">
-		INSERT INTO problem_categories (problem_id, category_name)
-		VALUES
-		<foreach collection="categories" item="cat" separator=",">
-			(#{problemId}, #{cat})
-		</foreach>
-	</insert>
+	
+	<!-- 문제 추가 후 추가한 행 조회 -->
+	<select id="selectOne" resultMap="userProblemMap">
+		<include refid="userProblemJoin"/>
+		WHERE (up.user_id = #{userId}) AND (up.problem_id = #{problemId}) 
+	</select>
 	
 	<!-- 문제 삭제 -->
-	<delete id="deleteProblem">
-		DELETE FROM problems
-		WHERE user_id=#{userId}
-		AND problem_id=#{problemId}
+	<delete id="deleteUserProblem">
+		DELETE FROM user_problems
+		WHERE (user_id = #{userId}) AND (problem_id = #{problemId})
 	</delete>
-	
-	<!-- 문제 전체 조회 -->
-	<select id="selectAll" resultMap="problemMap">
-	    SELECT p.problem_id, p.title, p.number, p.difficulty, p.site, p.link,
-	           p.grade, p.solve_count, p.last_solved_date, p.user_id,
-	           c.category_name
-	    FROM problems p
-	    LEFT JOIN problem_categories c ON p.problem_id = c.problem_id
-	    WHERE p.user_id = #{userId}
-	</select>
-	
-	<!-- 문제 단일 조회 -->
-	<select id="selectById" resultMap="problemMap">
-	    SELECT p.problem_id, p.title, p.number, p.difficulty, p.site, p.link,
-	           p.grade, p.solve_count, p.last_solved_date, p.user_id,
-	           c.category_name
-	    FROM problems p
-	    LEFT JOIN problem_categories c ON p.problem_id = c.problem_id
-	    WHERE p.problem_id = #{problemId}
-	</select>
+
+	<!-- problems 테이블에 문제 추가 (INSERT IGNORE로 중복이면 무시) -->
+	<insert id="insertProblem" useGeneratedKeys="true" keyProperty="problemId">
+		INSERT IGNORE INTO problems (title, number, difficulty, site, link, description)
+		VALUES (#{title}, #{number}, #{difficulty}, #{site}, #{link}, #{description})
+	</insert>
+
+	<!-- 카테고리 저장 -->
+	<insert id="insertCategory">
+		INSERT IGNORE INTO problem_categories (problem_id, category_name)
+		VALUES (#{problemId}, #{categoryName})
+	</insert>
 </mapper>

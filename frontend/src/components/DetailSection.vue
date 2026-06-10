@@ -1,10 +1,17 @@
 <script setup>
+import { computed } from 'vue'
+import { renderDescription } from '@/utils/renderDescription'
 import SolutionManager from './SolutionManager.vue'
 
-defineProps({
+const props = defineProps({
   selectedItem: Object,
   username: String
 })
+
+// 사이트 무관하게 본문을 표시용 HTML로 변환
+const descriptionHtml = computed(() =>
+  renderDescription(props.selectedItem?.problem?.description)
+)
 </script>
 
 <template>
@@ -12,9 +19,9 @@ defineProps({
     <div v-if="selectedItem" class="detail-content">
       <!-- 상단: 사이트 아이콘 + 문제 번호 + 제목 -->
       <div class="detail-header">
-        <img :src="`/icons/${selectedItem.site}.png`" :alt="selectedItem.site" class="detail-site-icon" />
-        <a :href="selectedItem.link" target="_blank" class="detail-title-link">
-          <h2>[{{ selectedItem.number }}] {{ selectedItem.title }}</h2>
+        <img :src="`/icons/${selectedItem.problem.site}.png`" :alt="selectedItem.problem.site" class="detail-site-icon" />
+        <a :href="selectedItem.problem.link" target="_blank" class="detail-title-link">
+          <h2>[{{ selectedItem.problem.number }}] {{ selectedItem.problem.title }}</h2>
         </a>
       </div>
 
@@ -22,16 +29,16 @@ defineProps({
       <div class="info-group">
         <div class="info-row">
           <span class="info-label">난이도</span>
-          <span class="info-value">{{ selectedItem.difficulty }}</span>
+          <span class="info-value">{{ selectedItem.problem.difficulty }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">사이트</span>
-          <span class="info-value">{{ selectedItem.site }}</span>
+          <span class="info-value">{{ selectedItem.problem.site }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">알고리즘 분류</span>
           <div class="category-tags">
-            <span v-for="cat in selectedItem.category" :key="cat" class="category-tag">
+            <span v-for="cat in selectedItem.problem.category" :key="cat" class="category-tag">
               {{ cat }}
             </span>
           </div>
@@ -55,6 +62,11 @@ defineProps({
           <span class="info-label">최근 푼 날짜</span>
           <span class="info-value">{{ selectedItem.lastSolvedDate }}</span>
         </div>
+      </div>
+      <!-- 문제 본문 -->
+      <div v-if="selectedItem.problem.description" class="description-section">
+        <h3 class="description-title">문제 본문</h3>
+        <div class="description-content" v-html="descriptionHtml"></div>
       </div>
     </div>
     <div v-else class="detail-placeholder">
@@ -170,5 +182,72 @@ defineProps({
 .grade-badge.green {
   color: #2e7d32;
   background-color: #e8f5e9;
+}
+
+/* 문제 본문 */
+.description-section {
+  border-top: 1px solid #eee;
+  padding: 20px 0;
+}
+
+.description-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.description-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #444;
+  word-break: break-word;
+}
+
+.description-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.description-content :deep(p) {
+  margin: 8px 0;
+}
+
+.description-content :deep(ol),
+.description-content :deep(ul) {
+  padding-left: 2em;
+  margin: 4px 0;
+}
+
+.description-content :deep(li) {
+  margin: 2px 0;
+}
+
+.description-content :deep(pre) {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.description-content :deep(table) {
+  border-collapse: collapse;
+  margin: 12px 0;
+  width: 100%;
+}
+
+.description-content :deep(th),
+.description-content :deep(td) {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.description-content :deep(th) {
+  background-color: #f5f5f5;
+  font-weight: 600;
 }
 </style>

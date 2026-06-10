@@ -1,4 +1,6 @@
-CREATE DATABASE IF NOT EXISTS algolist;
+CREATE DATABASE IF NOT EXISTS algolist
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 USE algolist;
 
 # 유저 테이블
@@ -51,6 +53,7 @@ CREATE TABLE IF NOT EXISTS problems (
     difficulty VARCHAR(50),
     site VARCHAR(50),
     link VARCHAR(500),
+    description MEDIUMTEXT,
     # (site, number)로 "DB에 있는지" 확인 & 중복 저장 방지. GitHub를 한 번만 호출하게 해주는 캐시 키.
     UNIQUE KEY uq_site_number (site, number)
 );
@@ -68,7 +71,9 @@ CREATE TABLE IF NOT EXISTS user_problems (
     user_problem_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     problem_id BIGINT NOT NULL,
-    grade VARCHAR(20),
+
+    grade VARCHAR(20) NOT NULL DEFAULT 'YELLOW',
+
     solve_count INT DEFAULT 0,
     last_solved_date DATE,
     # 한 유저가 같은 문제를 중복으로 담지 못하게
