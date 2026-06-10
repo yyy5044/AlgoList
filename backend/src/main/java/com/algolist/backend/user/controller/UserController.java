@@ -1,7 +1,5 @@
 package com.algolist.backend.user.controller;
 
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,12 +30,7 @@ public class UserController {
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	// 회원가입 요청
 	public ResponseEntity<?> regist(@ModelAttribute CreateRequestDto request) {
-		boolean success;
-		try {
-			success = userService.insertUser(request);
-		} catch (IllegalArgumentException e) { // username 중복 등 오류가 발생하면 반환된 예외를 catch, message에 담아서 보냄
-			return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
-		}
+		boolean success = userService.insertUser(request);
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.CREATED).build(); // 생성 성공 시 CREATED(201) 반환
@@ -69,12 +62,7 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 
-		boolean success;
-		try {
-			success = userService.updateUser(username, request);
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-		}
+		boolean success = userService.updateUser(username, request);
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();
