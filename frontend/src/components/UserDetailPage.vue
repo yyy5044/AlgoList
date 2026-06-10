@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
 import UserSuspensionForm from './UserSuspensionForm.vue'
+import UserRoleUpdateForm from './UserRoleUpdateForm.vue'
 
 const props = defineProps({
   username: String,
@@ -48,6 +49,7 @@ const isUpdatingRole = ref(false)
 const isSuspending = ref(false)
 const isReleaseFormOpen = ref(false)
 const isSuspensionFormOpen = ref(false)
+const isRoleControlOpen = ref(false)
 const imageLoadFailed = ref(false)
 const selectedRole = ref('')
 
@@ -79,11 +81,18 @@ const canUpdateRole = computed(() => {
     selectedRole.value !== user.value.role
   )
 })
-const roleUpdateButtonText = computed(() => {
+const canOpenRoleControl = computed(() => {
+  return (
+    props.showAdminActions &&
+    !isLoading.value &&
+    user.value.username !== props.currentUsername &&
+    user.value.accountStatus !== 'DELETED'
+  )
+})
+const roleControlButtonText = computed(() => {
   if (isLoading.value) return '회원 정보 확인 중'
   if (user.value.username === props.currentUsername) return '내 권한 변경 불가'
   if (user.value.accountStatus === 'DELETED') return '삭제된 회원'
-  if (selectedRole.value === user.value.role) return '현재 권한'
   return '권한 변경'
 })
 const suspendButtonText = computed(() => {
@@ -124,6 +133,11 @@ async function loadUser() {
 }
 
 onMounted(loadUser)
+
+function openRoleControl() {
+  selectedRole.value = user.value.role || 'USER'
+  isRoleControlOpen.value = true
+}
 
 async function deleteUser() {
   const confirmed = window.confirm('정말 탈퇴하시겠습니까?')
@@ -225,7 +239,10 @@ async function releaseUserSuspension(payload) {
   }
 }
 
-async function updateUserRole() {
+async function updateUserRole(payload) {
+  selectedRole.value = payload.role
+  if (!canUpdateRole.value) return
+
   try {
     isUpdatingRole.value = true
     errorMessage.value = ''
@@ -239,6 +256,7 @@ async function updateUserRole() {
 
     if (response.ok) {
       successMessage.value = '권한 변경이 완료되었습니다.'
+      isRoleControlOpen.value = false
       await loadUser()
     } else {
       let message = '권한 변경에 실패했습니다.'
@@ -307,38 +325,31 @@ async function updateUserRole() {
         </button>
       </template>
       <template v-if="showAdminActions">
-        <div class="admin-role-control">
-          <label>
-            <span>권한 변경</span>
-            <select v-model="selectedRole" :disabled="isLoading || isUpdatingRole">
-              <option value="USER">USER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
-          </label>
+        <div class="admin-actions">
           <button
-            class="role-update-button"
-            :disabled="!canUpdateRole"
-            @click="updateUserRole"
+            class="role-open-button"
+            :disabled="!canOpenRoleControl"
+            @click="openRoleControl"
           >
-            {{ isUpdatingRole ? '변경 중...' : roleUpdateButtonText }}
+            {{ roleControlButtonText }}
+          </button>
+          <button
+            v-if="user.accountStatus === 'SUSPENDED'"
+            class="release-button"
+            :disabled="!canReleaseSuspension || isReleasingSuspension"
+            @click="isReleaseFormOpen = true"
+          >
+            {{ isReleasingSuspension ? '해제 처리 중...' : releaseButtonText }}
+          </button>
+          <button
+            v-else
+            class="suspend-button"
+            :disabled="!canSuspend || isSuspending"
+            @click="isSuspensionFormOpen = true"
+          >
+            {{ isSuspending ? '정지 처리 중...' : suspendButtonText }}
           </button>
         </div>
-        <button
-          v-if="user.accountStatus === 'SUSPENDED'"
-          class="release-button"
-          :disabled="!canReleaseSuspension || isReleasingSuspension"
-          @click="isReleaseFormOpen = true"
-        >
-          {{ isReleasingSuspension ? '해제 처리 중...' : releaseButtonText }}
-        </button>
-        <button
-          v-else
-          class="suspend-button"
-          :disabled="!canSuspend || isSuspending"
-          @click="isSuspensionFormOpen = true"
-        >
-          {{ isSuspending ? '정지 처리 중...' : suspendButtonText }}
-        </button>
       </template>
       <button class="back-button" @click="emit('back')">뒤로가기</button>
     </div>
@@ -358,6 +369,15 @@ async function updateUserRole() {
       @close="isReleaseFormOpen = false"
       @submit="releaseUserSuspension"
     />
+
+    <UserRoleUpdateForm
+      v-if="isRoleControlOpen"
+      :username="user.username"
+      :current-role="user.role || 'USER'"
+      :is-submitting="isUpdatingRole"
+      @close="isRoleControlOpen = false"
+      @submit="updateUserRole"
+    />
   </div>
 </template>
 
@@ -365,22 +385,24 @@ async function updateUserRole() {
 .user-page {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   flex: 1;
   min-height: 0;
-  padding: 32px;
+  padding: 28px 36px;
   overflow: auto;
-  background: #f5f5f5;
+  background: white;
 }
 
 .user-panel {
-  background: white;
-  margin: auto 0;
-  padding: 36px;
-  border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
-  width: min(100%, 520px);
-  text-align: center;
+  background: transparent;
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+  max-width: 1040px;
+  text-align: left;
 }
 
 .user-panel h2 {
@@ -414,15 +436,16 @@ async function updateUserRole() {
 
 .profile-summary {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 12px 0 24px;
+  gap: 18px;
+  padding: 12px 0 28px;
 }
 
 .profile-image,
 .profile-placeholder {
-  width: 112px;
-  height: 112px;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
 }
 
@@ -446,7 +469,7 @@ async function updateUserRole() {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 14px;
+  min-width: 0;
 }
 
 .profile-name {
@@ -531,7 +554,8 @@ async function updateUserRole() {
 }
 
 button {
-  width: 100%;
+  width: auto;
+  min-width: 120px;
   padding: 10px;
   background: #4a90d9;
   color: white;
@@ -552,6 +576,7 @@ button:disabled {
 
 .delete-button {
   margin-top: 10px;
+  margin-left: 8px;
   background: #e74c3c;
 }
 
@@ -560,7 +585,6 @@ button:disabled {
 }
 
 .suspend-button {
-  margin-top: 10px;
   background: #e74c3c;
 }
 
@@ -568,53 +592,27 @@ button:disabled {
   background: #d43f30;
 }
 
-.admin-role-control {
-  padding: 14px;
-  margin-bottom: 10px;
-  background: #fafafa;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  text-align: left;
+.admin-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.admin-role-control label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.admin-role-control span {
-  color: #888;
-  font-size: 13px;
-}
-
-.admin-role-control select {
-  width: 100%;
-  height: 38px;
-  padding: 0 10px;
-  color: #333;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.admin-role-control select:disabled {
-  color: #999;
-  background: #f8f9fa;
-}
-
-.role-update-button {
+.role-open-button {
   background: #4a90d9;
 }
 
-.role-update-button:hover {
+.role-open-button:hover {
   background: #3a7bc8;
 }
 
+.role-open-button:disabled {
+  background: #9bbfe5;
+  cursor: default;
+}
+
 .release-button {
-  margin-top: 10px;
   background: #2e7d32;
 }
 
@@ -624,6 +622,7 @@ button:disabled {
 
 .back-button {
   margin-top: 10px;
+  margin-left: 8px;
   background: white;
   color: #4a90d9;
   border: 1px solid #4a90d9;
@@ -631,5 +630,36 @@ button:disabled {
 
 .back-button:hover {
   background: #f0f6fd;
+}
+
+@media (max-width: 640px) {
+  .user-page {
+    padding: 18px;
+  }
+
+  .user-panel {
+    padding: 0;
+  }
+
+  .profile-summary {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .admin-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .delete-button,
+  .back-button {
+    margin-left: 0;
+  }
 }
 </style>

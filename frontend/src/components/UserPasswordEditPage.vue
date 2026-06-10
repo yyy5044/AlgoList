@@ -166,8 +166,10 @@ async function updateUser() {
           @error="profile.imageLoadFailed = true"
         />
         <div v-else class="profile-placeholder">{{ profileInitial }}</div>
-        <strong class="profile-name">{{ displayName }}</strong>
-        <span class="profile-username">@{{ username }}</span>
+        <div class="profile-name-wrap">
+          <strong class="profile-name">{{ displayName }}</strong>
+          <span class="profile-username">@{{ username }}</span>
+        </div>
       </div>
 
       <div class="form-section">
@@ -229,22 +231,24 @@ async function updateUser() {
 .edit-page {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   flex: 1;
   min-height: 0;
-  padding: 32px;
+  padding: 28px 36px;
   overflow: auto;
-  background: #f5f5f5;
+  background: white;
 }
 
 .edit-panel {
-  width: min(100%, 560px);
-  margin: auto 0;
-  padding: 36px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1);
-  text-align: center;
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
 }
 
 .edit-panel h2 {
@@ -279,15 +283,16 @@ async function updateUser() {
 
 .profile-summary {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 8px 0 24px;
+  gap: 18px;
+  padding: 8px 0 28px;
 }
 
 .profile-image,
 .profile-placeholder {
-  width: 112px;
-  height: 112px;
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
 }
 
@@ -307,15 +312,20 @@ async function updateUser() {
   font-weight: 700;
 }
 
+.profile-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .profile-name {
-  margin-top: 14px;
   color: #222;
   font-size: 22px;
   line-height: 1.2;
 }
 
 .profile-username {
-  margin-top: 4px;
   color: #888;
   font-size: 13px;
 }
@@ -361,7 +371,8 @@ textarea {
 }
 
 button {
-  width: 100%;
+  width: auto;
+  min-width: 120px;
   padding: 10px;
   background: #4a90d9;
   color: white;
@@ -394,6 +405,7 @@ button:disabled {
 
 .back-button {
   margin-top: 10px;
+  margin-left: 8px;
   background: white;
   color: #4a90d9;
   border: 1px solid #4a90d9;
@@ -409,12 +421,26 @@ button:disabled {
   }
 
   .edit-panel {
-    padding: 28px 22px;
+    padding: 0;
+  }
+
+  .profile-summary {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .back-button {
+    margin-left: 0;
   }
 }
 </style>

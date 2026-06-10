@@ -236,18 +236,20 @@ onMounted(loadUsers)
 <style scoped>
 .user-list-page {
   flex: 1;
-  padding: 32px;
+  padding: 28px 36px;
   overflow: auto;
-  background: #f5f5f5;
+  background: white;
 }
 
 .user-list-panel {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1120px;
   margin: 0 auto;
-  background: white;
-  padding: 28px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .user-list-header {
@@ -361,7 +363,8 @@ onMounted(loadUsers)
 .table-wrap {
   border: 1px solid #eee;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 table {
@@ -474,6 +477,10 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 720px) {
+  .user-list-page {
+    padding: 18px;
+  }
+
   .filter-bar,
   .pagination {
     align-items: stretch;

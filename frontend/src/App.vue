@@ -86,6 +86,7 @@ async function logout() {
 
 function onSelectItem(item) {
   selectedItem.value = item
+  mainPage.value = 'problems'
 }
 
 function showSignupPage() {
@@ -108,6 +109,11 @@ function showProblemPage() {
 
 function showUserDetailPage() {
   mainPage.value = 'user-detail'
+  selectedAdminUsername.value = ''
+  if (isUserListPath.value) {
+    window.history.pushState({}, '', '/')
+    isUserListPath.value = false
+  }
 }
 
 function showUserListPage() {
@@ -162,20 +168,20 @@ function showUserProfileEditPage() {
         @back="showProblemPage"
         @select-user="showAdminUserDetailPage"
       />
-      <UserDetailPage
-        v-else-if="mainPage === 'user-detail'"
-        :username="currentUser"
-        @back="showProblemPage"
-        @edit-profile="showUserProfileEditPage"
-        @delete-success="logout"
-      />
-      <UserProfileEditPage
-        v-else-if="mainPage === 'user-password-edit'"
-        :username="currentUser"
-        @back="showUserDetailPage"
-      />
       <div v-else class="main-content">
-        <DetailSection :selected-item="selectedItem" :username="currentUser" />
+        <UserDetailPage
+          v-if="mainPage === 'user-detail'"
+          :username="currentUser"
+          @back="showProblemPage"
+          @edit-profile="showUserProfileEditPage"
+          @delete-success="logout"
+        />
+        <UserProfileEditPage
+          v-else-if="mainPage === 'user-password-edit'"
+          :username="currentUser"
+          @back="showUserDetailPage"
+        />
+        <DetailSection v-else :selected-item="selectedItem" :username="currentUser" />
         <ListSection @select-item="onSelectItem" />
       </div>
     </div>
