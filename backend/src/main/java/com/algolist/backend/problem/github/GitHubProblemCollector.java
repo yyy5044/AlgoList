@@ -6,17 +6,14 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.algolist.backend.problem.ProblemDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-/**
- * GitHub를 통한 문제 수집의 전체 흐름을 조율하는 퍼사드.
- *
- * ProblemService는 이 클래스만 의존하며, 내부적으로
- * GitHubClient(API 통신), ReadmeParser(파싱), ImageConverter(이미지 처리)를 사용한다.
- */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GitHubProblemCollector {
@@ -31,24 +28,21 @@ public class GitHubProblemCollector {
      * 파싱된 ProblemDto 리스트로 반환한다.
      */
     public List<ProblemDto> searchProblems(String query, int maxResults) {
-        // 1. 사용자 쿼리 → GitHub Search API용 쿼리 변환
         String searchQuery = query + " \"### 문제 설명\" filename:README.md";
 
-        // 2. Search API 호출 → 응답 JSON
         String json = client.searchCode(searchQuery, maxResults);
         if (json == null) return List.of();
 
-        // 3. JSON에서 파일 URL 추출
         List<String> fileUrls = extractFileUrls(json);
 
-        // 4. 각 URL: Contents API → README → 파싱 → 이미지 처리
         List<ProblemDto> results = new ArrayList<>();
         for (String fileUrl : fileUrls) {
+            // 개별 파일 실패는 건너뛰고 나머지 수집을 계속한다 (best-effort)
             try {
                 ProblemDto dto = fetchAndParse(fileUrl);
                 if (dto != null) results.add(dto);
             } catch (Exception e) {
-                // 개별 파일 실패는 무시하고 다음 파일 진행
+                log.warn("문제 수집 실패 (건너뜀): {} ({})", fileUrl, e.getMessage());
             }
         }
         return results;
@@ -69,19 +63,22 @@ public class GitHubProblemCollector {
     /** Search API 응답 JSON에서 파일의 Contents API URL을 추출한다 */
     private List<String> extractFileUrls(String json) {
         List<String> urls = new ArrayList<>();
+        JsonNode root;
         try {
-            JsonNode root = objectMapper.readTree(json);
-            JsonNode items = root.get("items");
-            if (items != null && items.isArray()) {
-                for (JsonNode item : items) {
-                    JsonNode urlNode = item.get("url");
-                    if (urlNode != null) {
-                        urls.add(urlNode.asText());
-                    }
+            root = objectMapper.readTree(json);
+        } catch (JsonProcessingException e) {
+            // checked → unchecked로 전환하여 전역 핸들러까지 전파 (삼키지 않음)
+            throw new IllegalStateException("GitHub 검색 응답 파싱 실패", e);
+        }
+
+        JsonNode items = root.get("items");
+        if (items != null && items.isArray()) {
+            for (JsonNode item : items) {
+                JsonNode urlNode = item.get("url");
+                if (urlNode != null) {
+                    urls.add(urlNode.asText());
                 }
             }
-        } catch (Exception e) {
-            // JSON 파싱 실패 시 빈 리스트 반환
         }
         return urls;
     }
