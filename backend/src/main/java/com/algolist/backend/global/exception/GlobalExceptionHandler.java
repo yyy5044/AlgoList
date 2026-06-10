@@ -1,5 +1,7 @@
 package com.algolist.backend.global.exception;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,11 +20,23 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** 그 외 처리되지 않은 모든 예외 → 500 */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception e) {
-        log.error("처리되지 않은 예외 발생", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("서버 내부 오류가 발생했습니다.");
-    }
+	/** 중복 아이디 → 409 */
+	@ExceptionHandler(DuplicateUsernameException.class)
+	public ResponseEntity<Map<String, String>> handleDuplicateUsernameException(DuplicateUsernameException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+	}
+
+	/** 잘못된 요청 파라미터 → 400 */
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+	}
+
+	/** 그 외 처리되지 않은 모든 예외 → 500 */
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<String> handleException(Exception e) {
+		log.error("처리되지 않은 예외 발생", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body("서버 내부 오류가 발생했습니다.");
+	}
 }

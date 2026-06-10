@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.algolist.backend.global.exception.DuplicateUsernameException;
 import com.algolist.backend.user.dao.UserDao;
 import com.algolist.backend.user.dto.request.CreateRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRequestDto;
@@ -44,7 +45,7 @@ public class UserServiceImpl implements UserService {
 		
 		// 중복된 ID를 사용하고 있는지 확인, 중복이라면 예외 반환
 		if(user != null) {
-			throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
+			throw new DuplicateUsernameException("이미 사용 중인 아이디입니다.");
 		}
 
 		String profileImageUrl = profileImageService.saveProfileImage(request.getProfileImage());

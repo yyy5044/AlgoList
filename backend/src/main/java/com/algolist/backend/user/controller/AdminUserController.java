@@ -1,7 +1,5 @@
 package com.algolist.backend.user.controller;
 
-import java.util.Map;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,12 +71,7 @@ public class AdminUserController {
 	// 유저 정지 요청
 	public ResponseEntity<?> suspendUser(@PathVariable String username, @RequestBody SuspendUserRequestDto request,
 			Authentication authentication) {
-		boolean success;
-		try {
-			success = adminUserService.suspendUser(username, request, getCurrentUserId(authentication));
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-		}
+		boolean success = adminUserService.suspendUser(username, request, getCurrentUserId(authentication));
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();
@@ -91,12 +84,7 @@ public class AdminUserController {
 	// 유저 정지 해제 요청
 	public ResponseEntity<?> releaseUserSuspension(@PathVariable String username,
 			@RequestBody ReleaseSuspensionRequestDto request, Authentication authentication) {
-		boolean success;
-		try {
-			success = adminUserService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-		}
+		boolean success = adminUserService.releaseUserSuspension(username, request, getCurrentUserId(authentication));
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();
@@ -109,12 +97,7 @@ public class AdminUserController {
 	// 유저 권한 변경 요청
 	public ResponseEntity<?> updateUserRole(@PathVariable String username, @RequestBody UpdateRoleRequestDto request,
 			Authentication authentication) {
-		boolean success;
-		try {
-			success = adminUserService.updateUserRole(username, request, getCurrentUserId(authentication));
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-		}
+		boolean success = adminUserService.updateUserRole(username, request, getCurrentUserId(authentication));
 
 		if (success) {
 			return ResponseEntity.status(HttpStatus.OK).build();
