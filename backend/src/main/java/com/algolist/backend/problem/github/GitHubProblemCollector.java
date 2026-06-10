@@ -24,7 +24,7 @@ public class GitHubProblemCollector {
     private final GitHubClient client;
     private final ReadmeParser parser;
     private final ImageConverter imageConverter;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 사용자 검색어를 기반으로 GitHub에서 문제를 찾아
