@@ -13,17 +13,20 @@ const searchQuery = ref('')
 // 문제 리스트 변수
 const items = ref([])
 
-onMounted(async () => {
-  // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
+async function fetchItems() {
   try {
     const response = await fetch('/api/problems', {
-      credentials: 'include' // 세션 쿠키
+      credentials: 'include',
     })
     items.value = await response.json()
   } catch (error) {
     console.error('목록 조회 실패:', error)
   }
-})
+}
+
+onMounted(fetchItems)
+
+defineExpose({ refresh: fetchItems })
 
 // 선택 / 메뉴
 const selectedItem = ref(null) // 리스트 내에서 문제를 선택하기 위한 변수

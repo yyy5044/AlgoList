@@ -7,6 +7,7 @@ import UserListPage from './components/UserListPage.vue'
 import UserProfileEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
+import BrowsePage from './components/BrowsePage.vue'
 
 const isLoggedIn = ref(false)
 const currentUser = ref('')
@@ -15,6 +16,8 @@ const selectedItem = ref(null)
 const selectedAdminUsername = ref('') // 어드민이 조회한 유저의 이름
 const authPage = ref('login')
 const mainPage = ref('problems')
+// 상단 탭: 'main' = 메인 페이지(문제 둘러보기), 'my' = 내 문제(기존 화면)
+const activeTab = ref('main')
 const isUserListPath = ref(window.location.pathname === '/users')
 const loginSuccessMessage = ref('')
 const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
@@ -53,6 +56,7 @@ function onLoginSuccess(user) {
   currentUserRole.value = user.role || ''
   authPage.value = 'login'
   mainPage.value = 'problems'
+  activeTab.value = 'main'
   loginSuccessMessage.value = ''
   if (isUserListPath.value && !isAdmin.value) {
     showProblemPage()
@@ -81,12 +85,14 @@ async function logout() {
   selectedAdminUsername.value = ''
   authPage.value = 'login'
   mainPage.value = 'problems'
+  activeTab.value = 'main'
   loginSuccessMessage.value = ''
 }
 
 function onSelectItem(item) {
   selectedItem.value = item
   mainPage.value = 'problems'
+  activeTab.value = 'my'
 }
 
 function showSignupPage() {
@@ -109,6 +115,7 @@ function showProblemPage() {
 
 function showUserDetailPage() {
   mainPage.value = 'user-detail'
+  activeTab.value = 'my' // 둘러보기 탭에서 눌러도 보이도록 내 문제 탭으로 전환
   selectedAdminUsername.value = ''
   if (isUserListPath.value) {
     window.history.pushState({}, '', '/')
@@ -119,6 +126,7 @@ function showUserDetailPage() {
 function showUserListPage() {
   if (!isAdmin.value) return
 
+  activeTab.value = 'my'
   selectedAdminUsername.value = ''
   window.history.pushState({}, '', '/users')
   isUserListPath.value = true
@@ -130,6 +138,12 @@ function showAdminUserDetailPage(username) {
 
 function showUserProfileEditPage() {
   mainPage.value = 'user-password-edit'
+}
+
+const listSectionRef = ref(null)
+
+function onProblemAdded() {
+  listSectionRef.value?.refresh()
 }
 </script>
 
@@ -148,41 +162,62 @@ function showUserProfileEditPage() {
   <div v-else class="outer-container">
     <div class="app-container">
       <div class="top-bar">
-        <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
-        <button class="user-link" @click="showUserDetailPage">
-          {{ currentUser }}님 환영합니다
-        </button>
-        <button @click="logout" class="logout-btn">로그아웃</button>
+        <div class="page-tabs">
+          <button
+            :class="['page-tab', { active: activeTab === 'main' }]"
+            @click="activeTab = 'main'"
+          >
+            메인 페이지
+          </button>
+          <button
+            :class="['page-tab', { active: activeTab === 'my' }]"
+            @click="activeTab = 'my'"
+          >
+            내 문제
+          </button>
+        </div>
+        <div class="top-bar-right">
+          <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
+          <button class="user-link" @click="showUserDetailPage">
+            {{ currentUser }}님 환영합니다
+          </button>
+          <button @click="logout" class="logout-btn">로그아웃</button>
+        </div>
       </div>
-      <UserDetailPage
-        v-if="isUserListPath && isAdmin && selectedAdminUsername"
-        :username="selectedAdminUsername"
-        :current-username="currentUser"
-        api-base-path="/api/admin/users"
-        :show-actions="false"
-        :show-admin-actions="true"
-        @back="showUserListPage"
-      />
-      <UserListPage
-        v-else-if="isUserListPath && isAdmin"
-        @back="showProblemPage"
-        @select-user="showAdminUserDetailPage"
-      />
-      <div v-else class="main-content">
-        <UserDetailPage
-          v-if="mainPage === 'user-detail'"
-          :username="currentUser"
-          @back="showProblemPage"
-          @edit-profile="showUserProfileEditPage"
-          @delete-success="logout"
-        />
-        <UserProfileEditPage
-          v-else-if="mainPage === 'user-password-edit'"
-          :username="currentUser"
-          @back="showUserDetailPage"
-        />
-        <DetailSection v-else :selected-item="selectedItem" :username="currentUser" />
-        <ListSection @select-item="onSelectItem" />
+      <div class="main-content">
+        <KeepAlive>
+          <BrowsePage v-if="activeTab === 'main'" @problem-added="onProblemAdded" />
+        </KeepAlive>
+        <template v-if="activeTab !== 'main'">
+          <UserDetailPage
+            v-if="isUserListPath && isAdmin && selectedAdminUsername"
+            :username="selectedAdminUsername"
+            :current-username="currentUser"
+            api-base-path="/api/admin/users"
+            :show-actions="false"
+            :show-admin-actions="true"
+            @back="showUserListPage"
+          />
+          <UserListPage
+            v-else-if="isUserListPath && isAdmin"
+            @back="showProblemPage"
+            @select-user="showAdminUserDetailPage"
+          />
+          <UserDetailPage
+            v-else-if="mainPage === 'user-detail'"
+            :username="currentUser"
+            @back="showProblemPage"
+            @edit-profile="showUserProfileEditPage"
+            @delete-success="logout"
+          />
+          <UserProfileEditPage
+            v-else-if="mainPage === 'user-password-edit'"
+            :username="currentUser"
+            @back="showUserDetailPage"
+          />
+          <DetailSection v-else :selected-item="selectedItem" :username="currentUser" />
+        </template>
+        <ListSection ref="listSectionRef" @select-item="onSelectItem" />
       </div>
     </div>
   </div>
@@ -218,14 +253,49 @@ function showUserProfileEditPage() {
 
 .top-bar {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 8px 16px 0;
   background: #f8f9fa;
   border-bottom: 1px solid #eee;
   font-size: 14px;
   color: #666;
+}
+
+/* 크롬 탭 스타일: 활성 탭이 아래 흰 영역과 이어져 보이도록 */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: -1px;
+}
+
+.page-tab {
+  padding: 8px 20px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: none;
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+}
+
+.page-tab:hover {
+  color: #333;
+}
+
+.page-tab.active {
+  background: white;
+  border-color: #eee;
+  color: #1a56db;
+  font-weight: 600;
+}
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
 }
 
 .logout-btn {
