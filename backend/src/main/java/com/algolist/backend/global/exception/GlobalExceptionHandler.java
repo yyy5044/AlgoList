@@ -2,6 +2,7 @@ package com.algolist.backend.global.exception;
 
 import java.util.Map;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,5 +39,11 @@ public class GlobalExceptionHandler {
 		log.error("처리되지 않은 예외 발생", e);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 			.body("서버 내부 오류가 발생했습니다.");
+	}
+	
+	@ExceptionHandler(DuplicateKeyException.class)
+	public ResponseEntity<String> handleDuplicateKeyException(DuplicateKeyException e){
+		log.warn("중복 문제 삽입 예외");
+		return ResponseEntity.status(HttpStatus.CONFLICT).body("중복 문제 삽입 요청");
 	}
 }
