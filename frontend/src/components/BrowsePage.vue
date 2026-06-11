@@ -88,7 +88,7 @@ async function addToMyList(problem, event) {
       credentials: 'include',
       body: JSON.stringify({ problemId: problem.problemId }),
     })
-    if (response.status === 409) {
+    if (response.status === 409 || response.status === 400) {
       addedSet.value.add(problem.problemId)
       alert('이미 내 문제에 등록된 문제입니다.')
       return
