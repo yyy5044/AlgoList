@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import * as problemApi from '@/api/problems'
 
 const emit = defineEmits(['select-item'])
 
@@ -7,18 +8,15 @@ const emit = defineEmits(['select-item'])
 const tabs = ['문제', '분류', 'Git']
 const currentTab = ref('문제')
 
-// 문제 리스트 필터링용 검색어 변수
+// 문제 리스트 필터링용 검색어
 const searchQuery = ref('')
 
-// 문제 리스트 변수
+// 내 문제 리스트
 const items = ref([])
 
 async function fetchItems() {
   try {
-    const response = await fetch('/api/problems', {
-      credentials: 'include',
-    })
-    items.value = await response.json()
+    items.value = await problemApi.fetchMine()
   } catch (error) {
     console.error('목록 조회 실패:', error)
   }
@@ -26,6 +24,7 @@ async function fetchItems() {
 
 onMounted(fetchItems)
 
+// 문제 둘러보기 페이지에서 추가했을 때 목록을 갱신할 수 있도록 공개
 defineExpose({ refresh: fetchItems })
 
 // 선택 / 메뉴
@@ -54,18 +53,15 @@ const filteredItems = computed(() => {
   )
 })
 
-// 요소 추가 로직
-// 1. 문제 검색
-// 검색 모달
-const isSearchModalOpen = ref(false) // 모달이 열려 있으면 true, 닫혀 있으면 false
-const problemSearchQuery = ref('') // 모달에 있는 검색창에 들어오는 입력은 problemSearchQuery에 할당됨
+// 문제 검색 모달
+const isSearchModalOpen = ref(false)
+const problemSearchQuery = ref('') // 모달 검색창 입력값
 
 function openSearchModal() {
   isSearchModalOpen.value = true
   problemSearchQuery.value = ''
 }
 
-// closeSearchModal도 수정
 function closeSearchModal() {
   isSearchModalOpen.value = false
   problemSearchQuery.value = ''
@@ -74,25 +70,18 @@ function closeSearchModal() {
   duplicateMessage.value = ''
 }
 
-// 2. 검색 함수: 8080 포트로 GET 요청
-const searchResults = ref([]) // 검색 결과를 받는 리스트
-const hasSearched = ref(false) // "검색 결과 없음"을 표시하기 위한 변수, searchResults가 0인데 hasSeared는 true일 때 -> 검색 결과 없음
-const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
-
-// 검색 모달에서 문제 검색 함수
-const isSearching = ref(false) // 검색 후 로딩 표시용 변수
+// 검색 상태
+const searchResults = ref([])
+const hasSearched = ref(false) // "검색 결과 없음" 표시용 (검색했는데 결과가 0개일 때)
+const searchError = ref('')
+const isSearching = ref(false)
 
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
     isSearching.value = true
     searchError.value = ''
-    const response = await fetch(
-      `/api/problems/search?query=${encodeURIComponent(problemSearchQuery.value)}`, {
-        credentials: 'include'
-      }
-    )
-    searchResults.value = await response.json()
+    searchResults.value = await problemApi.search(problemSearchQuery.value)
     hasSearched.value = true
   } catch (error) {
     searchError.value = '검색 중 오류가 발생했습니다. 다시 시도해주세요.'
@@ -102,12 +91,13 @@ async function searchProblem() {
   }
 }
 
-// 검색 결과 중에서 문제 선택할 때 호출되는 함수
-const duplicateMessage = ref('') // 문제 중복 추가 시도 시 메세지
+// 검색 결과에서 문제를 선택하면 내 문제로 추가
+const duplicateMessage = ref('')
+
 async function selectSearchResult(result) {
-    // 중복 체크: 같은 사이트 + 같은 문제 번호
+  // 중복 체크: 같은 사이트 + 같은 문제 번호
   const isDuplicate = items.value.some(
-    item => item.problem.site === result.site && item.problem.number === result.number
+    (item) => item.problem.site === result.site && item.problem.number === result.number,
   )
   if (isDuplicate) {
     duplicateMessage.value = '이미 추가된 문제입니다.'
@@ -115,14 +105,7 @@ async function selectSearchResult(result) {
   }
 
   try {
-    const response = await fetch('/api/problems', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ problemId: result.problemId }),
-      credentials: 'include' // 세션 쿠키
-    })
-    if (!response.ok) throw new Error('저장 실패')
-    const userProblem = await response.json()
+    const userProblem = await problemApi.add(result.problemId)
     items.value.push(userProblem)
     openMenuId.value = null
     selectedItem.value = userProblem
@@ -136,10 +119,7 @@ async function selectSearchResult(result) {
 // 개별 삭제
 async function deleteItem(item) {
   try {
-    await fetch(`/api/problems/${item.problem.problemId}`, {
-      method: 'DELETE',
-      credentials: 'include' // 세션 쿠키
-    })
+    await problemApi.remove(item.problem.problemId)
     items.value = items.value.filter((i) => i.problem.problemId !== item.problem.problemId)
     if (selectedItem.value?.problem.problemId === item.problem.problemId) {
       selectedItem.value = null
@@ -177,10 +157,7 @@ function toggleCheck(id) {
 async function deleteChecked() {
   try {
     for (const id of checkedIds.value) {
-      await fetch(`/api/problems/${id}`, {
-        method: 'DELETE',
-        credentials: 'include' // 세션 쿠키
-      })
+      await problemApi.remove(id)
     }
     items.value = items.value.filter((item) => !checkedIds.value.includes(item.problem.problemId))
     if (selectedItem.value && checkedIds.value.includes(selectedItem.value.problem.problemId)) {

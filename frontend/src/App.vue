@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import * as authApi from '@/api/auth'
 import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
@@ -20,33 +21,39 @@ const mainPage = ref('problems')
 const activeTab = ref('main')
 const isUserListPath = ref(window.location.pathname === '/users')
 const loginSuccessMessage = ref('')
+const listSectionRef = ref(null) // 둘러보기에서 문제 추가 시 내 문제 목록 갱신용
 const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
+
+// 로그아웃·세션 만료 시 화면 상태를 초기값으로 되돌린다
+function resetSessionState() {
+  isLoggedIn.value = false
+  currentUser.value = ''
+  currentUserRole.value = ''
+  selectedItem.value = null
+  selectedAdminUsername.value = ''
+  authPage.value = 'login'
+  mainPage.value = 'problems'
+  activeTab.value = 'main'
+  loginSuccessMessage.value = ''
+}
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
   try {
-    const response = await fetch('/api/me', {
-      credentials: 'include',
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      isLoggedIn.value = true
-      currentUser.value = data.username
-      currentUserRole.value = data.role || ''
-      if (isUserListPath.value && !isAdmin.value) {
-        showProblemPage()
-      }
-    } else {
-      isLoggedIn.value = false
-      currentUser.value = ''
-      currentUserRole.value = ''
+    const user = await authApi.fetchCurrentUser()
+    if (!user) {
+      resetSessionState()
+      return
+    }
+    isLoggedIn.value = true
+    currentUser.value = user.username
+    currentUserRole.value = user.role || ''
+    if (isUserListPath.value && !isAdmin.value) {
+      showProblemPage()
     }
   } catch (error) {
     console.error('로그인 상태 확인 실패:', error)
-    isLoggedIn.value = false
-    currentUser.value = ''
-    currentUserRole.value = ''
+    resetSessionState()
   }
 })
 
@@ -71,22 +78,11 @@ function onSignupSuccess(message) {
 
 async function logout() {
   try {
-    await fetch('/api/logout', {
-      method: 'POST',
-      credentials: 'include',
-    })
+    await authApi.logout()
   } catch (error) {
     console.error('로그아웃 실패:', error)
   }
-  isLoggedIn.value = false
-  currentUser.value = ''
-  currentUserRole.value = ''
-  selectedItem.value = null
-  selectedAdminUsername.value = ''
-  authPage.value = 'login'
-  mainPage.value = 'problems'
-  activeTab.value = 'main'
-  loginSuccessMessage.value = ''
+  resetSessionState()
 }
 
 function onSelectItem(item) {
@@ -140,8 +136,7 @@ function showUserProfileEditPage() {
   mainPage.value = 'user-password-edit'
 }
 
-const listSectionRef = ref(null)
-
+// 둘러보기에서 문제를 추가하면 내 문제 목록을 갱신
 function onProblemAdded() {
   listSectionRef.value?.refresh()
 }

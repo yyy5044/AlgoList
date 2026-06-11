@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import { renderDescription } from '../utils/renderDescription'
+import * as problemApi from '@/api/problems'
+import { renderDescription } from '@/utils/renderDescription'
 
 const emit = defineEmits(['problem-added'])
 
@@ -29,15 +30,7 @@ async function fetchPage() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const params = new URLSearchParams({
-      page: page.value,
-      size: pageSize,
-    })
-    const response = await fetch(`/api/problems/browse/${selectedSite.value.key}?${params}`, {
-      credentials: 'include',
-    })
-    if (!response.ok) throw new Error(`조회 실패 (${response.status})`)
-    problems.value = await response.json()
+    problems.value = await problemApi.browse(selectedSite.value.key, page.value, pageSize)
     // 받아온 개수가 pageSize보다 적으면 마지막 페이지
     isLastPage.value = problems.value.length < pageSize
   } catch (error) {
@@ -75,33 +68,28 @@ function difficultyClass(difficulty) {
     : 'tier-unknown'
 }
 
-// 상세 모달
-const addedSet = ref(new Set())
+// 내 문제로 추가
+const addedSet = ref(new Set()) // 이번 화면에서 추가한 문제 ID 모음 (버튼 ✓ 표시용)
 
-async function addToMyList(problem, event) {
-  event.stopPropagation()
+async function addToMyList(problem) {
   if (addedSet.value.has(problem.problemId)) return
   try {
-    const response = await fetch('/api/problems', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ problemId: problem.problemId }),
-    })
-    if (response.status === 409 || response.status === 400) {
+    await problemApi.add(problem.problemId)
+    addedSet.value.add(problem.problemId)
+    emit('problem-added')
+  } catch (error) {
+    // 400(서비스 중복 검증) / 409(DB 중복 키) 모두 "이미 등록된 문제"
+    if (error.status === 400 || error.status === 409) {
       addedSet.value.add(problem.problemId)
       alert('이미 내 문제에 등록된 문제입니다.')
       return
     }
-    if (!response.ok) throw new Error(`추가 실패 (${response.status})`)
-    addedSet.value.add(problem.problemId)
-    emit('problem-added')
-  } catch (error) {
     console.error('문제 추가 실패:', error)
     alert('문제 추가에 실패했습니다.')
   }
 }
 
+// 상세 모달
 const detailProblem = ref(null)
 const detailLoading = ref(false)
 
@@ -109,11 +97,8 @@ async function openDetail(problem) {
   detailProblem.value = problem
   detailLoading.value = true
   try {
-    const response = await fetch(`/api/problems/detail/${problem.problemId}`, {
-      credentials: 'include',
-    })
-    if (!response.ok) throw new Error(`조회 실패 (${response.status})`)
-    const description = await response.text()
+    // 목록 응답에는 본문이 없으므로 모달을 열 때 본문만 따로 받아온다
+    const description = await problemApi.fetchDescription(problem.problemId)
     detailProblem.value = { ...detailProblem.value, description }
   } catch (error) {
     console.error('문제 상세 조회 실패:', error)
@@ -179,8 +164,8 @@ function closeDetail() {
           </span>
           <button
             :class="['add-button', { added: addedSet.has(p.problemId) }]"
-            @click="addToMyList(p, $event)"
             :disabled="addedSet.has(p.problemId)"
+            @click.stop="addToMyList(p)"
           >
             {{ addedSet.has(p.problemId) ? '✓' : '+' }}
           </button>
