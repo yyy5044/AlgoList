@@ -41,6 +41,7 @@ public class GlobalExceptionHandler {
 			.body("서버 내부 오류가 발생했습니다.");
 	}
 	
+	/** DB단에서 발생한 중복 문제 삽입 예외 */
 	@ExceptionHandler(DuplicateKeyException.class)
 	public ResponseEntity<String> handleDuplicateKeyException(DuplicateKeyException e){
 		log.warn("중복 문제 삽입 예외");

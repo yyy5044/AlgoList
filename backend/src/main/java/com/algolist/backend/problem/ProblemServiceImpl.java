@@ -56,6 +56,12 @@ public class ProblemServiceImpl implements ProblemService {
 	@Override
 	@Transactional
 	public UserProblemDto insertUserProblem(Long userId, Long problemId) {
+		UserProblemDto temp = dao.selectOne(userId, problemId); // 먼저 있는지 조회
+		
+		if (temp != null) {
+			throw new IllegalArgumentException("이미 등록된 문제입니다.");
+		}
+		
 		dao.insertUserProblem(userId, problemId);
 		return dao.selectOne(userId, problemId);
 	}
