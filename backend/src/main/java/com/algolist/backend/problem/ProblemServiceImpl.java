@@ -64,4 +64,15 @@ public class ProblemServiceImpl implements ProblemService {
 	public int deleteUserProblem(Long userId, Long problemId) {
 		return dao.deleteUserProblem(userId, problemId);
 	}
+
+	@Override
+	public List<ProblemDto> selectPage(String site, int page, int size) {
+		int offset = (page - 1) * size;
+		return dao.selectPage(site, offset, size);
+	}
+
+	@Override
+	public String selectDescription(Long problemId) {
+		return dao.selectDescription(problemId);
+	}
 }

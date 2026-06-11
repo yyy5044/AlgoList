@@ -27,4 +27,10 @@ public interface ProblemDao {
 
 	// 문제 카테고리 추가 (문제 추가할 때 반드시 같이 실행되어야 함.)
 	int insertCategory(@Param("problemId") Long problemId, @Param("categoryName") String categoryName);
+	
+	// 한 페이지 분량의 문제 가져오기
+	List<ProblemDto> selectPage(@Param("site") String site, @Param("offset") int offset, @Param("size") int size);
+	
+	// 문제 본문 가져오기
+	String selectDescription(Long problemId);
 }
