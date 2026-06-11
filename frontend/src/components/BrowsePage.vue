@@ -7,7 +7,7 @@ const emit = defineEmits(['problem-added'])
 // 사이트 목록 (코드포스는 아직 DB에 문제가 없어서 비활성화)
 const sites = [
   { key: 'BOJ', label: '백준', icon: '/icons/BOJ.png', enabled: true },
-  { key: 'CODEFORCES', label: '코드포스', icon: null, enabled: false },
+  { key: 'CODEFORCES', label: '코드포스', icon: '/icons/CODEFORCES.png', enabled: false },
 ]
 
 const selectedSite = ref(null)
