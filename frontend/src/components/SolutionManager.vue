@@ -14,6 +14,7 @@ const props = defineProps({
   selectedItem: Object,
   username: String
 })
+const emit = defineEmits(['user-problem-updated'])
 
 const maxSolutionsPerProblem = 20
 const maxAlgorithmLength = 50
@@ -317,6 +318,8 @@ async function uploadFile() {
       return
     }
 
+    const updatedUserProblem = await response.json()
+    emit('user-problem-updated', updatedUserProblem)
     await fetchSolutions(props.selectedItem.userProblemId)
     resetSolutionDetail()
     showUploadForm.value = false

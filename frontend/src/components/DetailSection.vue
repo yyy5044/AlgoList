@@ -7,6 +7,7 @@ const props = defineProps({
   selectedItem: Object,
   username: String
 })
+const emit = defineEmits(['user-problem-updated'])
 
 // 사이트 무관하게 본문을 표시용 HTML로 변환
 const descriptionHtml = computed(() =>
@@ -73,7 +74,11 @@ const descriptionHtml = computed(() =>
       <p>오른쪽 리스트에서 항목을 선택해주세요.</p>
     </div>
     <!--SolutionManager 컴포넌트-->
-    <SolutionManager :selected-item="selectedItem" :username="username" />
+    <SolutionManager
+      :selected-item="selectedItem"
+      :username="username"
+      @user-problem-updated="emit('user-problem-updated', $event)"
+    />
   </div>
 </template>
 

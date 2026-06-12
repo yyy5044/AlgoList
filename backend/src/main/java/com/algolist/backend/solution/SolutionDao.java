@@ -1,9 +1,12 @@
 package com.algolist.backend.solution;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import com.algolist.backend.problem.UserProblemDto;
 
 @Mapper
 public interface SolutionDao {
@@ -22,6 +25,13 @@ public interface SolutionDao {
 
 	// Solution 추가
 	int insertSolution(SolutionDto solution);
+
+	// 풀이 업로드 성공 시 유저 문제의 최근 풀이 정보 갱신
+	int updateUserProblemSolvedStatus(@Param("userId") Long userId, @Param("userProblemId") Long userProblemId,
+			@Param("lastSolvedDate") LocalDate lastSolvedDate);
+
+	// 갱신된 유저 문제 정보 조회
+	UserProblemDto selectUserProblem(@Param("userId") Long userId, @Param("userProblemId") Long userProblemId);
 
 	// Solution 삭제
 	int deleteSolution(@Param("userId") Long userId, @Param("solutionId") Long solutionId);

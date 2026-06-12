@@ -12,6 +12,7 @@ const isLoggedIn = ref(false)
 const currentUser = ref('')
 const currentUserRole = ref('')
 const selectedItem = ref(null)
+const listRefreshKey = ref(0)
 const selectedAdminUsername = ref('') // 어드민이 조회한 유저의 이름
 const authPage = ref('login')
 const mainPage = ref('problems')
@@ -87,6 +88,13 @@ async function logout() {
 function onSelectItem(item) {
   selectedItem.value = item
   mainPage.value = 'problems'
+}
+
+function onUserProblemUpdated(userProblem) {
+  if (!userProblem?.userProblemId) return
+
+  selectedItem.value = userProblem
+  listRefreshKey.value += 1
 }
 
 function showSignupPage() {
@@ -181,8 +189,13 @@ function showUserProfileEditPage() {
           :username="currentUser"
           @back="showUserDetailPage"
         />
-        <DetailSection v-else :selected-item="selectedItem" :username="currentUser" />
-        <ListSection @select-item="onSelectItem" />
+        <DetailSection
+          v-else
+          :selected-item="selectedItem"
+          :username="currentUser"
+          @user-problem-updated="onUserProblemUpdated"
+        />
+        <ListSection :refresh-key="listRefreshKey" @select-item="onSelectItem" />
       </div>
     </div>
   </div>

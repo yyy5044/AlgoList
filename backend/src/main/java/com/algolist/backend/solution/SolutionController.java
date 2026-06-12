@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.UserProblemDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,10 +58,11 @@ public class SolutionController {
 	public ResponseEntity<?> insertSolution(@AuthenticationPrincipal CustomUserDetails userDetails,
 			@RequestBody SolutionDto solution) {
 		Long userId = userDetails.getUser().getUserId();
-		boolean success = solutionService.insertSolution(userId, solution);
+		// 풀이를 추가한 뒤, 갱신된 문제 데이터를 다시 가져옴(풀이 횟수 증가, 최근에 푼 날짜 갱신)
+		UserProblemDto updatedUserProblem = solutionService.insertSolution(userId, solution);
 
-		if (success) {
-			return ResponseEntity.status(HttpStatus.CREATED).build();
+		if (updatedUserProblem != null) {
+			return ResponseEntity.status(HttpStatus.CREATED).body(updatedUserProblem);
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}

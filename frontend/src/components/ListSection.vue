@@ -1,10 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 const emit = defineEmits(['select-item'])
+const props = defineProps({
+  refreshKey: {
+    type: Number,
+    default: 0,
+  },
+})
 
 // 탭
-const tabs = ['문제', '분류', 'Git']
+const tabs = ['문제', '분류', 'Git', '복습']
 const currentTab = ref('문제')
 
 // 문제 리스트 필터링용 검색어 변수
@@ -12,9 +18,9 @@ const searchQuery = ref('')
 
 // 문제 리스트 변수
 const items = ref([])
+const reminderItems = ref([])
 
-onMounted(async () => {
-  // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
+async function fetchProblemItems() {
   try {
     const response = await fetch('/api/problems', {
       credentials: 'include' // 세션 쿠키
@@ -23,6 +29,31 @@ onMounted(async () => {
   } catch (error) {
     console.error('목록 조회 실패:', error)
   }
+}
+
+async function fetchReminderItems() {
+  try {
+    const response = await fetch('/api/reminders/today', {
+      credentials: 'include' // 세션 쿠키
+    })
+    reminderItems.value = await response.json()
+  } catch (error) {
+    console.error('복습 목록 조회 실패:', error)
+  }
+}
+
+async function fetchCurrentTabItems() {
+  if (currentTab.value === '복습') {
+    await fetchReminderItems()
+    return
+  }
+
+  await fetchProblemItems()
+}
+
+onMounted(async () => {
+  // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
+  await fetchProblemItems()
 })
 
 // 선택 / 메뉴
@@ -39,11 +70,18 @@ function toggleMenu(item) {
   openMenuId.value = openMenuId.value === item.problem.problemId ? null : item.problem.problemId
 }
 
+const isReminderTab = computed(() => currentTab.value === '복습')
+const showManageActions = computed(() => !isReminderTab.value)
+const currentItems = computed(() => isReminderTab.value ? reminderItems.value : items.value)
+const emptyMessage = computed(() =>
+  isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
+)
+
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
 const filteredItems = computed(() => {
-  if (!searchQuery.value) return items.value
+  if (!searchQuery.value) return currentItems.value
   const query = searchQuery.value.toLowerCase()
-  return items.value.filter(
+  return currentItems.value.filter(
     (item) =>
       item.problem.title.toLowerCase().includes(query) ||
       item.problem.number.includes(query) ||
@@ -162,6 +200,22 @@ function cancelDeleteMode() {
   checkedIds.value = []
 }
 
+watch(currentTab, async () => {
+  openMenuId.value = null
+  searchQuery.value = ''
+  if (isDeleteMode.value) {
+    cancelDeleteMode()
+  }
+  await fetchCurrentTabItems()
+})
+
+watch(() => props.refreshKey, async () => {
+  await fetchProblemItems()
+  if (isReminderTab.value) {
+    await fetchReminderItems()
+  }
+})
+
 function toggleCheck(id) {
   if (checkedIds.value.includes(id)) {
     checkedIds.value = checkedIds.value.filter((i) => i !== id)
@@ -223,7 +277,7 @@ function editItem(item) {
     </div>
 
     <!-- 액션 버튼 -->
-    <div class="action-bar">
+    <div v-if="showManageActions" class="action-bar">
       <button class="action-button add" @click="openSearchModal" v-if="!isDeleteMode">+</button>
       <button class="action-button trash" @click="enterDeleteMode" v-if="!isDeleteMode">🗑</button>
       <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">
@@ -235,7 +289,7 @@ function editItem(item) {
     </div>
 
     <!-- 리스트 -->
-    <ul class="list">
+    <ul v-if="filteredItems.length > 0" class="list">
       <li
         v-for="item in filteredItems"
         :key="item.problem.problemId"
@@ -262,6 +316,7 @@ function editItem(item) {
         </div>
       </li>
     </ul>
+    <p v-else class="empty-list">{{ emptyMessage }}</p>
 
     <!-- 하단 설정 -->
     <div class="list-footer">
@@ -558,6 +613,14 @@ function editItem(item) {
   padding: 0;
   flex: 1;
   overflow-y: auto;
+}
+
+.empty-list {
+  flex: 1;
+  padding: 24px 16px;
+  color: #999;
+  font-size: 14px;
+  text-align: center;
 }
 
 .list-item {
