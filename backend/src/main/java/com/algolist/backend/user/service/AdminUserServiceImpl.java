@@ -145,6 +145,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 	}
 
 	@Override
+	// 유저 권한 변경하기, 예외 상황은 IllegalArguemntException으로 처리해서 ControllerAdvice가 받음
 	public boolean updateUserRole(String username, UpdateRoleRequestDto request, Long adminId) {
 		if (request == null || !StringUtils.hasText(request.getRole())) {
 			throw new IllegalArgumentException("변경할 권한을 선택해주세요.");

@@ -17,6 +17,7 @@
     "marked": "^18.0.5",
     "marked-katex-extension": "^5.1.10",
     "pinia": "^3.0.4",
+    "prismjs": "^1.30.0",
     "vue": "^3.5.29",
     "vue-router": "^5.0.3"
   },
