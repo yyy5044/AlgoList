@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -60,7 +62,7 @@ public class ProblemController {
 
 	// 개별 삭제: DELETE /api/problems/{id}
 	@DeleteMapping("/{problemId}")
-	public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
+	public ResponseEntity<?> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
 								       @PathVariable Long problemId) {
 		Long userId = userDetails.getUser().getUserId();
 		
@@ -70,4 +72,23 @@ public class ProblemController {
 				  			   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	}
 	
+	// 문제 목록 페이지 전달 : /api/problems/browse/{params}
+	@GetMapping("/browse/{site}")
+	public ResponseEntity<?> selectPage(@PathVariable String site, @RequestParam int page, @RequestParam int size) {
+		
+		List<ProblemDto> problems = service.selectPage(site, page, size);
+		
+		return (problems != null) ? ResponseEntity.status(HttpStatus.OK).body(problems) :
+									ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+	
+	// 문제 상세 조회
+	@GetMapping("/detail/{problemId}")
+	public ResponseEntity<?> selectDescription(@PathVariable Long problemId) {
+		
+		String description = service.selectDescription(problemId);
+		
+		return (description != null) ? ResponseEntity.status(HttpStatus.OK).body(description) :
+									   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
 }
