@@ -11,9 +11,20 @@ export class ApiError extends Error {
   }
 }
 
+let onUnauthorized = null
+
+export function setOnUnauthorized(callback) {
+  onUnauthorized = callback
+}
+
 export async function request(url, options = {}) {
   const response = await fetch(url, { credentials: 'include', ...options })
-  if (!response.ok) throw new ApiError(response.status)
+  if (!response.ok) {
+    if (response.status === 401 && onUnauthorized) {
+      onUnauthorized()
+    }
+    throw new ApiError(response.status)
+  }
   return response
 }
 

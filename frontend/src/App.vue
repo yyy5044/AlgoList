@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { setOnUnauthorized } from '@/api/http'
 import * as authApi from '@/api/auth'
 import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
@@ -36,6 +37,8 @@ function resetSessionState() {
   activeTab.value = 'main'
   loginSuccessMessage.value = ''
 }
+
+setOnUnauthorized(() => resetSessionState())
 
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
