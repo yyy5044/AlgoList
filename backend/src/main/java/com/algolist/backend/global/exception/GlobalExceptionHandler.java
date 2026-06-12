@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,5 +47,13 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<String> handleDuplicateKeyException(DuplicateKeyException e){
 		log.warn("중복 문제 삽입 예외");
 		return ResponseEntity.status(HttpStatus.CONFLICT).body("중복 문제 삽입 요청");
+	}
+	
+	/** 프론트에서 없는 자원에 요청 보낼 때 예외 */
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException e) {
+	    log.warn("존재하지 않는 경로 요청: /{}", e.getResourcePath());
+	    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	            .body(Map.of("message", "존재하지 않는 경로입니다."));
 	}
 }
