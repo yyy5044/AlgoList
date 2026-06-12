@@ -17,7 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -34,13 +37,20 @@ public class SecurityConfig {
 	// ⚠️ 개발용 설정: 모든 요청 허용 + CSRF 비활성화.
 	// 로그인/회원 기능 구현 시, 아래를 인증 규칙(formLogin, authorizeHttpRequests 등)으로 교체할 것.
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
 		http.csrf(csrf -> csrf.disable()) // REST API라 세션 기반 CSRF 토큰이 없으므로 끈다 (안 끄면 POST/DELETE가 403)
-			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/login").permitAll() // 로그인 요청은 모두 가능
+			.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, "/api/login").permitAll() // 로그인 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/users").permitAll() // POST 요청으로 오는 /api/users(회원가입) 요청은 모두 가능
 			.requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN만 가능
 			.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // swagger 관련 요청은 모두 허용
 			.anyRequest().authenticated()) // 로그인을 제외한 나머지 요청들은 로그인해야 가능하도록 설정
+			.sessionManagement(session -> session.maximumSessions(-1) // 동시 로그인 수는 제한을 두지 않음
+				.sessionRegistry(sessionRegistry)
+				.expiredSessionStrategy(event -> { // 만료된 세션일 때는 해당 에러 타입과 메시지를 보냄
+					event.getResponse().setStatus(HttpStatus.UNAUTHORIZED.value());
+					event.getResponse().setContentType("application/json;charset=UTF-8");
+					objectMapper.writeValue(event.getResponse().getWriter(), Map.of("message", "세션이 만료되었습니다."));
+				}))
 			.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> { // 인증되지 않은 요청이 들어올 시 가장 먼저 처리하는 지점
 			response.setStatus(401); // UNAUTHORIZED(401) 응답 보내기
 		}))
@@ -88,6 +98,18 @@ public class SecurityConfig {
 		); 
 
 		return http.build();
+	}
+
+	@Bean
+	// 현재 로그인 세션 목록을 추적할 수 있는 객체
+	SessionRegistry sessionRegistry() {
+		return new SessionRegistryImpl();
+	}
+
+	@Bean
+	// 로그아웃이나 세션 만료 등의 이벤트를 전달하는 객체(세션이 만료되었을 때 레지스트리도 자동으로 정리)
+	HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
 	}
 
 	// 정지 기간 포맷팅해서 전달하기

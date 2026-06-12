@@ -4,10 +4,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.algolist.backend.auth.CustomUserDetails;
 import com.algolist.backend.user.dao.UserDao;
 import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
@@ -23,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminUserServiceImpl implements AdminUserService {
 
 	private final UserDao userDao;
+	private final SessionRegistry sessionRegistry;
 
 	@Override
 	public List<UserDto> selectAllUsers() {
@@ -108,6 +112,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 			throw new IllegalStateException("정지 이력을 저장하지 못했습니다.");
 		}
 
+		expireUserSessions(user.getUserId());
+
 		return true;
 	}
 
@@ -175,5 +181,21 @@ public class AdminUserServiceImpl implements AdminUserService {
 
 		int result = userDao.updateUserRole(user.getUserId(), role);
 		return result == 1;
+	}
+
+	private void expireUserSessions(Long userId) {
+		for (Object principal : sessionRegistry.getAllPrincipals()) {
+			if (!(principal instanceof CustomUserDetails userDetails)) {
+				continue;
+			}
+
+			if (!userId.equals(userDetails.getUser().getUserId())) {
+				continue;
+			}
+
+			for (SessionInformation session : sessionRegistry.getAllSessions(userDetails, false)) {
+				session.expireNow();
+			}
+		}
 	}
 }
