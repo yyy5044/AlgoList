@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 import lombok.RequiredArgsConstructor;
 

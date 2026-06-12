@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 import com.algolist.backend.problem.github.GitHubProblemCollector;
 
 import lombok.RequiredArgsConstructor;

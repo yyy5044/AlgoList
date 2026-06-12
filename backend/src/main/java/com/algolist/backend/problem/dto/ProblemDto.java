@@ -1,4 +1,4 @@
-package com.algolist.backend.problem;
+package com.algolist.backend.problem.dto;
 
 import java.util.List;
 

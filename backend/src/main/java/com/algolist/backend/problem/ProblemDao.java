@@ -5,6 +5,9 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
+
 @Mapper
 public interface ProblemDao {
 	// 초기에 유저 문제 전체 조회

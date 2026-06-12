@@ -2,6 +2,9 @@ package com.algolist.backend.problem;
 
 import java.util.List;
 
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
+
 public interface ProblemService {
 	List<UserProblemDto> selectAllByUserId(Long userId); // 초기에 1회 유저 문제 가져오기
 	List<ProblemDto> searchProblem(String query); // 문제 검색
