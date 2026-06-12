@@ -217,6 +217,9 @@ function onProblemAdded() {
         </template>
         <ListSection ref="listSectionRef" @select-item="onSelectItem" />
       </div>
+      <footer class="app-footer">
+        Codeforces 문제 데이터 출처: <a href="https://huggingface.co/datasets/open-r1/codeforces" target="_blank">open-r1/codeforces</a> (CC-BY-4.0) | 문제 데이터는 권리자 요청 시 삭제할 수 있습니다. 연락처: yyy5044@naver.com
+      </footer>
     </div>
   </div>
 </template>
@@ -317,6 +320,20 @@ function onProblemAdded() {
 
 .user-link:hover {
   color: #1a56db;
+}
+
+.app-footer {
+  padding: 6px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  border-top: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.app-footer a {
+  color: #999;
+  text-decoration: underline;
 }
 </style>
 
