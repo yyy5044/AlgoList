@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['login-success', 'signup-click'])
 const props = defineProps({
@@ -51,11 +52,11 @@ async function login() {
         errorMessage.value = '정지된 계정입니다.'
       }
     } else {
-      errorMessage.value = '아이디 또는 비밀번호가 틀렸습니다.'
+      errorMessage.value = await readErrorMessage(response, '아이디 또는 비밀번호가 틀렸습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   }
 }
 </script>

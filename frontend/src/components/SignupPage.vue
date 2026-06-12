@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['back-to-login', 'signup-success'])
 
@@ -54,15 +55,6 @@ function clearProfileImageSelection() {
   }
 }
 
-async function readErrorMessage(response, fallbackMessage) {
-  try {
-    const data = await response.json()
-    return data.message || fallbackMessage
-  } catch {
-    return fallbackMessage
-  }
-}
-
 async function signup() {
   errorMessage.value = ''
 
@@ -105,7 +97,7 @@ async function signup() {
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isSubmitting.value = false
   }

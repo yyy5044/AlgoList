@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['back', 'select-user'])
 
@@ -78,11 +79,11 @@ async function loadUsers() {
         totalPages: data.totalPages || 0,
       }
     } else {
-      errorMessage.value = '회원 목록을 불러오지 못했습니다.'
+      errorMessage.value = await readErrorMessage(response, '회원 목록을 불러오지 못했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isLoading.value = false
     hasLoaded.value = true

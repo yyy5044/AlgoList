@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import com.algolist.backend.auth.CustomUserDetails;
@@ -47,18 +48,20 @@ public class SecurityConfig {
 			.sessionManagement(session -> session.maximumSessions(-1) // 동시 로그인 수는 제한을 두지 않음
 				.sessionRegistry(sessionRegistry)
 				.expiredSessionStrategy(event -> { // 만료된 세션일 때는 해당 에러 타입과 메시지를 보냄
-					event.getResponse().setStatus(HttpStatus.UNAUTHORIZED.value());
-					event.getResponse().setContentType("application/json;charset=UTF-8");
-					objectMapper.writeValue(event.getResponse().getWriter(), Map.of("message", "세션이 만료되었습니다."));
+					writeErrorResponse(event.getResponse(), HttpStatus.UNAUTHORIZED, "세션이 만료되었습니다.");
 				}))
-			.exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> { // 인증되지 않은 요청이 들어올 시 가장 먼저 처리하는 지점
-			response.setStatus(401); // UNAUTHORIZED(401) 응답 보내기
-		}))
+			.exceptionHandling(exception -> exception
+				.authenticationEntryPoint((request, response, authException) -> { // 인증되지 않은 요청이 들어올 시 가장 먼저 처리하는 지점
+					writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."); // UNAUTHORIZED(401) 응답 보내기
+				})
+				.accessDeniedHandler((request, response, accessDeniedException) -> {
+					writeErrorResponse(response, HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
+				}))
 		.formLogin(login -> login.loginProcessingUrl("/api/login") // 로그인 요청은 /api/login 요청일 때
 		.successHandler((request, response, authenticaiton) -> { // 로그인 성공 시 실행할 로직
 			if (authenticaiton.getPrincipal() instanceof CustomUserDetails userDetails
 					&& "SUSPENDED".equals(userDetails.getUser().getAccountStatus())) { // 로그인했는데 SUSPENDED인 계정이면
-				UserSuspensionInfoDto suspension = userService.selectActiveSuspension(userDetails.getUser().getUserId());
+				UserSuspensionInfoDto suspension = userService.selectActiveSuspension(userDetails.getUser().getUserId()); // 정지 정보를 찾아서 전달
 				HttpSession session = request.getSession(false);
 				if (session != null) {
 					session.invalidate();
@@ -87,7 +90,7 @@ public class SecurityConfig {
 			objectMapper.writeValue(response.getWriter(), Map.of("username", authenticaiton.getName(), "role", role)); // objectMapper를 사용해 json에 username과 role을 넣어준 상태로 응답함
 		})
 		.failureHandler((request, response, authentication) -> {
-			response.setStatus(400); // 실패 시 BAD REQUEST 설정
+			writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 틀렸습니다.");
 		}))
 		.logout(logout -> logout.logoutUrl("/api/logout") // 로그아웃 요청은 /api/logout일 때
 			.invalidateHttpSession(true) // 세션 초기화
@@ -110,6 +113,12 @@ public class SecurityConfig {
 	// 로그아웃이나 세션 만료 등의 이벤트를 전달하는 객체(세션이 만료되었을 때 레지스트리도 자동으로 정리)
 	HttpSessionEventPublisher httpSessionEventPublisher() {
 		return new HttpSessionEventPublisher();
+	}
+
+	private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message) throws java.io.IOException {
+		response.setStatus(status.value());
+		response.setContentType("application/json;charset=UTF-8");
+		objectMapper.writeValue(response.getWriter(), Map.of("message", message));
 	}
 
 	// 정지 기간 포맷팅해서 전달하기

@@ -8,6 +8,7 @@ import 'prismjs/components/prism-cpp'
 import 'prismjs/plugins/line-numbers/prism-line-numbers'
 import 'prismjs/themes/prism-tomorrow.css'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
   selectedItem: Object,
@@ -143,7 +144,7 @@ async function fetchSolutionDetail(solutionId) {
 
     if (!response.ok) {
       if (selectedSolutionId.value === solutionId) {
-        solutionDetailError.value = '풀이 상세 정보를 불러올 수 없습니다.'
+        solutionDetailError.value = await readErrorMessage(response, '풀이 상세 정보를 불러올 수 없습니다.')
       }
       return
     }
@@ -160,7 +161,7 @@ async function fetchSolutionDetail(solutionId) {
   } catch (error) {
     console.error('풀이 상세 조회 실패:', error)
     if (selectedSolutionId.value === solutionId) {
-      solutionDetailError.value = '서버에 연결할 수 없습니다.'
+      solutionDetailError.value = NETWORK_ERROR_MESSAGE
     }
   } finally {
     if (loadingSolutionId.value === solutionId) {
@@ -194,15 +195,6 @@ function highlightOpenedSolutions() {
       codeBlock.removeAttribute('data-highlighted')
       Prism.highlightElement(codeBlock)
     })
-}
-
-async function readErrorMessage(response, fallbackMessage) {
-  try {
-    const data = await response.json()
-    return data.message || fallbackMessage
-  } catch {
-    return fallbackMessage
-  }
 }
 
 // 문제가 바뀔 때마다 풀이 목록 다시 가져오기
@@ -333,7 +325,7 @@ async function uploadFile() {
     resetFileSelection()
   } catch (error) {
     console.error('업로드 실패:', error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isUploading.value = false
   }
@@ -346,7 +338,10 @@ async function deleteSolution(id) {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })
-    if (!response.ok) throw new Error('삭제 실패')
+    if (!response.ok) {
+      errorMessage.value = await readErrorMessage(response, '삭제에 실패했습니다.')
+      return
+    }
 
     solutions.value = solutions.value.filter(s => s.solutionId !== id)
     if (selectedSolutionId.value === id) {
@@ -354,6 +349,7 @@ async function deleteSolution(id) {
     }
   } catch (error) {
     console.error('삭제 실패:', error)
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   }
 }
 </script>

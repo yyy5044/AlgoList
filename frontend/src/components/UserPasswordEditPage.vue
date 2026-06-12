@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
   username: String,
@@ -46,11 +47,11 @@ async function loadUser() {
       profile.value.imageUrl = user.profileImageUrl || ''
       profile.value.imageLoadFailed = false
     } else {
-      errorMessage.value = '회원 정보를 불러오지 못했습니다.'
+      errorMessage.value = await readErrorMessage(response, '회원 정보를 불러오지 못했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isLoading.value = false
   }
@@ -87,15 +88,6 @@ function clearProfileImageSelection() {
 
   if (fileInput.value) {
     fileInput.value.value = ''
-  }
-}
-
-async function readErrorMessage(response, fallbackMessage) {
-  try {
-    const data = await response.json()
-    return data.message || fallbackMessage
-  } catch {
-    return fallbackMessage
   }
 }
 
@@ -140,7 +132,7 @@ async function updateUser() {
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isSubmitting.value = false
   }
