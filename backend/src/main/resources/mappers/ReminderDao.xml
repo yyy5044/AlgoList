@@ -37,4 +37,25 @@
 			ELSE 2
 		END, up.last_solved_date ASC, up.user_problem_id ASC
 	</select>
+
+	<!-- 같은 user_problem_id의 grade 컬럼 수정 -->
+	<update id="updateGrade">
+		UPDATE user_problems
+		SET grade = #{grade}
+		WHERE user_id = #{userId}
+		  AND user_problem_id = #{userProblemId}
+	</update>
+
+	<!-- 갱신된 user_problem 찾아서 반환 -->
+	<select id="selectOne" resultMap="reminderProblemMap">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, p.description, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+		WHERE up.user_id = #{userId}
+		  AND up.user_problem_id = #{userProblemId}
+	</select>
 </mapper>

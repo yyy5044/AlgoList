@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { renderDescription } from '@/utils/renderDescription'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 import SolutionManager from './SolutionManager.vue'
 
 const props = defineProps({
@@ -8,11 +9,63 @@ const props = defineProps({
   username: String
 })
 const emit = defineEmits(['user-problem-updated'])
+const gradeOptions = ['RED', 'YELLOW', 'GREEN']
+const isGradeMenuOpen = ref(false)
+const isUpdatingGrade = ref(false)
+const gradeErrorMessage = ref('')
 
 // 사이트 무관하게 본문을 표시용 HTML로 변환
 const descriptionHtml = computed(() =>
   renderDescription(props.selectedItem?.problem?.description)
 )
+
+watch(() => props.selectedItem?.userProblemId, () => {
+  isGradeMenuOpen.value = false
+  gradeErrorMessage.value = ''
+})
+
+function getGradeClass(grade) {
+  return grade ? grade.toLowerCase() : ''
+}
+
+function toggleGradeMenu() {
+  if (!props.selectedItem?.userProblemId || isUpdatingGrade.value) return
+
+  isGradeMenuOpen.value = !isGradeMenuOpen.value
+  gradeErrorMessage.value = ''
+}
+
+async function updateGrade(grade) {
+  if (!props.selectedItem?.userProblemId || grade === props.selectedItem.grade || isUpdatingGrade.value) {
+    isGradeMenuOpen.value = false
+    return
+  }
+
+  try {
+    isUpdatingGrade.value = true
+    gradeErrorMessage.value = ''
+    const response = await fetch(`/api/reminders/${props.selectedItem.userProblemId}/grade`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade }),
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      gradeErrorMessage.value = await readErrorMessage(response, '문제 등급 변경에 실패했습니다.')
+      return
+    }
+
+    const updatedProblem = await response.json()
+    emit('user-problem-updated', updatedProblem)
+    isGradeMenuOpen.value = false
+  } catch (error) {
+    console.error('문제 등급 변경 실패:', error)
+    gradeErrorMessage.value = NETWORK_ERROR_MESSAGE
+  } finally {
+    isUpdatingGrade.value = false
+  }
+}
 </script>
 
 <template>
@@ -50,11 +103,30 @@ const descriptionHtml = computed(() =>
       <div class="info-group">
         <div class="info-row">
           <span class="info-label">문제 등급</span>
-          <span v-if="selectedItem.grade" :class="['grade-badge', selectedItem.grade.toLowerCase()]">
-            {{ selectedItem.grade }}
-          </span>
-          <span v-else class="grade-badge">미지정</span>
+          <div class="grade-control">
+            <button
+              type="button"
+              :class="['grade-badge', 'grade-button', getGradeClass(selectedItem.grade)]"
+              :disabled="isUpdatingGrade"
+              @click="toggleGradeMenu"
+            >
+              {{ selectedItem.grade || '미지정' }}
+            </button>
+            <div v-if="isGradeMenuOpen" class="grade-menu">
+              <button
+                v-for="grade in gradeOptions"
+                :key="grade"
+                type="button"
+                :class="['grade-option', getGradeClass(grade), { active: selectedItem.grade === grade }]"
+                :disabled="isUpdatingGrade"
+                @click="updateGrade(grade)"
+              >
+                {{ grade }}
+              </button>
+            </div>
+          </div>
         </div>
+        <p v-if="gradeErrorMessage" class="grade-error">{{ gradeErrorMessage }}</p>
         <div class="info-row">
           <span class="info-label">푼 횟수</span>
           <span class="info-value">{{ selectedItem.solveCount }}회</span>
@@ -172,6 +244,60 @@ const descriptionHtml = computed(() =>
   font-weight: 600;
   padding: 3px 12px;
   border-radius: 12px;
+}
+
+.grade-control {
+  position: relative;
+  display: inline-flex;
+}
+
+.grade-button {
+  border: none;
+  cursor: pointer;
+}
+
+.grade-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.grade-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 120px;
+  padding: 6px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.grade-option {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.grade-option.active {
+  font-weight: 700;
+}
+
+.grade-option:hover {
+  background: #f5f7fb;
+}
+
+.grade-error {
+  margin: 0 0 4px 120px;
+  color: #e74c3c;
+  font-size: 13px;
 }
 
 .grade-badge.red {

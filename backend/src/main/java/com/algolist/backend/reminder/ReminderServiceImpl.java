@@ -4,14 +4,19 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ReminderServiceImpl implements ReminderService {
+
+	private static final Set<String> ALLOWED_GRADES = Set.of("RED", "YELLOW", "GREEN");
 
 	private final ReminderDao reminderDao;
 
@@ -39,5 +44,42 @@ public class ReminderServiceImpl implements ReminderService {
 				.thenComparing(ReminderProblemDto::getUserProblemId));
 
 		return reminders;
+	}
+
+	@Override
+	@Transactional
+	// Grade 값 갱신 후 바뀐 문제 Dto 다시 가져오기
+	public ReminderProblemDto updateGrade(Long userId, Long userProblemId, UpdateGradeRequestDto request) {
+		String grade = validateGrade(request);
+
+		int updated = reminderDao.updateGrade(userId, userProblemId, grade);
+		if (updated != 1) {
+			return null;
+		}
+
+		ReminderProblemDto updatedProblem = reminderDao.selectOne(userId, userProblemId);
+		if (updatedProblem == null) {
+			return null;
+		}
+
+		// 바뀐 등급 기준으로 복습 일자 다시 설정
+		updatedProblem.setReviewDueDate(
+				ReminderSchedule.getReviewDueDate(updatedProblem.getGrade(), updatedProblem.getLastSolvedDate()));
+
+		return updatedProblem;
+	}
+
+	// 설정된 등급이 RED, YELLOW, GREEN이 아니면 가져오지 못하도록 설정
+	private String validateGrade(UpdateGradeRequestDto request) {
+		if (request == null || request.getGrade() == null || request.getGrade().isBlank()) {
+			throw new IllegalArgumentException("문제 등급을 선택해주세요.");
+		}
+
+		String grade = request.getGrade().trim().toUpperCase(Locale.ROOT);
+		if (!ALLOWED_GRADES.contains(grade)) {
+			throw new IllegalArgumentException("지원하지 않는 문제 등급입니다.");
+		}
+
+		return grade;
 	}
 }

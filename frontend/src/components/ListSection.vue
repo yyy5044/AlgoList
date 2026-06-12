@@ -77,6 +77,14 @@ const emptyMessage = computed(() =>
   isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
 )
 
+function getGradeClass(grade) {
+  return grade ? grade.toLowerCase() : ''
+}
+
+function getReviewDueDateText(item) {
+  return item.reviewDueDate ? `복습 예정일: ${item.reviewDueDate}` : '복습 예정일 없음'
+}
+
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
 const filteredItems = computed(() => {
   if (!searchQuery.value) return currentItems.value
@@ -305,12 +313,18 @@ function editItem(item) {
         />
         <div class="item-info">
           <img :src="`/icons/${item.problem.site}.png`" :alt="item.problem.site" class="site-icon" />
-          <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
+          <div class="item-text">
+            <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
+            <span v-if="isReminderTab" class="reminder-meta">
+              <span :class="['grade-badge', getGradeClass(item.grade)]">{{ item.grade }}</span>
+              <span>{{ getReviewDueDateText(item) }}</span>
+            </span>
+          </div>
         </div>
-        <button v-if="!isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
+        <button v-if="showManageActions && !isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
 
         <!-- 드롭다운 메뉴 -->
-        <div v-if="openMenuId === item.problem.problemId" class="dropdown-menu">
+        <div v-if="showManageActions && openMenuId === item.problem.problemId" class="dropdown-menu">
           <button @click.stop="editItem(item)">수정</button>
           <button @click.stop="deleteItem(item)">삭제</button>
         </div>
@@ -660,6 +674,14 @@ function editItem(item) {
   min-width: 0;
 }
 
+.item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
 .site-icon {
   width: 20px;
   height: 20px;
@@ -671,6 +693,38 @@ function editItem(item) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.reminder-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #777;
+  font-size: 12px;
+}
+
+.grade-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.grade-badge.red {
+  color: #d32f2f;
+  background-color: #fde8e8;
+}
+
+.grade-badge.yellow {
+  color: #a56a00;
+  background-color: #fff4cc;
+}
+
+.grade-badge.green {
+  color: #2e7d32;
+  background-color: #e8f5e9;
 }
 
 .menu-button {
