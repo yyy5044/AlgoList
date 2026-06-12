@@ -183,6 +183,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 		return result == 1;
 	}
 
+	// 정지된 유저의 userId를 이용해 해당 유저의 세션을 만료 처리하는 메서드
 	private void expireUserSessions(Long userId) {
 		for (Object principal : sessionRegistry.getAllPrincipals()) {
 			if (!(principal instanceof CustomUserDetails userDetails)) {
