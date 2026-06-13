@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import * as problemApi from '@/api/problems'
+import * as reminderApi from '@/api/reminders'
 
 const emit = defineEmits(['select-item'])
 
 // 탭
-const tabs = ['문제', '분류', 'Git']
+const tabs = ['문제', '분류', 'Git', '복습']
 const currentTab = ref('문제')
 
 // 문제 리스트 필터링용 검색어
@@ -13,6 +14,7 @@ const searchQuery = ref('')
 
 // 내 문제 리스트
 const items = ref([])
+const reminderItems = ref([])
 
 async function fetchItems() {
   try {
@@ -22,10 +24,25 @@ async function fetchItems() {
   }
 }
 
+async function fetchReminderItems() {
+  try {
+    reminderItems.value = await reminderApi.fetchToday()
+  } catch (error) {
+    console.error('복습 목록 조회 실패:', error)
+  }
+}
+
+async function refresh() {
+  await fetchItems()
+  if (isReminderTab.value) {
+    await fetchReminderItems()
+  }
+}
+
 onMounted(fetchItems)
 
 // 문제 둘러보기 페이지에서 추가했을 때 목록을 갱신할 수 있도록 공개
-defineExpose({ refresh: fetchItems })
+defineExpose({ refresh })
 
 // 선택 / 메뉴
 const selectedItem = ref(null) // 리스트 내에서 문제를 선택하기 위한 변수
@@ -41,16 +58,51 @@ function toggleMenu(item) {
   openMenuId.value = openMenuId.value === item.problem.problemId ? null : item.problem.problemId
 }
 
+const isReminderTab = computed(() => currentTab.value === '복습')
+const showManageActions = computed(() => !isReminderTab.value)
+const currentItems = computed(() => isReminderTab.value ? reminderItems.value : items.value)
+const emptyMessage = computed(() =>
+  isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
+)
+
+const todayText = computed(() => {
+  const today = new Date()
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+  return localDate.toISOString().slice(0, 10)
+})
+
+function getGradeClass(grade) {
+  return grade ? grade.toLowerCase() : ''
+}
+
+function getReviewDueDateText(item) {
+  return item.reviewDueDate || '복습 예정일 없음'
+}
+
+function isReviewDueToday(item) {
+  return item.reviewDueDate === todayText.value
+}
+
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
 const filteredItems = computed(() => {
-  if (!searchQuery.value) return items.value
+  if (!searchQuery.value) return currentItems.value
   const query = searchQuery.value.toLowerCase()
-  return items.value.filter(
+  return currentItems.value.filter(
     (item) =>
       item.problem.title.toLowerCase().includes(query) ||
-      item.problem.number.includes(query) ||
+      String(item.problem.number).toLowerCase().includes(query) ||
       item.problem.category?.some((cat) => cat.toLowerCase().includes(query)),
   )
+})
+
+watch(currentTab, async () => {
+  openMenuId.value = null
+  searchQuery.value = ''
+  cancelDeleteMode()
+
+  if (isReminderTab.value) {
+    await fetchReminderItems()
+  }
 })
 
 // 문제 검색 모달
@@ -203,7 +255,7 @@ function editItem(item) {
     </div>
 
     <!-- 액션 버튼 -->
-    <div class="action-bar">
+    <div v-if="showManageActions" class="action-bar">
       <button class="action-button add" @click="openSearchModal" v-if="!isDeleteMode">+</button>
       <button class="action-button trash" @click="enterDeleteMode" v-if="!isDeleteMode">🗑</button>
       <button class="action-button delete-confirm" @click="deleteChecked" v-if="isDeleteMode">
@@ -215,15 +267,21 @@ function editItem(item) {
     </div>
 
     <!-- 리스트 -->
-    <ul class="list">
+    <ul v-if="filteredItems.length > 0" class="list">
       <li
         v-for="item in filteredItems"
-        :key="item.problem.problemId"
-        :class="['list-item', { active: selectedItem?.problem.problemId === item.problem.problemId }]"
+        :key="item.userProblemId ?? item.problem.problemId"
+        :class="[
+          'list-item',
+          {
+            active: selectedItem?.userProblemId === item.userProblemId,
+            'due-today': isReviewDueToday(item)
+          }
+        ]"
         @click="selectItem(item)"
       >
         <input
-          v-if="isDeleteMode"
+          v-if="showManageActions && isDeleteMode"
           type="checkbox"
           :checked="checkedIds.includes(item.problem.problemId)"
           @click.stop="toggleCheck(item.problem.problemId)"
@@ -231,17 +289,30 @@ function editItem(item) {
         />
         <div class="item-info">
           <img :src="`/icons/${item.problem.site}.png`" :alt="item.problem.site" class="site-icon" />
-          <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
+          <div class="item-text">
+            <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
+            <div v-if="isReminderTab" class="reminder-meta">
+              <span :class="['grade-badge', getGradeClass(item.grade)]">{{ item.grade || '미지정' }}</span>
+              <span>복습 예정일: {{ getReviewDueDateText(item) }}</span>
+            </div>
+          </div>
         </div>
-        <button v-if="!isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
+        <button
+          v-if="showManageActions && !isDeleteMode"
+          class="menu-button"
+          @click.stop="toggleMenu(item)"
+        >
+          ⋮
+        </button>
 
         <!-- 드롭다운 메뉴 -->
-        <div v-if="openMenuId === item.problem.problemId" class="dropdown-menu">
+        <div v-if="showManageActions && openMenuId === item.problem.problemId" class="dropdown-menu">
           <button @click.stop="editItem(item)">수정</button>
           <button @click.stop="deleteItem(item)">삭제</button>
         </div>
       </li>
     </ul>
+    <p v-else class="empty-list">{{ emptyMessage }}</p>
 
     <!-- 하단 설정 -->
     <div class="list-footer">
@@ -344,6 +415,14 @@ function editItem(item) {
   color: #999;
   font-size: 14px;
   padding: 16px 0;
+}
+
+.empty-list {
+  flex: 1;
+  padding: 24px 12px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
 }
 
 /* 모달 */
@@ -545,6 +624,7 @@ function editItem(item) {
   padding: 10px 12px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
+  border-left: 3px solid transparent;
   color: #444;
   transition: background-color 0.15s;
   display: flex;
@@ -556,10 +636,24 @@ function editItem(item) {
   background-color: #e9ecef;
 }
 
+.list-item.due-today {
+  background-color: #fff7e6;
+  border-left-color: #f59f00;
+}
+
+.list-item.due-today:hover {
+  background-color: #fff1cf;
+}
+
 .list-item.active {
   background-color: #d0e3ff;
   color: #1a56db;
   font-weight: 600;
+}
+
+.list-item.due-today.active {
+  background-color: #ffe8b5;
+  color: #744d00;
 }
 
 .delete-checkbox {
@@ -571,7 +665,7 @@ function editItem(item) {
 
 .item-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   flex: 1;
   min-width: 0;
@@ -584,10 +678,48 @@ function editItem(item) {
 }
 
 .item-title {
+  display: block;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.item-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.reminder-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: #777;
+  font-size: 12px;
+}
+
+.grade-badge {
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.grade-badge.red {
+  color: #d32f2f;
+  background-color: #fde8e8;
+}
+
+.grade-badge.yellow {
+  color: #b07600;
+  background-color: #fff4ce;
+}
+
+.grade-badge.green {
+  color: #2e7d32;
+  background-color: #e8f5e9;
 }
 
 .menu-button {

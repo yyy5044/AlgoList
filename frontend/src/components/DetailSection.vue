@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { renderDescription } from '@/utils/renderDescription'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '@/utils/apiError'
 import SolutionManager from './SolutionManager.vue'
 
 const props = defineProps({
@@ -8,10 +9,66 @@ const props = defineProps({
   username: String
 })
 
+const emit = defineEmits(['user-problem-updated'])
+
 // 사이트 무관하게 본문을 표시용 HTML로 변환
 const descriptionHtml = computed(() =>
   renderDescription(props.selectedItem?.problem?.description)
 )
+
+const gradeOptions = ['RED', 'YELLOW', 'GREEN']
+const isGradeMenuOpen = ref(false)
+const isUpdatingGrade = ref(false)
+const gradeErrorMessage = ref('')
+
+watch(() => props.selectedItem?.userProblemId, () => {
+  isGradeMenuOpen.value = false
+  gradeErrorMessage.value = ''
+})
+
+function getGradeClass(grade) {
+  return grade ? grade.toLowerCase() : ''
+}
+
+function toggleGradeMenu() {
+  if (!props.selectedItem?.userProblemId || isUpdatingGrade.value) return
+  gradeErrorMessage.value = ''
+  isGradeMenuOpen.value = !isGradeMenuOpen.value
+}
+
+async function updateGrade(grade) {
+  if (!props.selectedItem?.userProblemId) return
+
+  if (props.selectedItem.grade === grade) {
+    isGradeMenuOpen.value = false
+    return
+  }
+
+  try {
+    isUpdatingGrade.value = true
+    gradeErrorMessage.value = ''
+    const response = await fetch(`/api/reminders/${props.selectedItem.userProblemId}/grade`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grade }),
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      gradeErrorMessage.value = await readErrorMessage(response, '문제 등급을 변경할 수 없습니다.')
+      return
+    }
+
+    const updatedUserProblem = await response.json()
+    emit('user-problem-updated', updatedUserProblem)
+    isGradeMenuOpen.value = false
+  } catch (error) {
+    console.error('문제 등급 변경 실패:', error)
+    gradeErrorMessage.value = NETWORK_ERROR_MESSAGE
+  } finally {
+    isUpdatingGrade.value = false
+  }
+}
 </script>
 
 <template>
@@ -49,10 +106,27 @@ const descriptionHtml = computed(() =>
       <div class="info-group">
         <div class="info-row">
           <span class="info-label">문제 등급</span>
-          <span v-if="selectedItem.grade" :class="['grade-badge', selectedItem.grade.toLowerCase()]">
-            {{ selectedItem.grade }}
-          </span>
-          <span v-else class="grade-badge">미지정</span>
+          <div class="grade-wrapper">
+            <button type="button" class="grade-button" @click="toggleGradeMenu">
+              <span v-if="selectedItem.grade" :class="['grade-badge', getGradeClass(selectedItem.grade)]">
+                {{ selectedItem.grade }}
+              </span>
+              <span v-else class="grade-badge">미지정</span>
+            </button>
+            <div v-if="isGradeMenuOpen" class="grade-menu">
+              <button
+                v-for="grade in gradeOptions"
+                :key="grade"
+                type="button"
+                :class="['grade-menu-item', { active: selectedItem.grade === grade }]"
+                :disabled="isUpdatingGrade"
+                @click="updateGrade(grade)"
+              >
+                {{ grade }}
+              </button>
+            </div>
+            <p v-if="gradeErrorMessage" class="grade-error">{{ gradeErrorMessage }}</p>
+          </div>
         </div>
         <div class="info-row">
           <span class="info-label">푼 횟수</span>
@@ -73,7 +147,11 @@ const descriptionHtml = computed(() =>
       <p>오른쪽 리스트에서 항목을 선택해주세요.</p>
     </div>
     <!--SolutionManager 컴포넌트-->
-    <SolutionManager :selected-item="selectedItem" :username="username" />
+    <SolutionManager
+      :selected-item="selectedItem"
+      :username="username"
+      @user-problem-updated="emit('user-problem-updated', $event)"
+    />
   </div>
 </template>
 
@@ -162,11 +240,24 @@ const descriptionHtml = computed(() =>
 }
 
 /* 등급 뱃지 */
+.grade-wrapper {
+  position: relative;
+}
+
+.grade-button {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
 .grade-badge {
   font-size: 13px;
   font-weight: 600;
   padding: 3px 12px;
   border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .grade-badge.red {
@@ -182,6 +273,50 @@ const descriptionHtml = computed(() =>
 .grade-badge.green {
   color: #2e7d32;
   background-color: #e8f5e9;
+}
+
+.grade-menu {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  min-width: 112px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+}
+
+.grade-menu-item {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #333;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.grade-menu-item:hover,
+.grade-menu-item.active {
+  background-color: #eef4ff;
+  color: #1a56db;
+  font-weight: 600;
+}
+
+.grade-menu-item:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.grade-error {
+  margin-top: 6px;
+  color: #d32f2f;
+  font-size: 12px;
 }
 
 /* 문제 본문 */

@@ -1,6 +1,7 @@
 package com.algolist.backend.solution;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -9,6 +10,8 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,11 +55,11 @@ public class SolutionServiceImpl implements SolutionService {
 	@Override
 	@Transactional
 	// Solution 추가하기
-	public boolean insertSolution(Long userId, SolutionDto solution) {
+	public UserProblemDto insertSolution(Long userId, SolutionDto solution) {
 		validateSolution(solution);
 
 		if (!existsUserProblem(userId, solution.getUserProblemId())) {
-			return false;
+			return null;
 		}
 
 		// 현재 유저가 올린 풀이의 개수를 확인하고 20개 이상이면 제한(DoS 방지)
@@ -67,10 +70,22 @@ public class SolutionServiceImpl implements SolutionService {
 		int result = solutionDao.insertSolution(solution);
 
 		if (result != 1) {
-			return false;
-		} else {
-			return true;
+			return null;
 		}
+
+		// 문제 풀이를 성공적으로 추가했다면 user_problem 컬럼을 UPDATE
+		int updated = solutionDao.updateUserProblemSolvedStatus(userId, solution.getUserProblemId(), LocalDate.now());
+		if (updated != 1) {
+			throw new IllegalStateException("풀이 기록 갱신에 실패했습니다.");
+		}
+
+		// 갱신된 user_problem 데이터를 다시 가져오고 반환
+		UserProblemDto updatedUserProblem = solutionDao.selectUserProblem(userId, solution.getUserProblemId());
+		if (updatedUserProblem == null) {
+			throw new IllegalStateException("갱신된 문제 정보를 불러오지 못했습니다.");
+		}
+
+		return updatedUserProblem;
 	}
 
 	@Override

@@ -143,6 +143,20 @@ function showUserProfileEditPage() {
 function onProblemAdded() {
   listSectionRef.value?.refresh()
 }
+
+function onUserProblemUpdated(userProblem) {
+  if (!userProblem?.userProblemId) return
+
+  if (selectedItem.value?.userProblemId === userProblem.userProblemId) {
+    selectedItem.value = {
+      ...selectedItem.value,
+      ...userProblem,
+      problem: userProblem.problem ?? selectedItem.value.problem,
+    }
+  }
+
+  listSectionRef.value?.refresh()
+}
 </script>
 
 <template>
@@ -213,7 +227,12 @@ function onProblemAdded() {
             :username="currentUser"
             @back="showUserDetailPage"
           />
-          <DetailSection v-else :selected-item="selectedItem" :username="currentUser" />
+          <DetailSection
+            v-else
+            :selected-item="selectedItem"
+            :username="currentUser"
+            @user-problem-updated="onUserProblemUpdated"
+          />
         </template>
         <ListSection ref="listSectionRef" @select-item="onSelectItem" />
       </div>

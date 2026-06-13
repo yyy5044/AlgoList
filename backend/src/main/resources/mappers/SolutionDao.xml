@@ -11,6 +11,21 @@
 		<result column="user_problem_id" property="userProblemId"/>
 	</resultMap>
 
+	<resultMap id="problemMap" type="ProblemDto" autoMapping="true">
+		<id column="problem_id" property="problemId"/>
+		<collection property="category" ofType="string">
+			<result column="category_name"/>
+		</collection>
+	</resultMap>
+
+	<resultMap id="userProblemMap" type="UserProblemDto" autoMapping="true">
+		<id column="user_problem_id" property="userProblemId"/>
+		<result column="user_id" property="userId"/>
+		<result column="solve_count" property="solveCount"/>
+		<result column="last_solved_date" property="lastSolvedDate"/>
+		<association property="problem" resultMap="problemMap"/>
+	</resultMap>
+
 	<!-- 현재 선택된 문제의 모든 풀이들 반환(code 미포함) -->
 	<select id="selectSolutions" resultMap="solutionMap">
 		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.user_problem_id
@@ -55,6 +70,28 @@
 		INSERT INTO solutions (algorithm, `type`, language, code, user_problem_id)
 		VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{userProblemId})
 	</insert>
+
+	<!-- 풀이 업로드 성공 시 최근 풀이 날짜와 풀이 횟수 갱신 -->
+	<update id="updateUserProblemSolvedStatus">
+		UPDATE user_problems
+		SET last_solved_date = #{lastSolvedDate},
+			solve_count = COALESCE(solve_count, 0) + 1
+		WHERE user_id = #{userId}
+		  AND user_problem_id = #{userProblemId}
+	</update>
+
+	<!-- 갱신된 유저 문제 정보 조회 -->
+	<select id="selectUserProblem" resultMap="userProblemMap">
+		SELECT 	up.user_problem_id, up.user_id, up.problem_id, up.grade, up.solve_count, up.last_solved_date,
+				p.title, p.number, p.difficulty, p.site, p.link, p.description, pc.category_name
+		FROM user_problems up
+		LEFT JOIN problems p
+		USING (problem_id)
+		LEFT JOIN problem_categories pc
+		USING (problem_id)
+		WHERE up.user_id = #{userId}
+		  AND up.user_problem_id = #{userProblemId}
+	</select>
 
 	<!-- 문제 풀이 삭제 -->
 	<delete id="deleteSolution">
