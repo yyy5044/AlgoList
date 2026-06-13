@@ -1,31 +1,24 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import * as problemApi from '@/api/problems'
+import * as reminderApi from '@/api/reminders'
 
 const emit = defineEmits(['select-item'])
-const props = defineProps({
-  refreshKey: {
-    type: Number,
-    default: 0,
-  },
-})
 
 // 탭
 const tabs = ['문제', '분류', 'Git', '복습']
 const currentTab = ref('문제')
 
-// 문제 리스트 필터링용 검색어 변수
+// 문제 리스트 필터링용 검색어
 const searchQuery = ref('')
 
-// 문제 리스트 변수
+// 내 문제 리스트
 const items = ref([])
 const reminderItems = ref([])
 
-async function fetchProblemItems() {
+async function fetchItems() {
   try {
-    const response = await fetch('/api/problems', {
-      credentials: 'include' // 세션 쿠키
-    })
-    items.value = await response.json()
+    items.value = await problemApi.fetchMine()
   } catch (error) {
     console.error('목록 조회 실패:', error)
   }
@@ -33,28 +26,23 @@ async function fetchProblemItems() {
 
 async function fetchReminderItems() {
   try {
-    const response = await fetch('/api/reminders/today', {
-      credentials: 'include' // 세션 쿠키
-    })
-    reminderItems.value = await response.json()
+    reminderItems.value = await reminderApi.fetchToday()
   } catch (error) {
     console.error('복습 목록 조회 실패:', error)
   }
 }
 
-async function fetchCurrentTabItems() {
-  if (currentTab.value === '복습') {
+async function refresh() {
+  await fetchItems()
+  if (isReminderTab.value) {
     await fetchReminderItems()
-    return
   }
-
-  await fetchProblemItems()
 }
 
-onMounted(async () => {
-  // items[]는 처음에 비어있다가 프론트 시작시에 onMoundted로 API 요청 후 채운다.
-  await fetchProblemItems()
-})
+onMounted(fetchItems)
+
+// 문제 둘러보기 페이지에서 추가했을 때 목록을 갱신할 수 있도록 공개
+defineExpose({ refresh })
 
 // 선택 / 메뉴
 const selectedItem = ref(null) // 리스트 내에서 문제를 선택하기 위한 변수
@@ -76,13 +64,11 @@ const currentItems = computed(() => isReminderTab.value ? reminderItems.value : 
 const emptyMessage = computed(() =>
   isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
 )
+
 const todayText = computed(() => {
   const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
+  const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+  return localDate.toISOString().slice(0, 10)
 })
 
 function getGradeClass(grade) {
@@ -90,11 +76,11 @@ function getGradeClass(grade) {
 }
 
 function getReviewDueDateText(item) {
-  return item.reviewDueDate ? `복습 예정일: ${item.reviewDueDate}` : '복습 예정일 없음'
+  return item.reviewDueDate || '복습 예정일 없음'
 }
 
 function isReviewDueToday(item) {
-  return isReminderTab.value && item.reviewDueDate === todayText.value
+  return item.reviewDueDate === todayText.value
 }
 
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
@@ -104,23 +90,30 @@ const filteredItems = computed(() => {
   return currentItems.value.filter(
     (item) =>
       item.problem.title.toLowerCase().includes(query) ||
-      item.problem.number.includes(query) ||
+      String(item.problem.number).toLowerCase().includes(query) ||
       item.problem.category?.some((cat) => cat.toLowerCase().includes(query)),
   )
 })
 
-// 요소 추가 로직
-// 1. 문제 검색
-// 검색 모달
-const isSearchModalOpen = ref(false) // 모달이 열려 있으면 true, 닫혀 있으면 false
-const problemSearchQuery = ref('') // 모달에 있는 검색창에 들어오는 입력은 problemSearchQuery에 할당됨
+watch(currentTab, async () => {
+  openMenuId.value = null
+  searchQuery.value = ''
+  cancelDeleteMode()
+
+  if (isReminderTab.value) {
+    await fetchReminderItems()
+  }
+})
+
+// 문제 검색 모달
+const isSearchModalOpen = ref(false)
+const problemSearchQuery = ref('') // 모달 검색창 입력값
 
 function openSearchModal() {
   isSearchModalOpen.value = true
   problemSearchQuery.value = ''
 }
 
-// closeSearchModal도 수정
 function closeSearchModal() {
   isSearchModalOpen.value = false
   problemSearchQuery.value = ''
@@ -129,25 +122,18 @@ function closeSearchModal() {
   duplicateMessage.value = ''
 }
 
-// 2. 검색 함수: 8080 포트로 GET 요청
-const searchResults = ref([]) // 검색 결과를 받는 리스트
-const hasSearched = ref(false) // "검색 결과 없음"을 표시하기 위한 변수, searchResults가 0인데 hasSeared는 true일 때 -> 검색 결과 없음
-const searchError = ref('') // 검색 실패 시에 에러 메세지 받을 변수
-
-// 검색 모달에서 문제 검색 함수
-const isSearching = ref(false) // 검색 후 로딩 표시용 변수
+// 검색 상태
+const searchResults = ref([])
+const hasSearched = ref(false) // "검색 결과 없음" 표시용 (검색했는데 결과가 0개일 때)
+const searchError = ref('')
+const isSearching = ref(false)
 
 async function searchProblem() {
   if (!problemSearchQuery.value) return
   try {
     isSearching.value = true
     searchError.value = ''
-    const response = await fetch(
-      `/api/problems/search?query=${encodeURIComponent(problemSearchQuery.value)}`, {
-        credentials: 'include'
-      }
-    )
-    searchResults.value = await response.json()
+    searchResults.value = await problemApi.search(problemSearchQuery.value)
     hasSearched.value = true
   } catch (error) {
     searchError.value = '검색 중 오류가 발생했습니다. 다시 시도해주세요.'
@@ -157,12 +143,13 @@ async function searchProblem() {
   }
 }
 
-// 검색 결과 중에서 문제 선택할 때 호출되는 함수
-const duplicateMessage = ref('') // 문제 중복 추가 시도 시 메세지
+// 검색 결과에서 문제를 선택하면 내 문제로 추가
+const duplicateMessage = ref('')
+
 async function selectSearchResult(result) {
-    // 중복 체크: 같은 사이트 + 같은 문제 번호
+  // 중복 체크: 같은 사이트 + 같은 문제 번호
   const isDuplicate = items.value.some(
-    item => item.problem.site === result.site && item.problem.number === result.number
+    (item) => item.problem.site === result.site && item.problem.number === result.number,
   )
   if (isDuplicate) {
     duplicateMessage.value = '이미 추가된 문제입니다.'
@@ -170,14 +157,7 @@ async function selectSearchResult(result) {
   }
 
   try {
-    const response = await fetch('/api/problems', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ problemId: result.problemId }),
-      credentials: 'include' // 세션 쿠키
-    })
-    if (!response.ok) throw new Error('저장 실패')
-    const userProblem = await response.json()
+    const userProblem = await problemApi.add(result.problemId)
     items.value.push(userProblem)
     openMenuId.value = null
     selectedItem.value = userProblem
@@ -191,10 +171,7 @@ async function selectSearchResult(result) {
 // 개별 삭제
 async function deleteItem(item) {
   try {
-    await fetch(`/api/problems/${item.problem.problemId}`, {
-      method: 'DELETE',
-      credentials: 'include' // 세션 쿠키
-    })
+    await problemApi.remove(item.problem.problemId)
     items.value = items.value.filter((i) => i.problem.problemId !== item.problem.problemId)
     if (selectedItem.value?.problem.problemId === item.problem.problemId) {
       selectedItem.value = null
@@ -220,22 +197,6 @@ function cancelDeleteMode() {
   checkedIds.value = []
 }
 
-watch(currentTab, async () => {
-  openMenuId.value = null
-  searchQuery.value = ''
-  if (isDeleteMode.value) {
-    cancelDeleteMode()
-  }
-  await fetchCurrentTabItems()
-})
-
-watch(() => props.refreshKey, async () => {
-  await fetchProblemItems()
-  if (isReminderTab.value) {
-    await fetchReminderItems()
-  }
-})
-
 function toggleCheck(id) {
   if (checkedIds.value.includes(id)) {
     checkedIds.value = checkedIds.value.filter((i) => i !== id)
@@ -248,10 +209,7 @@ function toggleCheck(id) {
 async function deleteChecked() {
   try {
     for (const id of checkedIds.value) {
-      await fetch(`/api/problems/${id}`, {
-        method: 'DELETE',
-        credentials: 'include' // 세션 쿠키
-      })
+      await problemApi.remove(id)
     }
     items.value = items.value.filter((item) => !checkedIds.value.includes(item.problem.problemId))
     if (selectedItem.value && checkedIds.value.includes(selectedItem.value.problem.problemId)) {
@@ -312,18 +270,18 @@ function editItem(item) {
     <ul v-if="filteredItems.length > 0" class="list">
       <li
         v-for="item in filteredItems"
-        :key="item.problem.problemId"
+        :key="item.userProblemId ?? item.problem.problemId"
         :class="[
           'list-item',
           {
-            active: selectedItem?.problem.problemId === item.problem.problemId,
-            'due-today': isReviewDueToday(item),
+            active: selectedItem?.userProblemId === item.userProblemId,
+            'due-today': isReviewDueToday(item)
           }
         ]"
         @click="selectItem(item)"
       >
         <input
-          v-if="isDeleteMode"
+          v-if="showManageActions && isDeleteMode"
           type="checkbox"
           :checked="checkedIds.includes(item.problem.problemId)"
           @click.stop="toggleCheck(item.problem.problemId)"
@@ -333,13 +291,19 @@ function editItem(item) {
           <img :src="`/icons/${item.problem.site}.png`" :alt="item.problem.site" class="site-icon" />
           <div class="item-text">
             <span class="item-title">[{{ item.problem.number }}] {{ item.problem.title }}</span>
-            <span v-if="isReminderTab" class="reminder-meta">
-              <span :class="['grade-badge', getGradeClass(item.grade)]">{{ item.grade }}</span>
-              <span>{{ getReviewDueDateText(item) }}</span>
-            </span>
+            <div v-if="isReminderTab" class="reminder-meta">
+              <span :class="['grade-badge', getGradeClass(item.grade)]">{{ item.grade || '미지정' }}</span>
+              <span>복습 예정일: {{ getReviewDueDateText(item) }}</span>
+            </div>
           </div>
         </div>
-        <button v-if="showManageActions && !isDeleteMode" class="menu-button" @click.stop="toggleMenu(item)">⋮</button>
+        <button
+          v-if="showManageActions && !isDeleteMode"
+          class="menu-button"
+          @click.stop="toggleMenu(item)"
+        >
+          ⋮
+        </button>
 
         <!-- 드롭다운 메뉴 -->
         <div v-if="showManageActions && openMenuId === item.problem.problemId" class="dropdown-menu">
@@ -451,6 +415,14 @@ function editItem(item) {
   color: #999;
   font-size: 14px;
   padding: 16px 0;
+}
+
+.empty-list {
+  flex: 1;
+  padding: 24px 12px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
 }
 
 /* 모달 */
@@ -647,19 +619,12 @@ function editItem(item) {
   overflow-y: auto;
 }
 
-.empty-list {
-  flex: 1;
-  padding: 24px 16px;
-  color: #999;
-  font-size: 14px;
-  text-align: center;
-}
-
 .list-item {
   position: relative;
   padding: 10px 12px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
+  border-left: 3px solid transparent;
   color: #444;
   transition: background-color 0.15s;
   display: flex;
@@ -673,7 +638,7 @@ function editItem(item) {
 
 .list-item.due-today {
   background-color: #fff7e6;
-  border-left: 3px solid #f59f00;
+  border-left-color: #f59f00;
 }
 
 .list-item.due-today:hover {
@@ -686,6 +651,11 @@ function editItem(item) {
   font-weight: 600;
 }
 
+.list-item.due-today.active {
+  background-color: #ffe8b5;
+  color: #744d00;
+}
+
 .delete-checkbox {
   width: 16px;
   height: 16px;
@@ -695,16 +665,8 @@ function editItem(item) {
 
 .item-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.item-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   flex: 1;
   min-width: 0;
 }
@@ -716,25 +678,31 @@ function editItem(item) {
 }
 
 .item-title {
+  display: block;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.item-text {
+  min-width: 0;
+  flex: 1;
+}
+
 .reminder-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  min-width: 0;
+  margin-top: 4px;
   color: #777;
   font-size: 12px;
 }
 
 .grade-badge {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 2px 7px;
+  border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
 }
@@ -745,8 +713,8 @@ function editItem(item) {
 }
 
 .grade-badge.yellow {
-  color: #a56a00;
-  background-color: #fff4cc;
+  color: #b07600;
+  background-color: #fff4ce;
 }
 
 .grade-badge.green {

@@ -14,6 +14,7 @@ const props = defineProps({
   selectedItem: Object,
   username: String
 })
+
 const emit = defineEmits(['user-problem-updated'])
 
 const maxSolutionsPerProblem = 20
