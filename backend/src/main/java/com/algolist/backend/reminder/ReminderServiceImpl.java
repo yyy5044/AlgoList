@@ -37,13 +37,18 @@ public class ReminderServiceImpl implements ReminderService {
 			}
 		}
 
-		// RED-YELLOW, 복습 날짜, problem_id 순으로 리스트를 다시 정렬 후 반환(RED = 0, YELLOW = 1)
+		// 오늘 복습해야 하는 문제를 가장 위로 올리고, 이후 RED-YELLOW, 복습 날짜, problem_id 순으로 정렬
 		reminders.sort(Comparator
-				.comparingInt((ReminderProblemDto item) -> ReminderSchedule.getGradePriority(item.getGrade()))
+				.comparingInt((ReminderProblemDto item) -> getDueDatePriority(item, today))
+				.thenComparingInt(item -> ReminderSchedule.getGradePriority(item.getGrade()))
 				.thenComparing(ReminderProblemDto::getReviewDueDate)
 				.thenComparing(ReminderProblemDto::getUserProblemId));
 
 		return reminders;
+	}
+
+	private int getDueDatePriority(ReminderProblemDto item, LocalDate today) {
+		return today.equals(item.getReviewDueDate()) ? 0 : 1;
 	}
 
 	@Override

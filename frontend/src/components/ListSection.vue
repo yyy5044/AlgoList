@@ -76,6 +76,14 @@ const currentItems = computed(() => isReminderTab.value ? reminderItems.value : 
 const emptyMessage = computed(() =>
   isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
 )
+const todayText = computed(() => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+})
 
 function getGradeClass(grade) {
   return grade ? grade.toLowerCase() : ''
@@ -83,6 +91,10 @@ function getGradeClass(grade) {
 
 function getReviewDueDateText(item) {
   return item.reviewDueDate ? `복습 예정일: ${item.reviewDueDate}` : '복습 예정일 없음'
+}
+
+function isReviewDueToday(item) {
+  return isReminderTab.value && item.reviewDueDate === todayText.value
 }
 
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
@@ -301,7 +313,13 @@ function editItem(item) {
       <li
         v-for="item in filteredItems"
         :key="item.problem.problemId"
-        :class="['list-item', { active: selectedItem?.problem.problemId === item.problem.problemId }]"
+        :class="[
+          'list-item',
+          {
+            active: selectedItem?.problem.problemId === item.problem.problemId,
+            'due-today': isReviewDueToday(item),
+          }
+        ]"
         @click="selectItem(item)"
       >
         <input
@@ -651,6 +669,15 @@ function editItem(item) {
 
 .list-item:hover {
   background-color: #e9ecef;
+}
+
+.list-item.due-today {
+  background-color: #fff7e6;
+  border-left: 3px solid #f59f00;
+}
+
+.list-item.due-today:hover {
+  background-color: #fff1cf;
 }
 
 .list-item.active {
