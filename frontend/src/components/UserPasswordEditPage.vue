@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
@@ -36,7 +37,7 @@ async function loadUser() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch(`/api/users/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`/api/users/${encodeURIComponent(props.username)}`, {
       credentials: 'include',
     })
 
@@ -115,7 +116,7 @@ async function updateUser() {
       formData.append('profileImage', profile.value.image)
     }
 
-    const response = await fetch(`/api/users/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`/api/users/${encodeURIComponent(props.username)}`, {
       method: 'PUT',
       credentials: 'include',
       body: formData,

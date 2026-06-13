@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['back-to-login', 'signup-success'])
@@ -84,7 +85,7 @@ async function signup() {
       formData.append('profileImage', profile.value.image)
     }
 
-    const response = await fetch('/api/users', {
+    const response = await fetchWithCsrf('/api/users', {
       method: 'POST',
       credentials: 'include',
       body: formData,

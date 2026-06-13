@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['login-success', 'signup-click'])
@@ -29,7 +30,7 @@ async function login() {
     formData.append('username', username.value)
     formData.append('password', password.value)
 
-    const response = await fetch('/api/login', {
+    const response = await fetchWithCsrf('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       credentials: 'include',

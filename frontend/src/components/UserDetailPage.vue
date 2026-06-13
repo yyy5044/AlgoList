@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
 import UserSuspensionForm from './UserSuspensionForm.vue'
 import UserRoleUpdateForm from './UserRoleUpdateForm.vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
@@ -114,7 +115,7 @@ async function loadUser() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       credentials: 'include',
     })
 
@@ -148,7 +149,7 @@ async function deleteUser() {
     isDeleting.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -172,7 +173,7 @@ async function suspendUser(payload) {
     isSuspending.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -200,7 +201,7 @@ async function releaseUserSuspension(payload) {
     isReleasingSuspension.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(
+    const response = await fetchWithCsrf(
       `${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions/release`,
       {
         method: 'PATCH',
@@ -234,7 +235,7 @@ async function updateUserRole(payload) {
     isUpdatingRole.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/role`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}/role`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

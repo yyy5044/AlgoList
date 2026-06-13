@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { renderDescription } from '@/utils/renderDescription'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '@/utils/apiError'
+import { fetchWithCsrf } from '@/api/http'
 import SolutionManager from './SolutionManager.vue'
 
 const props = defineProps({
@@ -47,7 +48,7 @@ async function updateGrade(grade) {
   try {
     isUpdatingGrade.value = true
     gradeErrorMessage.value = ''
-    const response = await fetch(`/api/reminders/${props.selectedItem.userProblemId}/grade`, {
+    const response = await fetchWithCsrf(`/api/reminders/${props.selectedItem.userProblemId}/grade`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ grade }),
