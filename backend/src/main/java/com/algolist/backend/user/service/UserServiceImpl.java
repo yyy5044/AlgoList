@@ -64,10 +64,10 @@ public class UserServiceImpl implements UserService {
 	@Override
 	// 유저 정보 업데이트(프로필 이미지, 닉네임, 비밀번호, 자기소개)
 	public boolean updateUser(String username, UpdateRequestDto request) {
-		String profileImageUrl = profileImageService.saveProfileImage(request.getProfileImage());
 		String nickname = StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : null;
 		String password = request.getPassword();
 		String bio = request.getBio() == null ? null : request.getBio().trim();
+		boolean hasProfileImage = request.getProfileImage() != null && !request.getProfileImage().isEmpty();
 
 		if (StringUtils.hasText(password)) {
 			password = password.trim();
@@ -77,16 +77,40 @@ public class UserServiceImpl implements UserService {
 			password = null;
 		}
 
-		if (nickname == null && password == null && bio == null && profileImageUrl == null) {
+		if (nickname == null && password == null && bio == null && !hasProfileImage) {
 			return userDao.selectUser(username) != null;
 		}
 
-		int result = userDao.updateUser(username, nickname, password, bio, profileImageUrl);
+		UserDetailDto currentUser = null;
+		// 이미지 파일이 존재할 경우 기존 유저의 이미지 파일 경로를 가져오기 위해 currentUser 객체 가져오기
+		if (hasProfileImage) {
+			currentUser = userDao.selectUser(username);
+			if (currentUser == null) {
+				return false;
+			}
+		}
 
-		if (result != 1) {
-			return false;
-		} else {
+		String profileImageUrl = profileImageService.saveProfileImage(request.getProfileImage());
+		try {
+			int result = userDao.updateUser(username, nickname, password, bio, profileImageUrl);
+
+			// 정상적인 유저 UPDATE에 실패하면 새로 저장한 프로필 이미지 지우기
+			if (result != 1) {
+				profileImageService.deleteProfileImage(profileImageUrl);
+				return false;
+			}
+
+			// 업데이트에 성공했다면 기존 유저의 프로필 이미지 지우기
+			if (currentUser != null) {
+				profileImageService.deleteProfileImage(currentUser.getProfileImageUrl());
+			}
+
 			return true;
+			
+		// 예외 발생 시에도 추가한 프로필 이미지 삭제
+		} catch (RuntimeException e) {
+			profileImageService.deleteProfileImage(profileImageUrl);
+			throw e;
 		}
 	}
 
