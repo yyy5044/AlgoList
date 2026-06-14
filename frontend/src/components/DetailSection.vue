@@ -8,9 +8,9 @@ const props = defineProps({
   username: String
 })
 
-// 사이트 무관하게 본문을 표시용 HTML로 변환
+// site 에 따라 본문을 표시용 HTML로 변환 (BOJ / CODEFORCES 경로 분기)
 const descriptionHtml = computed(() =>
-  renderDescription(props.selectedItem?.problem?.description)
+  renderDescription(props.selectedItem?.problem?.description, props.selectedItem?.problem?.site)
 )
 </script>
 
