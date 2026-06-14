@@ -17,8 +17,13 @@ const profile = ref({
   imageLoadFailed: false,
 })
 const errorMessage = ref('')
+const profileImageError = ref('')
 const isSubmitting = ref(false)
 const fileInput = ref(null)
+
+const allowedProfileImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const profileImageAccept = allowedProfileImageTypes.join(',')
+const profileImageGuide = 'JPG, PNG, WEBP, GIF 형식만 가능하며, 2MB 이하·1024x1024 이하 이미지만 업로드할 수 있습니다.'
 
 const displayName = computed(() => form.value.nickname || form.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -38,18 +43,31 @@ function revokePreviewUrl() {
 function onProfileImageChange(event) {
   const file = event.target.files?.[0]
   revokePreviewUrl()
-  profile.value.image = file || null
+  profile.value.image = null
   profile.value.imageLoadFailed = false
+  profileImageError.value = ''
 
-  if (file) {
-    profile.value.previewUrl = URL.createObjectURL(file)
+  if (!file) {
+    return
   }
+
+  if (!allowedProfileImageTypes.includes(file.type)) {
+    profileImageError.value = '프로필 이미지는 JPG, PNG, WEBP, GIF 형식만 가능합니다.'
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+    return
+  }
+
+  profile.value.image = file
+  profile.value.previewUrl = URL.createObjectURL(file)
 }
 
 function clearProfileImageSelection() {
   profile.value.image = null
   revokePreviewUrl()
   profile.value.imageLoadFailed = false
+  profileImageError.value = ''
 
   if (fileInput.value) {
     fileInput.value.value = ''
@@ -133,9 +151,11 @@ function isValidPassword(password) {
           ref="fileInput"
           class="file-input"
           type="file"
-          accept="image/*"
+          :accept="profileImageAccept"
           @change="onProfileImageChange"
         />
+        <p class="field-guide">{{ profileImageGuide }}</p>
+        <p v-if="profileImageError" class="field-error">{{ profileImageError }}</p>
         <button
           v-if="profile.image"
           class="subtle-button"
@@ -282,6 +302,21 @@ input {
 .file-input {
   padding: 9px 12px;
   background: #fafafa;
+}
+
+.field-guide,
+.field-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.field-guide {
+  color: #888;
+}
+
+.field-error {
+  color: #e74c3c;
 }
 
 .error {

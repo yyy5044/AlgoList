@@ -39,6 +39,8 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
 		http.csrf(csrf -> csrf.spa())
+			.headers(headers -> headers.contentTypeOptions(contentTypeOptions -> { // 웹 서버가 명시한 파일 타입을 브라우저가 임의적으로 변경하지 않도록 함
+			}))
 			.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/csrf").permitAll() // CSRF 토큰을 받는 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/login").permitAll() // 로그인 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/users").permitAll() // POST 요청으로 오는 /api/users(회원가입) 요청은 모두 가능
