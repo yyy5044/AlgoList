@@ -1,12 +1,11 @@
 package com.algolist.backend.problem.batch.codeforces;
 
-import java.util.Set;
-
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.launch.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
@@ -35,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CodeforcesIngestLifecycle implements SmartLifecycle {
 
     private final JobOperator jobOperator;
+    private final JobRepository jobRepository;
     private final Job codeforcesIngestJob; 
 
     /** 개발 중 매 재시작마다 배치가 도는 게 거슬릴 때 false 로 끄면 시작 시 실행하지 않는다. */
@@ -73,10 +73,10 @@ public class CodeforcesIngestLifecycle implements SmartLifecycle {
     @Override
     public void stop() {
         try {
-            Set<Long> runningExecutions = jobOperator.getRunningExecutions(CodeforcesIngestJobConfig.JOB_NAME);
-            for (Long executionId : runningExecutions) {
-                log.info("[CF-BATCH] 종료 감지 — 실행 {} 정지 요청(STOPPED 로 마감)", executionId);
-                jobOperator.stop(executionId);
+            // Batch 6: id 기반 getRunningExecutions(String)/stop(long) 은 deprecated → 객체 기반 API 사용
+            for (JobExecution execution : jobRepository.findRunningJobExecutions(CodeforcesIngestJobConfig.JOB_NAME)) {
+                log.info("[CF-BATCH] 종료 감지 — 실행 {} 정지 요청(STOPPED 로 마감)", execution.getId());
+                jobOperator.stop(execution);
             }
         } catch (Exception e) {
             log.warn("[CF-BATCH] 정지 요청 중 오류(무시하고 종료 진행)", e);
