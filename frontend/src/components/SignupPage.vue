@@ -24,6 +24,9 @@ const fileInput = ref(null)
 const allowedProfileImageTypes = ['image/jpeg', 'image/png', 'image/gif']
 const profileImageAccept = allowedProfileImageTypes.join(',')
 const profileImageGuide = 'JPG, PNG, GIF 형식만 가능하며, 2MB 이하·1024x1024 이하 이미지만 업로드할 수 있습니다.'
+const maxUsernameLength = 50
+const maxNicknameLength = 50
+const maxPasswordLength = 72
 
 const displayName = computed(() => form.value.nickname || form.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -88,7 +91,7 @@ async function signup() {
   }
 
   if (!isValidPassword(form.value.password.trim())) {
-    errorMessage.value = '비밀번호는 8자 이상이며 영어와 숫자를 모두 포함해야 합니다.'
+    errorMessage.value = '비밀번호는 8자 이상 72자 이하이며 영어와 숫자를 모두 포함해야 합니다.'
     return
   }
 
@@ -123,7 +126,12 @@ async function signup() {
 }
 
 function isValidPassword(password) {
-  return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password)
+  return (
+    password.length >= 8 &&
+    password.length <= maxPasswordLength &&
+    /[A-Za-z]/.test(password) &&
+    /\d/.test(password)
+  )
 }
 </script>
 
@@ -170,7 +178,13 @@ function isValidPassword(password) {
         <label class="form-label" for="username">
           아이디 <span class="required-mark">*</span>
         </label>
-        <input id="username" v-model="form.username" placeholder="아이디" @keyup.enter="signup" />
+        <input
+          id="username"
+          v-model="form.username"
+          :maxlength="maxUsernameLength"
+          placeholder="아이디"
+          @keyup.enter="signup"
+        />
       </div>
 
       <div class="form-section">
@@ -181,6 +195,7 @@ function isValidPassword(password) {
           id="password"
           v-model="form.password"
           type="password"
+          :maxlength="maxPasswordLength"
           placeholder="비밀번호"
           @keyup.enter="signup"
         />
@@ -194,6 +209,7 @@ function isValidPassword(password) {
           id="passwordConfirm"
           v-model="form.passwordConfirm"
           type="password"
+          :maxlength="maxPasswordLength"
           placeholder="비밀번호 확인"
           @keyup.enter="signup"
         />
@@ -201,7 +217,13 @@ function isValidPassword(password) {
 
       <div class="form-section">
         <label class="form-label" for="nickname">닉네임</label>
-        <input id="nickname" v-model="form.nickname" placeholder="닉네임" @keyup.enter="signup" />
+        <input
+          id="nickname"
+          v-model="form.nickname"
+          :maxlength="maxNicknameLength"
+          placeholder="닉네임"
+          @keyup.enter="signup"
+        />
       </div>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       <button @click="signup" :disabled="isSubmitting">

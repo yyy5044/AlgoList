@@ -31,6 +31,9 @@ const fileInput = ref(null)
 const allowedProfileImageTypes = ['image/jpeg', 'image/png', 'image/gif']
 const profileImageAccept = allowedProfileImageTypes.join(',')
 const profileImageGuide = 'JPG, PNG, GIF 형식만 가능하며, 2MB 이하·1024x1024 이하 이미지만 업로드할 수 있습니다.'
+const maxNicknameLength = 50
+const maxBioLength = 500
+const maxPasswordLength = 72
 
 const displayName = computed(() => form.value.nickname || props.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -207,13 +210,24 @@ async function updateUser() {
 
       <div class="form-section">
         <label class="form-label" for="nickname">닉네임</label>
-        <input id="nickname" v-model="form.nickname" placeholder="닉네임" />
+        <input
+          id="nickname"
+          v-model="form.nickname"
+          :maxlength="maxNicknameLength"
+          placeholder="닉네임"
+        />
       </div>
 
       <div class="form-grid">
         <div class="form-section">
           <label class="form-label" for="password">새 비밀번호</label>
-          <input id="password" v-model="form.password" type="password" placeholder="변경할 때만 입력" />
+          <input
+            id="password"
+            v-model="form.password"
+            type="password"
+            :maxlength="maxPasswordLength"
+            placeholder="변경할 때만 입력"
+          />
         </div>
         <div class="form-section">
           <label class="form-label" for="passwordConfirm">비밀번호 확인</label>
@@ -221,6 +235,7 @@ async function updateUser() {
             id="passwordConfirm"
             v-model="form.passwordConfirm"
             type="password"
+            :maxlength="maxPasswordLength"
             placeholder="새 비밀번호 확인"
             @keyup.enter="updateUser"
           />
@@ -229,7 +244,13 @@ async function updateUser() {
 
       <div class="form-section">
         <label class="form-label" for="bio">자기소개</label>
-        <textarea id="bio" v-model="form.bio" rows="5" placeholder="자기소개를 입력해주세요."></textarea>
+        <textarea
+          id="bio"
+          v-model="form.bio"
+          rows="5"
+          :maxlength="maxBioLength"
+          placeholder="자기소개를 입력해주세요."
+        ></textarea>
       </div>
 
       <button @click="updateUser" :disabled="isSubmitting || isLoading">

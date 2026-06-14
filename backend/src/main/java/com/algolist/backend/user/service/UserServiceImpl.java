@@ -17,6 +17,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+	private static final int MAX_USERNAME_LENGTH = 50;
+	private static final int MAX_NICKNAME_LENGTH = 50;
+	private static final int MAX_BIO_LENGTH = 500;
+	private static final int MAX_PASSWORD_LENGTH = 72;
+
 	private final UserDao userDao;
 	private final PasswordEncoder passwordEncoder;
 	private final ProfileImageService profileImageService;
@@ -37,6 +42,9 @@ public class UserServiceImpl implements UserService {
 		if (username == null || !StringUtils.hasText(password)) {
 			throw new IllegalArgumentException("아이디와 비밀번호를 모두 입력해주세요.");
 		}
+
+		validateTextLength(username, MAX_USERNAME_LENGTH, "아이디");
+		validateTextLength(nickname, MAX_NICKNAME_LENGTH, "닉네임");
 
 		password = password.trim();
 		validatePassword(password);
@@ -68,6 +76,9 @@ public class UserServiceImpl implements UserService {
 		String password = request.getPassword();
 		String bio = request.getBio() == null ? null : request.getBio().trim();
 		boolean hasProfileImage = request.getProfileImage() != null && !request.getProfileImage().isEmpty();
+
+		validateTextLength(nickname, MAX_NICKNAME_LENGTH, "닉네임");
+		validateTextLength(bio, MAX_BIO_LENGTH, "자기소개");
 
 		if (StringUtils.hasText(password)) {
 			password = password.trim();
@@ -130,11 +141,20 @@ public class UserServiceImpl implements UserService {
 	public UserSuspensionInfoDto selectActiveSuspension(Long userId) {
 		return userDao.selectActiveSuspension(userId);
 	}
+	
+	// 아이디, 닉네임, 비밀번호, 자기소개 등이 허용된 길이 이내인지 검증하는 메서드
+	private void validateTextLength(String value, int maxLength, String fieldName) {
+		if (value != null && value.codePointCount(0, value.length()) > maxLength) {
+			throw new IllegalArgumentException(fieldName + "은(는) 최대 " + maxLength + "자까지 입력할 수 있습니다.");
+		}
+	}
 
 	// 비밀번호 로직이 적합한지 확인하는 메서드
 	private void validatePassword(String password) {
-		if (password.length() < 8 || !password.matches(".*[A-Za-z].*") || !password.matches(".*\\d.*")) {
-			throw new IllegalArgumentException("비밀번호는 8자 이상이며 영어와 숫자를 모두 포함해야 합니다.");
+		int passwordLength = password.codePointCount(0, password.length());
+		if (passwordLength < 8 || passwordLength > MAX_PASSWORD_LENGTH || !password.matches(".*[A-Za-z].*")
+				|| !password.matches(".*\\d.*")) {
+			throw new IllegalArgumentException("비밀번호는 8자 이상 72자 이하이며 영어와 숫자를 모두 포함해야 합니다.");
 		}
 	}
 }
