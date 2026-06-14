@@ -24,7 +24,6 @@ public class ProfileImageService {
 	private static final Map<String, String> ALLOWED_PROFILE_IMAGE_EXTENSIONS = Map.of(
 		"image/jpeg", "jpg",
 		"image/png", "png",
-		"image/webp", "webp",
 		"image/gif", "gif"
 	);
 	private static final int MAX_PROFILE_IMAGE_WIDTH = 1024;
@@ -81,7 +80,7 @@ public class ProfileImageService {
 	private String validateProfileImage(MultipartFile profileImage) throws IOException {
 		String extension = ALLOWED_PROFILE_IMAGE_EXTENSIONS.get(profileImage.getContentType());
 		if (extension == null) {
-			throw new IllegalArgumentException("프로필 이미지는 jpg, png, webp, gif 형식만 가능합니다.");
+			throw new IllegalArgumentException("프로필 이미지는 jpg, png, gif 형식만 가능합니다.");
 		}
 
 		// 실제 파일 내용이 이미지인지 검증

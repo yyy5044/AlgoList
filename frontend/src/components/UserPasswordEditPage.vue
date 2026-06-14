@@ -28,9 +28,9 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 const fileInput = ref(null)
 
-const allowedProfileImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const allowedProfileImageTypes = ['image/jpeg', 'image/png', 'image/gif']
 const profileImageAccept = allowedProfileImageTypes.join(',')
-const profileImageGuide = 'JPG, PNG, WEBP, GIF 형식만 가능하며, 2MB 이하·1024x1024 이하 이미지만 업로드할 수 있습니다.'
+const profileImageGuide = 'JPG, PNG, GIF 형식만 가능하며, 2MB 이하·1024x1024 이하 이미지만 업로드할 수 있습니다.'
 
 const displayName = computed(() => form.value.nickname || props.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -88,7 +88,7 @@ function onProfileImageChange(event) {
   }
 
   if (!allowedProfileImageTypes.includes(file.type)) {
-    profileImageError.value = '프로필 이미지는 JPG, PNG, WEBP, GIF 형식만 가능합니다.'
+    profileImageError.value = '프로필 이미지는 JPG, PNG, GIF 형식만 가능합니다.'
     if (fileInput.value) {
       fileInput.value.value = ''
     }
