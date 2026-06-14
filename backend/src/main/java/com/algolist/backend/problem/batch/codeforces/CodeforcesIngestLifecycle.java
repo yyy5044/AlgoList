@@ -7,6 +7,7 @@ import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.launch.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
@@ -36,11 +37,19 @@ public class CodeforcesIngestLifecycle implements SmartLifecycle {
     private final JobOperator jobOperator;
     private final Job codeforcesIngestJob; 
 
+    /** 개발 중 매 재시작마다 배치가 도는 게 거슬릴 때 false 로 끄면 시작 시 실행하지 않는다. */
+    @Value("${codeforces.batch.run-on-startup:true}")
+    private boolean runOnStartup = true;
+
     private volatile Thread worker;
     private volatile boolean running = false;
 
     @Override
     public void start() {
+        if (!runOnStartup) {
+            log.info("[CF-BATCH] run-on-startup=false → 시작 시 자동 실행 안 함");
+            return;
+        }
         running = true;
         worker = new Thread(this::runJob, "codeforces-ingest");
         worker.setDaemon(true);
