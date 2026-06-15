@@ -35,10 +35,18 @@ public class AdminBatchController {
         return ResponseEntity.ok(Map.of("status", "ALREADY_RUNNING", "message", "이미 실행 중입니다."));
     }
 
-    /** 코드포스 수집 중지 (graceful → STOPPED, 다음 실행 시 체크포인트부터 재개) */
+    /**
+     * 코드포스 수집 중지. 실제로 멈출 때까지 대기했다가 결과를 응답한다.
+     * (관리자 화면은 그동안 스피너로 "중지 중"을 보여주고, 응답이 오면 "완전히 중지됨"을 확인한다.)
+     */
     @PostMapping("/codeforces/stop")
     public ResponseEntity<Map<String, String>> stopCodeforces() {
-        codeforcesLauncher.stopGracefully();
-        return ResponseEntity.ok(Map.of("status", "STOPPING", "message", "중지를 요청했습니다."));
+        boolean stopped = codeforcesLauncher.stopGracefully();
+        if (stopped) {
+            return ResponseEntity.ok(Map.of("status", "STOPPED", "message", "완전히 중지되었습니다."));
+        }
+        return ResponseEntity.ok(Map.of("status", "STOPPING",
+                "message", "중지 요청됨 — 아직 정리 중입니다. 잠시 후 다시 시도/확인하세요."));
     }
+    
 }

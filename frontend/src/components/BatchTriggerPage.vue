@@ -21,25 +21,28 @@ const jobs = [
 const status = reactive({})
 
 function run(job) {
-  call(job, job.run, '실행 요청을 보냈습니다.')
+  call(job, job.run, '실행', '실행 요청을 보냈습니다.')
 }
 
 function stop(job) {
-  call(job, job.stop, '중지 요청을 보냈습니다.')
+  call(job, job.stop, '중지', '중지되었습니다.')
 }
 
-async function call(job, action, okMessage) {
-  status[job.key] = { loading: true, message: '', ok: null }
+// actionLabel: 로딩 중 표시("중지 중…"/"실행 중…")에 쓰는 동작 이름
+async function call(job, action, actionLabel, okMessage) {
+  status[job.key] = { loading: true, actionLabel, message: '', ok: null }
   try {
     const result = await action()
     status[job.key] = {
       loading: false,
+      actionLabel,
       message: result?.message || okMessage,
       ok: true,
     }
   } catch (error) {
     status[job.key] = {
       loading: false,
+      actionLabel,
       message: `실패 (${error?.status ?? '오류'})`,
       ok: false,
     }
@@ -65,10 +68,11 @@ async function call(job, action, okMessage) {
           <button class="run-btn" :disabled="status[job.key]?.loading" @click="run(job)">실행</button>
           <button class="stop-btn" :disabled="status[job.key]?.loading" @click="stop(job)">중지</button>
           <span
-            v-if="status[job.key]?.message"
-            :class="['job-status', status[job.key].ok ? 'ok' : 'fail']"
+            v-if="status[job.key]"
+            :class="['job-status', status[job.key].loading ? 'loading' : (status[job.key].ok ? 'ok' : 'fail')]"
           >
-            {{ status[job.key].loading ? '요청 중…' : status[job.key].message }}
+            <span v-if="status[job.key].loading" class="spinner" aria-hidden="true"></span>
+            {{ status[job.key].loading ? `${status[job.key].actionLabel} 중…` : status[job.key].message }}
           </span>
         </div>
       </li>
@@ -189,6 +193,8 @@ async function call(job, action, okMessage) {
 
 .job-status {
   font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .job-status.ok {
@@ -197,5 +203,26 @@ async function call(job, action, okMessage) {
 
 .job-status.fail {
   color: #d32f2f;
+}
+
+.job-status.loading {
+  color: #666;
+}
+
+.spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #d0d0d0;
+  border-top-color: #1a56db;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

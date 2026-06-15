@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * 코드포스 문제 수집 Job 정의 (Chunk 지향: Read -> Process -> Write).
  *
  * 한눈에 보는 구조
- *   codeforcesIngestJob                                  (실행 단위, 앱 시작 시 1회)
+ *   codeforcesIngestJob                                  (실행 단위, 관리자 트리거로 실행)
  *     └─ codeforcesIngestStep (chunk = page-size)        (작업 한 덩어리)
  *          ├─ reader   : CodeforcesPageReader  (전량을 페이징하며 읽음 + offset 체크포인트)
  *          ├─ processor: CodeforcesParser::parse(JsonNode -> ProblemDto, 실패 시 예외)
