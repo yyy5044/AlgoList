@@ -6,6 +6,7 @@ import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
 import UserListPage from './components/UserListPage.vue'
+import BatchTriggerPage from './components/BatchTriggerPage.vue'
 import UserProfileEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
 import DetailSection from './components/DetailSection.vue'
@@ -21,6 +22,7 @@ const mainPage = ref('problems')
 // 상단 탭: 'main' = 메인 페이지(문제 둘러보기), 'my' = 내 문제(기존 화면)
 const activeTab = ref('main')
 const isUserListPath = ref(window.location.pathname === '/users')
+const isBatchTriggerPath = ref(false) // 어드민 '배치 트리거' 뷰 표시 여부
 const loginSuccessMessage = ref('')
 const listSectionRef = ref(null) // 둘러보기에서 문제 추가 시 내 문제 목록 갱신용
 const isAdmin = computed(() => currentUserRole.value === 'ADMIN')
@@ -106,6 +108,7 @@ function showLoginPage() {
 function showProblemPage() {
   mainPage.value = 'problems'
   selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
   if (isUserListPath.value) {
     window.history.pushState({}, '', '/')
     isUserListPath.value = false
@@ -116,6 +119,7 @@ function showUserDetailPage() {
   mainPage.value = 'user-detail'
   activeTab.value = 'my' // 둘러보기 탭에서 눌러도 보이도록 내 문제 탭으로 전환
   selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
   if (isUserListPath.value) {
     window.history.pushState({}, '', '/')
     isUserListPath.value = false
@@ -127,8 +131,21 @@ function showUserListPage() {
 
   activeTab.value = 'my'
   selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
   window.history.pushState({}, '', '/users')
   isUserListPath.value = true
+}
+
+function showBatchTriggerPage() {
+  if (!isAdmin.value) return
+
+  activeTab.value = 'my'
+  selectedAdminUsername.value = ''
+  isUserListPath.value = false
+  isBatchTriggerPath.value = true
+  if (window.location.pathname === '/users') {
+    window.history.pushState({}, '', '/')
+  }
 }
 
 function showAdminUserDetailPage(username) {
@@ -175,6 +192,7 @@ function onProblemAdded() {
           </button>
         </div>
         <div class="top-bar-right">
+          <button v-if="isAdmin" class="user-link" @click="showBatchTriggerPage">배치 트리거</button>
           <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
           <button class="user-link" @click="showUserDetailPage">
             {{ currentUser }}님 환영합니다
@@ -200,6 +218,10 @@ function onProblemAdded() {
             v-else-if="isUserListPath && isAdmin"
             @back="showProblemPage"
             @select-user="showAdminUserDetailPage"
+          />
+          <BatchTriggerPage
+            v-else-if="isBatchTriggerPath && isAdmin"
+            @back="showProblemPage"
           />
           <UserDetailPage
             v-else-if="mainPage === 'user-detail'"
