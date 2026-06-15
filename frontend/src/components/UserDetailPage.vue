@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
 import UserSuspensionForm from './UserSuspensionForm.vue'
 import UserRoleUpdateForm from './UserRoleUpdateForm.vue'
+import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
   username: String,
@@ -122,11 +123,11 @@ async function loadUser() {
       selectedRole.value = user.value.role || 'USER'
       imageLoadFailed.value = false
     } else {
-      errorMessage.value = '회원 정보를 불러오지 못했습니다.'
+      errorMessage.value = await readErrorMessage(response, '회원 정보를 불러오지 못했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isLoading.value = false
   }
@@ -156,11 +157,11 @@ async function deleteUser() {
       successMessage.value = '회원 탈퇴가 완료되었습니다.'
       emit('delete-success')
     } else {
-      errorMessage.value = '회원 탈퇴에 실패했습니다.'
+      errorMessage.value = await readErrorMessage(response, '회원 탈퇴에 실패했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isDeleting.value = false
   }
@@ -184,18 +185,11 @@ async function suspendUser(payload) {
       await loadUser()
       emit('suspend-success')
     } else {
-      let message = '회원 정지에 실패했습니다.'
-      try {
-        const data = await response.json()
-        message = data.message || message
-      } catch (error) {
-        console.log(error)
-      }
-      errorMessage.value = message
+      errorMessage.value = await readErrorMessage(response, '회원 정지에 실패했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isSuspending.value = false
   }
@@ -222,18 +216,11 @@ async function releaseUserSuspension(payload) {
       await loadUser()
       emit('release-suspension-success')
     } else {
-      let message = '정지 해제에 실패했습니다.'
-      try {
-        const data = await response.json()
-        message = data.message || message
-      } catch (error) {
-        console.log(error)
-      }
-      errorMessage.value = message
+      errorMessage.value = await readErrorMessage(response, '정지 해제에 실패했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isReleasingSuspension.value = false
   }
@@ -259,18 +246,11 @@ async function updateUserRole(payload) {
       isRoleControlOpen.value = false
       await loadUser()
     } else {
-      let message = '권한 변경에 실패했습니다.'
-      try {
-        const data = await response.json()
-        message = data.message || message
-      } catch (error) {
-        console.log(error)
-      }
-      errorMessage.value = message
+      errorMessage.value = await readErrorMessage(response, '권한 변경에 실패했습니다.')
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = '서버에 연결할 수 없습니다.'
+    errorMessage.value = NETWORK_ERROR_MESSAGE
   } finally {
     isUpdatingRole.value = false
   }

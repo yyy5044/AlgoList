@@ -27,6 +27,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	// 회원가입
 	public boolean insertUser(CreateRequestDto request) {
 		String username = StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : null;
 		String password = request.getPassword();
@@ -90,6 +91,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	// 유저 삭제(Soft Delete)
 	public boolean deleteUser(String username) {
 		int result = userDao.deleteUser(username);
 

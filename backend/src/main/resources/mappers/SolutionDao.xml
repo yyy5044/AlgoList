@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.algolist.backend.solution.SolutionDao">
+	
+	<!-- Dto와 데이터베이스 컬럼 맞춰주기 -->
+	<resultMap id="solutionMap" type="SolutionDto" autoMapping="true">
+		<id column="solution_id" property="solutionId"/>
+		<result column="user_problem_id" property="userProblemId"/>
+	</resultMap>
+
+	<!-- 현재 선택된 문제의 모든 풀이들 반환(code 미포함) -->
+	<select id="selectSolutions" resultMap="solutionMap">
+		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.user_problem_id
+		FROM solutions s
+		JOIN user_problems up
+		USING (user_problem_id)
+		WHERE up.user_id = #{userId}
+		  AND s.user_problem_id = #{userProblemId}
+		ORDER BY s.solution_id DESC
+	</select>
+
+	<!-- 선택한 풀이 하나만 반환(code 포함) -->
+	<select id="selectSolution" resultMap="solutionMap">
+		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.code, s.user_problem_id
+		FROM solutions s
+		JOIN user_problems up
+		USING (user_problem_id)
+		WHERE up.user_id = #{userId}
+		  AND s.solution_id = #{solutionId}
+	</select>
+
+	<!-- UserProblemId가 현재 로그인한 유저의 UserProblem인지 확인(소유권 확인용) -->
+	<select id="countUserProblem" resultType="int">
+		SELECT COUNT(*)
+		FROM user_problems
+		WHERE user_id = #{userId}
+		  AND user_problem_id = #{userProblemId}
+	</select>
+
+	<!-- 현재 선택된 문제의 풀이 개수 확인(최대 개수 초과 방지) -->
+	<select id="countSolutions" resultType="int">
+		SELECT COUNT(*)
+		FROM solutions s
+		JOIN user_problems up
+		USING (user_problem_id)
+		WHERE up.user_id = #{userId}
+		  AND s.user_problem_id = #{userProblemId}
+	</select>
+
+	<!-- 문제 풀이 추가 -->
+	<insert id="insertSolution">
+		INSERT INTO solutions (algorithm, `type`, language, code, user_problem_id)
+		VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{userProblemId})
+	</insert>
+
+	<!-- 문제 풀이 삭제 -->
+	<delete id="deleteSolution">
+		DELETE s
+		FROM solutions s
+		JOIN user_problems up
+		USING (user_problem_id)
+		WHERE up.user_id = #{userId}
+		  AND s.solution_id = #{solutionId}
+	</delete>
+</mapper>
