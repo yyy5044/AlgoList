@@ -58,6 +58,14 @@ CREATE TABLE IF NOT EXISTS problems (
     UNIQUE KEY uq_site_number (site, number)
 );
 
+# 문제 번역: problems 테이블과 식별 관계
+CREATE TABLE IF NOT EXISTS translated_problems (
+	problem_id BIGINT PRIMARY KEY,
+	translated_title VARCHAR(255) NOT NULL,
+	translated_description MEDIUMTEXT,
+	FOREIGN KEY (problem_id) REFERENCES problems(problem_id) ON DELETE CASCADE
+);
+
 # 문제 분류: 문제 자체의 속성이므로 카탈로그(problems)에 종속
 CREATE TABLE IF NOT EXISTS problem_categories (
     problem_category_id BIGINT AUTO_INCREMENT PRIMARY KEY,
