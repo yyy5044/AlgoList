@@ -20,7 +20,7 @@ public class AlgoListDBConfig {
 	DataSource algoListDataSource() {
 		return DataSourceBuilder.create().type(HikariDataSource.class).build();
 	}
-	
+
     @Bean(name = "algoListTransactionManager")
     @Primary
     PlatformTransactionManager algoListTransactionManager(DataSource dataSource) {

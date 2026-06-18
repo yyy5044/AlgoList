@@ -1,17 +1,21 @@
 package com.algolist.backend.problem.batch.common;
 
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
-/**
- * 수집 중 끝내 실패한 "페이지(offset 구간)"를 기록하는 매퍼.
- * 나중에 이 기록(status='PENDING')만 골라 재시도하는 잡을 붙일 수 있다.
- */
-@Mapper
-public interface FailedPageDao {
+@Repository
+public class FailedPageDao {
 
-    int insertFailedPage(@Param("source") String source,
-                         @Param("pageOffset") long pageOffset,
-                         @Param("pageSize") int pageSize,
-                         @Param("reason") String reason);
+    private final JdbcTemplate jdbcTemplate;
+
+    public FailedPageDao(@Qualifier("batchSystemDataSource") javax.sql.DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    public int insertFailedPage(String source, long pageOffset, int pageSize, String reason) {
+        return jdbcTemplate.update(
+                "INSERT INTO failed_pages (source, page_offset, page_size, reason) VALUES (?, ?, ?, ?)",
+                source, pageOffset, pageSize, reason);
+    }
 }

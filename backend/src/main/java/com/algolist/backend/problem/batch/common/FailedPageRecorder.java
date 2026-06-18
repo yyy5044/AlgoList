@@ -20,7 +20,7 @@ public class FailedPageRecorder {
 
     private final FailedPageDao dao;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "batchSystemTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void record(String source, long pageOffset, int pageSize, String reason) {
         String trimmed = (reason != null && reason.length() > 1000)
                 ? reason.substring(0, 1000) : reason;
