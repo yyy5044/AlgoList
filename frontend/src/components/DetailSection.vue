@@ -131,10 +131,7 @@ const descriptionHtml = computed(() => {
       </div>
       <!-- 문제 본문 -->
       <div v-if="selectedItem.problem.description" class="description-section">
-        <h3 class="description-title">
-          문제 본문
-          <span v-if="showTranslation" class="translated-badge">AI 번역됨</span>
-        </h3>
+        <span v-if="showTranslation" class="translated-badge">AI 번역됨</span>
         <div class="description-content" v-html="descriptionHtml"></div>
       </div>
     </div>
@@ -382,5 +379,36 @@ const descriptionHtml = computed(() => {
 .description-content :deep(th) {
   background-color: #f5f5f5;
   font-weight: 600;
+}
+
+/* Examples — Codeforces 스타일 */
+.description-content :deep(.example-box) {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.description-content :deep(.example-header) {
+  background-color: #f0f0f0;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid #ddd;
+}
+
+.description-content :deep(.example-data) {
+  margin: 0;
+  padding: 10px 12px;
+  background-color: #fff;
+  border-radius: 0;
+  border-bottom: 1px solid #ddd;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.description-content :deep(.example-box .example-data:last-child) {
+  border-bottom: none;
 }
 </style>

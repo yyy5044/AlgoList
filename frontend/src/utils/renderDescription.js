@@ -47,10 +47,10 @@ function renderMath(text) {
     }
   })
 
-  // $$..$$ (블록)
+  // $$..$$ (인라인 — 데이터셋에서 인라인 용도로 사용됨)
   text = text.replace(/\$\$([\s\S]*?)\$\$/g, (whole, tex) => {
     try {
-      return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false })
+      return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false })
     } catch {
       return whole
     }

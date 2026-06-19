@@ -67,16 +67,31 @@ public class CodeforcesParser implements ProblemParser<JsonNode> {
     private String buildDescription(JsonNode row) {
         StringBuilder description = new StringBuilder();
         if (row.hasNonNull("description")) {
-            description.append(row.get("description").asText());
+            description.append("## Description\n\n").append(row.get("description").asText());
         }
         if (row.hasNonNull("input_format")) {
-            description.append("\n\n**Input**\n").append(row.get("input_format").asText());
+            description.append("\n\n## Input\n\n").append(row.get("input_format").asText());
         }
         if (row.hasNonNull("output_format")) {
-            description.append("\n\n**Output**\n").append(row.get("output_format").asText());
+            description.append("\n\n## Output\n\n").append(row.get("output_format").asText());
+        }
+        if (row.has("examples") && row.get("examples").isArray() && !row.get("examples").isEmpty()) {
+            description.append("\n\n## Examples\n\n");
+            for (JsonNode example : row.get("examples")) {
+                description.append("<div class=\"example-box\">");
+                if (example.hasNonNull("input")) {
+                    description.append("<div class=\"example-header\">Input</div>")
+                               .append("<pre class=\"example-data\">").append(example.get("input").asText()).append("</pre>");
+                }
+                if (example.hasNonNull("output")) {
+                    description.append("<div class=\"example-header\">Output</div>")
+                               .append("<pre class=\"example-data\">").append(example.get("output").asText()).append("</pre>");
+                }
+                description.append("</div>");
+            }
         }
         if (row.hasNonNull("note")) {
-            description.append("\n\n**Note**\n").append(row.get("note").asText());
+            description.append("\n\n## Note\n\n").append(row.get("note").asText());
         }
         return description.toString();
     }
