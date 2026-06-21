@@ -25,3 +25,15 @@ export async function stopCodeforcesIngest() {
   const response = await postJson('/api/admin/batch/codeforces/stop', {})
   return readJsonSafely(response)
 }
+
+/** GitHub(백준) 문제 수집 배치 실행 트리거 */
+export async function runGitHubIngest() {
+  const response = await postJson('/api/admin/batch/github', {})
+  return readJsonSafely(response)
+}
+
+/** GitHub(백준) 문제 수집 배치 중지 */
+export async function stopGitHubIngest() {
+  const response = await postJson('/api/admin/batch/github/stop', {})
+  return readJsonSafely(response)
+}

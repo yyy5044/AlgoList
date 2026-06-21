@@ -15,6 +15,13 @@ const jobs = [
     run: adminApi.runCodeforcesIngest,
     stop: adminApi.stopCodeforcesIngest,
   },
+  {
+    key: 'github',
+    label: '백준 문제 수집',
+    description: 'GitHub Search API로 백준허브 README를 수집해 DB에 적재합니다.',
+    run: adminApi.runGitHubIngest,
+    stop: adminApi.stopGitHubIngest,
+  },
 ]
 
 // key -> { loading, message, ok }
