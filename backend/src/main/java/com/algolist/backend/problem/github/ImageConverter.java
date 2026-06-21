@@ -1,7 +1,9 @@
 package com.algolist.backend.problem.github;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,12 +39,18 @@ public class ImageConverter {
      * 이미지를 다운로드한 뒤 Base64 data URI로 교체한다.
      * 다운로드 실패 시 대체 텍스트로 교체.
      */
-    public String processImages(String html) {
-        if (html == null || !html.contains("<img")) return html;
+    public ImageProcessResult processImages(String html) {
+    	List<String> failedUrls = new ArrayList<>();
+
+        if (html == null || !html.contains("<img")) {
+        	return new ImageProcessResult(html, true, failedUrls);
+        }
 
         Matcher imgMatcher = IMG_PATTERN.matcher(html);
         StringBuilder sb = new StringBuilder();
 
+        boolean failed = false;
+        
         while (imgMatcher.find()) {
             String imgUrl = imgMatcher.group(1);
             String dataUri = downloadAsBase64(imgUrl);
@@ -51,13 +59,18 @@ public class ImageConverter {
                 imgMatcher.appendReplacement(sb,
                     Matcher.quoteReplacement(imgMatcher.group().replace(imgUrl, dataUri)));
             } else {
-                imgMatcher.appendReplacement(sb,
-                    Matcher.quoteReplacement("<em>[이미지를 불러올 수 없습니다]</em>"));
+                failedUrls.add(imgUrl);
+                failed = true;
             }
         }
 
-        imgMatcher.appendTail(sb);
-        return sb.toString();
+        if (failed) {
+        	return new ImageProcessResult(html, false, failedUrls);
+        } else {
+        	imgMatcher.appendTail(sb);
+        	return new ImageProcessResult(sb.toString(), true, failedUrls);
+        }
+        
     }
 
     /** 이미지 URL → Base64 data URI. 실패 시 null */
