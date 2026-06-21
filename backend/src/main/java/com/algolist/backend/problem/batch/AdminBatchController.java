@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.problem.batch.codeforces.CodeforcesIngestLauncher;
+import com.algolist.backend.problem.batch.github.GitHubIngestLauncher;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,8 +25,9 @@ import lombok.RequiredArgsConstructor;
 public class AdminBatchController {
 
     private final CodeforcesIngestLauncher codeforcesLauncher;
+    private final GitHubIngestLauncher githubIngestLauncher;
 
-    /** 코드포스 수집 실행 (이미 돌고 있으면 중복 실행하지 않음) */
+    // 코드포스 수집 실행 (이미 돌고 있으면 중복 실행하지 않음)
     @PostMapping("/codeforces")
     public ResponseEntity<Map<String, String>> runCodeforces() {
         boolean started = codeforcesLauncher.launch();
@@ -35,10 +37,7 @@ public class AdminBatchController {
         return ResponseEntity.ok(Map.of("status", "ALREADY_RUNNING", "message", "이미 실행 중입니다."));
     }
 
-    /**
-     * 코드포스 수집 중지. 실제로 멈출 때까지 대기했다가 결과를 응답한다.
-     * (관리자 화면은 그동안 스피너로 "중지 중"을 보여주고, 응답이 오면 "완전히 중지됨"을 확인한다.)
-     */
+    // 코드포스 수집 중지. 실제로 멈출 때까지 대기했다가 결과를 응답한다.
     @PostMapping("/codeforces/stop")
     public ResponseEntity<Map<String, String>> stopCodeforces() {
         boolean stopped = codeforcesLauncher.stopGracefully();
@@ -49,4 +48,24 @@ public class AdminBatchController {
                 "message", "중지 요청됨 — 아직 정리 중입니다. 잠시 후 다시 시도/확인하세요."));
     }
     
+    // 백준 문제 수집 실행
+    @PostMapping("/github")
+    public ResponseEntity<Map<String, String>> runGitHub() {
+    	boolean started = githubIngestLauncher.launch();
+    	if (started) {
+    		return ResponseEntity.ok(Map.of("status", "STARTED", "message", "백준 수집을 시작했습니다."));
+    	}
+    	return ResponseEntity.ok(Map.of("status", "ALREADY_RUNNING", "message", "이미 실행 중입니다."));
+    }
+    
+    // 백준 수집 중지
+    @PostMapping("/github/stop")
+    public ResponseEntity<Map<String, String>> stopGitHub() {
+        boolean stopped = githubIngestLauncher.stopGracefully();
+        if (stopped) {
+            return ResponseEntity.ok(Map.of("status", "STOPPED", "message", "완전히 중지되었습니다."));
+        }
+        return ResponseEntity.ok(Map.of("status", "STOPPING",
+                "message", "중지 요청됨 — 아직 정리 중입니다. 잠시 후 다시 시도/확인하세요."));
+    }
 }
