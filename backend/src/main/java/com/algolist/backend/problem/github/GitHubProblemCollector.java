@@ -6,9 +6,6 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.algolist.backend.problem.dto.ProblemDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +18,6 @@ public class GitHubProblemCollector {
     private final GitHubClient client;
     private final ReadmeParser parser;
     private final ImageConverter imageConverter;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 사용자 검색어를 기반으로 GitHub에서 문제를 찾아
@@ -30,10 +26,7 @@ public class GitHubProblemCollector {
     public List<ProblemDto> searchProblems(String query, int maxResults) {
         String searchQuery = query + " \"### 문제 설명\" filename:README.md";
 
-        String json = client.searchCode(searchQuery, maxResults);
-        if (json == null) return List.of();
-
-        List<String> fileUrls = extractFileUrls(json);
+        List<String> fileUrls = client.searchCode(searchQuery, maxResults, 1);
 
         List<ProblemDto> results = new ArrayList<>();
         for (String fileUrl : fileUrls) {
@@ -60,26 +53,4 @@ public class GitHubProblemCollector {
         return dto;
     }
 
-    /** Search API 응답 JSON에서 파일의 Contents API URL을 추출한다 */
-    private List<String> extractFileUrls(String json) {
-        List<String> urls = new ArrayList<>();
-        JsonNode root;
-        try {
-            root = objectMapper.readTree(json);
-        } catch (JsonProcessingException e) {
-            // checked → unchecked로 전환하여 전역 핸들러까지 전파 (삼키지 않음)
-            throw new IllegalStateException("GitHub 검색 응답 파싱 실패", e);
-        }
-
-        JsonNode items = root.get("items");
-        if (items != null && items.isArray()) {
-            for (JsonNode item : items) {
-                JsonNode urlNode = item.get("url");
-                if (urlNode != null) {
-                    urls.add(urlNode.asText());
-                }
-            }
-        }
-        return urls;
-    }
 }
