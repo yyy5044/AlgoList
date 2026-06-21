@@ -9,17 +9,17 @@ import org.springframework.batch.infrastructure.item.ExecutionContext;
 import org.springframework.batch.infrastructure.item.ItemStreamReader;
 import org.springframework.stereotype.Component;
 
-import com.algolist.backend.problem.batch.common.FailedPageRecorder;
 import com.algolist.backend.problem.github.GitHubClient;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @StepScope
 @RequiredArgsConstructor
-public class GitHubProblemReader implements ItemStreamReader<String>{
+public class GitHubProblemReader implements ItemStreamReader<GitHubReadme>{
 	private final GitHubClient client;
-	private final FailedPageRecorder failedPageRecorder;
  
 	private List<String> queries;
 	private int queryIndex = 0;
@@ -30,10 +30,17 @@ public class GitHubProblemReader implements ItemStreamReader<String>{
 	private int fileIndex = 0;
 
 	@Override
-	public @Nullable String read() throws Exception {
+	public @Nullable GitHubReadme read() throws Exception {
 	    while (queryIndex < queries.size()) {
+	    	if (page > 10) {
+	    	    queryIndex++;
+	    	    page = 1;
+	    	    continue;
+	    	}
+	    	
 	        // URL 목록이 비었으면 채우기
 	        if (fileUrls == null || fileIndex >= fileUrls.size()) {
+	        	log.info("[배치] 검색 시작: query={}, page={}", queries.get(queryIndex), page);
 	            fileUrls = client.searchCode(queries.get(queryIndex), 100, page);
 	            fileIndex = 0;
 
@@ -47,9 +54,12 @@ public class GitHubProblemReader implements ItemStreamReader<String>{
 	        }
 
 	        // URL 하나 꺼내서 README 가져오기
-	        String readme = client.fetchFileContent(fileUrls.get(fileIndex));
+	        String fileUrl = fileUrls.get(fileIndex);
+	        log.info("[배치] README fetch: [{}/{}] {}", fileIndex + 1, fileUrls.size(), fileUrl);
+	        Thread.sleep(500);
+	        String readme = client.fetchFileContent(fileUrl);
 	        fileIndex++;
-	        return readme;
+	        return new GitHubReadme(fileUrl, readme);
 	    }
 	    return null;  // 검색어 다 썼으면 끝
 	}

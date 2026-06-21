@@ -151,7 +151,7 @@ public class ReadmeParser {
             }
         }
 
-        return result.toString().replaceFirst("### 문제 설명\\s*", "").trim();
+        return result.toString().trim();
     }
 
     /** 헤더가 알려진 백준 문제 섹션인지 판별 */

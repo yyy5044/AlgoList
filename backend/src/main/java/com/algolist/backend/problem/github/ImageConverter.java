@@ -47,10 +47,17 @@ public class ImageConverter {
         }
 
         Matcher imgMatcher = IMG_PATTERN.matcher(html);
-        StringBuilder sb = new StringBuilder();
-
-        boolean failed = false;
         
+        // <img> 태그는 있는데 다운로드 가능한 이미지가 하나도 없음
+        if (!imgMatcher.find()) {
+            return new ImageProcessResult(html, false, failedUrls);
+        }
+
+        // find()가 커서를 이미 한 칸 옮겼으니 reset()
+        imgMatcher.reset();
+        
+        StringBuilder sb = new StringBuilder();
+        boolean failed = false;
         while (imgMatcher.find()) {
             String imgUrl = imgMatcher.group(1);
             String dataUri = downloadAsBase64(imgUrl);
@@ -76,19 +83,27 @@ public class ImageConverter {
     /** 이미지 URL → Base64 data URI. 실패 시 null */
     private String downloadAsBase64(String imageUrl) {
         try {
+        	log.info("[downloadAsBase64] 이미지 다운로드 시도: {}", imageUrl);
             ResponseEntity<byte[]> response = restClient.get()
                 .uri(URI.create(imageUrl))
                 .retrieve()
                 .toEntity(byte[].class);
 
             byte[] body = response.getBody();
-            if (body == null) return null;
+            if (body == null) {
+            	log.warn("[downloadAsBase64] 이미지 다운로드 실패: body is null");
+            	return null;
+            }
 
             MediaType contentType = response.getHeaders().getContentType();
-            String type = (contentType != null) ? contentType.toString() : "image/png";
+            if (contentType == null || !contentType.getType().equals("image")) {
+                log.warn("[downloadAsBase64] 이미지가 아닌 응답: {} contentType: {}", imageUrl, contentType);
+                return null;
+            }
+            String type = contentType.toString();
             return "data:" + type + ";base64," + Base64.getEncoder().encodeToString(body);
         } catch (Exception e) {
-            log.warn("이미지 다운로드 실패: {} ({})", imageUrl, e.getMessage());
+            log.warn("[downloadAsBase64] 이미지 다운로드 예외 발생: {}, 에러메세지: ({})", imageUrl, e.getMessage());
             return null;
         }
     }

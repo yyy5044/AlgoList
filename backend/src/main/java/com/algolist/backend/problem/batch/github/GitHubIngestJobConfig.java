@@ -28,7 +28,7 @@ public class GitHubIngestJobConfig {
 			) {
 		
 		return new StepBuilder(STEP_NAME, jobRepository)
-				.<String, ProblemDto>chunk(100)
+				.<GitHubReadme, ProblemDto>chunk(100)
 				.reader(reader)
 				.processor(processor)
 				.writer(writer)

@@ -43,13 +43,22 @@ public class GitHubProblemCollector {
 
     /** 하나의 파일 URL → README 조회 → 파싱 → 이미지 처리 */
     private ProblemDto fetchAndParse(String fileUrl) {
+        log.info("[온디맨드] README fetch 시작: {}", fileUrl);
         String readme = client.fetchFileContent(fileUrl);
         if (readme == null) return null;
 
+        log.info("[온디맨드] 파싱 시작");
         ProblemDto dto = parser.parse(readme);
         if (dto == null) return null;
 
-        dto.setDescription(imageConverter.processImages(dto.getDescription()));
+        log.info("[온디맨드] 이미지 변환 시작: {}", dto.getNumber());
+        ImageProcessResult imageProcessResult = imageConverter.processImages(dto.getDescription());
+        if (!imageProcessResult.isSuccess()) {
+            log.warn("[온디맨드] 이미지 다운로드 실패: {} ({})", dto.getNumber(), imageProcessResult.getFailedUrls());
+            return null;
+        }
+        dto.setDescription(imageProcessResult.getHtml());
+        log.info("[온디맨드] 완료: {}", dto.getNumber());
         return dto;
     }
 
