@@ -10,3 +10,13 @@ CREATE TABLE IF NOT EXISTS failed_pages (
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS failed_problems (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    site VARCHAR(50),              -- BOJ, PROGRAMMERS 등
+    number VARCHAR(50),            -- 문제 번호
+    file_url VARCHAR(1000),        -- README를 다시 가져올 GitHub URL
+    reason VARCHAR(1000),          -- 실패한 이미지 URL 등
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
