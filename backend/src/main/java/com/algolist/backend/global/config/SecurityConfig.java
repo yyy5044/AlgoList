@@ -44,6 +44,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/csrf").permitAll() // CSRF 토큰을 받는 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/login").permitAll() // 로그인 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/users").permitAll() // POST 요청으로 오는 /api/users(회원가입) 요청은 모두 가능
+			.requestMatchers(HttpMethod.POST, "/api/email-verifications", "/api/email-verifications/confirm").permitAll() // 이메일 인증 요청은 모두 가능
 			.requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN만 가능
 			.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // swagger 관련 요청은 모두 허용
 			.anyRequest().authenticated()) // 로그인을 제외한 나머지 요청들은 로그인해야 가능하도록 설정

@@ -1,7 +1,10 @@
 package com.algolist.backend.user.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.algolist.backend.global.exception.DuplicateUsernameException;
@@ -25,6 +28,7 @@ public class UserServiceImpl implements UserService {
 	private final UserDao userDao;
 	private final PasswordEncoder passwordEncoder;
 	private final ProfileImageService profileImageService;
+	private final EmailVerificationService emailVerificationService;
 
 	@Override
 	public UserDetailDto selectUser(String username) {
@@ -33,10 +37,12 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	// 회원가입
+	@Transactional
 	public boolean insertUser(CreateRequestDto request) {
 		String username = StringUtils.hasText(request.getUsername()) ? request.getUsername().trim() : null;
 		String password = request.getPassword();
 		String nickname = StringUtils.hasText(request.getNickname()) ? request.getNickname().trim() : null;
+		String email = request.getEmail();
 
 		// username이나 password는 필수 값이므로 하나라도 없을 시 예외 반환
 		if (username == null || !StringUtils.hasText(password)) {
@@ -57,15 +63,24 @@ public class UserServiceImpl implements UserService {
 			throw new DuplicateUsernameException("이미 사용 중인 아이디입니다.");
 		}
 
+		String normalizedEmail = emailVerificationService.normalizeEmail(email);
+		// 이메일 인증 여부 확인(컬럼에 넣을 값)
+		LocalDateTime emailVerifiedAt = emailVerificationService.validateSignupEmail(normalizedEmail);
 		String profileImageUrl = profileImageService.saveProfileImage(request.getProfileImage());
 		
 		// 유저 생성 시 1개의 행이 생성되므로 result가 1이여야만 정상 동작으로 간주
-		int result = userDao.insertUser(username, password, nickname, profileImageUrl);
-
-		if (result != 1) {
-			return false;
-		} else {
+		try {
+			int result = userDao.insertUser(username, normalizedEmail, emailVerifiedAt, password, nickname, profileImageUrl);
+			if (result != 1) {
+				profileImageService.deleteProfileImage(profileImageUrl);
+				return false;
+			}
+			// 인증한 이메일 데이터는 consumed_at 컬럼 설정
+			emailVerificationService.consumeVerifiedEmail(normalizedEmail);
 			return true;
+		} catch (RuntimeException e) {
+			profileImageService.deleteProfileImage(profileImageUrl);
+			throw e;
 		}
 	}
 

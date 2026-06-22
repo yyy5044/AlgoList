@@ -2,6 +2,8 @@ package com.algolist.backend.user.service;
 
 import java.util.List;
 
+import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
@@ -16,6 +18,12 @@ public interface AdminUserService {
 	public UserPageResponseDto selectUsers(int page, int size, String status, String searchType, String keyword);
 
 	public UserDetailDto selectUser(String username);
+
+	public List<UserProblemDto> selectUserProblems(String username);
+
+	public List<SolutionDto> selectUserProblemSolutions(String username, Long userProblemId);
+
+	public SolutionDto selectUserProblemSolution(String username, Long userProblemId, Long solutionId);
 
 	public boolean deleteUser(String username);
 

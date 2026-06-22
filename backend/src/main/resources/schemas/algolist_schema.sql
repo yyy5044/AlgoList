@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
     username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    email_verified_at DATETIME NOT NULL,
     nickname VARCHAR(50),
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
@@ -21,6 +23,25 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at DATETIME NULL,
 
     INDEX idx_users_account_status (account_status)
+);
+
+# 이메일 인증 테이블
+CREATE TABLE IF NOT EXISTS email_verifications (
+    verification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    email VARCHAR(255) NOT NULL UNIQUE,
+    code_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    verified_at DATETIME NULL,
+    consumed_at DATETIME NULL,
+    failed_attempts INT NOT NULL DEFAULT 0,
+    blocked_until DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    # 인증 요청이 갱신될 때마다 updated_at을 현재 시간으로 변경
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_email_verifications_expires_at (expires_at),
+    INDEX idx_email_verifications_consumed_at (consumed_at)
 );
 
 # 정지 이력 기록 테이블

@@ -28,6 +28,12 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
 	}
 
+	/** 중복 이메일 → 409 */
+	@ExceptionHandler(DuplicateEmailException.class)
+	public ResponseEntity<Map<String, String>> handleDuplicateEmailException(DuplicateEmailException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+	}
+
 	/** 잘못된 요청 파라미터 → 400 */
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {

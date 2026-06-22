@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
@@ -7,6 +7,8 @@ const emit = defineEmits(['back-to-login', 'signup-success'])
 
 const form = ref({
   username: '',
+  email: '',
+  emailCode: '',
   nickname: '',
   password: '',
   passwordConfirm: '',
@@ -16,6 +18,15 @@ const profile = ref({
   previewUrl: '',
   imageLoadFailed: false,
 })
+const emailVerification = ref({
+  sent: false,
+  verified: false,
+  message: '',
+  messageType: '',
+  isSending: false,
+  isConfirming: false,
+})
+const verifiedEmail = ref('')
 const errorMessage = ref('')
 const profileImageError = ref('')
 const isSubmitting = ref(false)
@@ -27,10 +38,27 @@ const profileImageGuide = 'JPG, PNG, GIF 형식만 가능하며, 2MB 이하·102
 const maxUsernameLength = 50
 const maxNicknameLength = 50
 const maxPasswordLength = 72
+const maxEmailLength = 255
 
 const displayName = computed(() => form.value.nickname || form.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
 const profilePreview = computed(() => profile.value.previewUrl)
+const normalizedEmail = computed(() => form.value.email.trim().toLowerCase())
+const isEmailVerified = computed(
+  () => emailVerification.value.verified && verifiedEmail.value === normalizedEmail.value,
+)
+
+watch(
+  () => form.value.email,
+  () => {
+    form.value.emailCode = ''
+    verifiedEmail.value = ''
+    emailVerification.value.sent = false
+    emailVerification.value.verified = false
+    emailVerification.value.message = ''
+    emailVerification.value.messageType = ''
+  },
+)
 
 onBeforeUnmount(() => {
   revokePreviewUrl()
@@ -77,11 +105,106 @@ function clearProfileImageSelection() {
   }
 }
 
+async function sendEmailVerificationCode() {
+  errorMessage.value = ''
+  emailVerification.value.message = ''
+  emailVerification.value.messageType = ''
+
+  if (!isValidEmail(normalizedEmail.value)) {
+    emailVerification.value.message = '올바른 이메일 주소를 입력해주세요.'
+    emailVerification.value.messageType = 'error'
+    return
+  }
+
+  try {
+    emailVerification.value.isSending = true
+    const response = await fetchWithCsrf('/api/email-verifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email: normalizedEmail.value }),
+    })
+
+    if (response.ok) {
+      emailVerification.value.sent = true
+      emailVerification.value.verified = false
+      emailVerification.value.message = '인증 코드가 발송되었습니다. 메일함을 확인해주세요.'
+      emailVerification.value.messageType = 'success'
+    } else {
+      emailVerification.value.message = await readErrorMessage(response, '인증 코드 발송에 실패했습니다.')
+      emailVerification.value.messageType = 'error'
+    }
+  } catch (error) {
+    console.log(error)
+    emailVerification.value.message = NETWORK_ERROR_MESSAGE
+    emailVerification.value.messageType = 'error'
+  } finally {
+    emailVerification.value.isSending = false
+  }
+}
+
+async function confirmEmailVerificationCode() {
+  errorMessage.value = ''
+  emailVerification.value.message = ''
+  emailVerification.value.messageType = ''
+
+  if (!emailVerification.value.sent) {
+    emailVerification.value.message = '먼저 인증 코드를 발송해주세요.'
+    emailVerification.value.messageType = 'error'
+    return
+  }
+
+  if (!/^\d{6}$/.test(form.value.emailCode.trim())) {
+    emailVerification.value.message = '6자리 인증 코드를 입력해주세요.'
+    emailVerification.value.messageType = 'error'
+    return
+  }
+
+  try {
+    emailVerification.value.isConfirming = true
+    const response = await fetchWithCsrf('/api/email-verifications/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        email: normalizedEmail.value,
+        code: form.value.emailCode.trim(),
+      }),
+    })
+
+    if (response.ok) {
+      verifiedEmail.value = normalizedEmail.value
+      emailVerification.value.verified = true
+      emailVerification.value.message = '이메일 인증이 완료되었습니다.'
+      emailVerification.value.messageType = 'success'
+    } else {
+      emailVerification.value.message = await readErrorMessage(response, '이메일 인증에 실패했습니다.')
+      emailVerification.value.messageType = 'error'
+    }
+  } catch (error) {
+    console.log(error)
+    emailVerification.value.message = NETWORK_ERROR_MESSAGE
+    emailVerification.value.messageType = 'error'
+  } finally {
+    emailVerification.value.isConfirming = false
+  }
+}
+
 async function signup() {
   errorMessage.value = ''
 
-  if (!form.value.username.trim() || !form.value.password.trim() || !form.value.passwordConfirm.trim()) {
-    errorMessage.value = '아이디와 비밀번호를 모두 입력해주세요.'
+  if (
+    !form.value.username.trim() ||
+    !normalizedEmail.value ||
+    !form.value.password.trim() ||
+    !form.value.passwordConfirm.trim()
+  ) {
+    errorMessage.value = '아이디, 이메일, 비밀번호, 비밀번호 확인을 모두 입력해주세요.'
+    return
+  }
+
+  if (!isEmailVerified.value) {
+    errorMessage.value = '회원가입 전에 이메일 인증을 완료해주세요.'
     return
   }
 
@@ -99,6 +222,7 @@ async function signup() {
     isSubmitting.value = true
     const formData = new FormData()
     formData.append('username', form.value.username)
+    formData.append('email', normalizedEmail.value)
     formData.append('password', form.value.password)
     formData.append('nickname', form.value.nickname)
 
@@ -123,6 +247,10 @@ async function signup() {
   } finally {
     isSubmitting.value = false
   }
+}
+
+function isValidEmail(email) {
+  return email.length <= maxEmailLength && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 function isValidPassword(password) {
@@ -188,6 +316,61 @@ function isValidPassword(password) {
       </div>
 
       <div class="form-section">
+        <label class="form-label" for="email">
+          이메일 <span class="required-mark">*</span>
+        </label>
+        <div class="inline-action">
+          <input
+            id="email"
+            v-model="form.email"
+            type="email"
+            :maxlength="maxEmailLength"
+            placeholder="name@example.com"
+            :disabled="emailVerification.isSending || emailVerification.isConfirming || isSubmitting"
+          />
+          <button
+            class="inline-button"
+            type="button"
+            :disabled="emailVerification.isSending || !normalizedEmail"
+            @click="sendEmailVerificationCode"
+          >
+            {{ emailVerification.isSending ? '발송 중' : '발송' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label class="form-label" for="emailCode">
+          인증 코드 <span class="required-mark">*</span>
+        </label>
+        <div class="inline-action">
+          <input
+            id="emailCode"
+            v-model="form.emailCode"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="6자리 코드"
+            :disabled="!emailVerification.sent || isEmailVerified"
+            @keyup.enter="confirmEmailVerificationCode"
+          />
+          <button
+            class="inline-button"
+            type="button"
+            :disabled="emailVerification.isConfirming || !emailVerification.sent || isEmailVerified"
+            @click="confirmEmailVerificationCode"
+          >
+            {{ emailVerification.isConfirming ? '확인 중' : '확인' }}
+          </button>
+        </div>
+        <p
+          v-if="emailVerification.message"
+          :class="['field-guide', emailVerification.messageType]"
+        >
+          {{ emailVerification.message }}
+        </p>
+      </div>
+
+      <div class="form-section">
         <label class="form-label" for="password">
           비밀번호 <span class="required-mark">*</span>
         </label>
@@ -225,11 +408,14 @@ function isValidPassword(password) {
           @keyup.enter="signup"
         />
       </div>
+
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-      <button @click="signup" :disabled="isSubmitting">
+      <button type="button" @click="signup" :disabled="isSubmitting || !isEmailVerified">
         {{ isSubmitting ? '가입 중...' : '회원가입' }}
       </button>
-      <button class="login-link" @click="emit('back-to-login')">로그인으로 돌아가기</button>
+      <button class="login-link" type="button" @click="emit('back-to-login')">
+        로그인으로 돌아가기
+      </button>
     </div>
   </div>
 </template>
@@ -250,7 +436,7 @@ function isValidPassword(password) {
   padding: 36px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  width: min(100%, 400px);
+  width: min(100%, 440px);
   text-align: center;
 }
 
@@ -313,12 +499,25 @@ function isValidPassword(password) {
 
 input {
   width: 100%;
+  min-width: 0;
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
   color: #333;
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.inline-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 8px;
+}
+
+.inline-button {
+  height: 40px;
+  padding: 0 10px;
+  font-size: 13px;
 }
 
 .file-input {
@@ -337,18 +536,29 @@ input {
   color: #888;
 }
 
-.field-error {
+.field-guide.success {
+  color: #1f8f4d;
+  font-weight: 600;
+}
+
+.field-guide.error {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.field-error,
+.error {
   color: #e74c3c;
 }
 
 .error {
-  color: #e74c3c;
   font-size: 13px;
   margin-bottom: 12px;
 }
 
 button {
   width: 100%;
+  min-height: 40px;
   padding: 10px;
   background: #4a90d9;
   color: white;
@@ -388,5 +598,15 @@ button:disabled {
 
 .login-link:hover {
   background: #f0f6fd;
+}
+
+@media (max-width: 420px) {
+  .signup-box {
+    padding: 28px 20px;
+  }
+
+  .inline-action {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
