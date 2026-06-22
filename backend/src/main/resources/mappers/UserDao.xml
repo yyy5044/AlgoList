@@ -8,6 +8,7 @@
 	<resultMap type="UserDto" id="UserDtoMap" autoMapping="true">
 		<id column="user_id" property="userId"/>
 		<result column="account_status" property="accountStatus"/>
+		<result column="email_verified_at" property="emailVerifiedAt"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="deleted_at" property="deletedAt"/>
 	</resultMap>
@@ -15,6 +16,7 @@
 	<resultMap type="UserDetailDto" id="UserDetailDtoMap" autoMapping="true">
 		<result column="profile_image_url" property="profileImageUrl"/>
 		<result column="account_status" property="accountStatus"/>
+		<result column="email_verified_at" property="emailVerifiedAt"/>
 	</resultMap>
 
 	<resultMap type="UserSuspensionInfoDto" id="UserSuspensionInfoDtoMap" autoMapping="true">
@@ -23,13 +25,13 @@
 	
 	<!-- 모든 유저 반환 -->
 	<select id="selectAllUsers" resultMap="UserDtoMap">
-		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
+		SELECT user_id, username, email, nickname, role, email_verified_at, created_at, deleted_at, account_status
 		FROM users
 	</select>
 
 	<!-- 조건에 맞는 유저 목록 반환 -->
 	<select id="selectUsers" resultMap="UserDtoMap">
-		SELECT user_id, username, nickname, role, created_at, deleted_at, account_status
+		SELECT user_id, username, email, nickname, role, email_verified_at, created_at, deleted_at, account_status
 		FROM users
 		<where>
 			<if test="accountStatus != null">
@@ -73,22 +75,29 @@
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 미포함) -->
 	<select id="selectUser" resultMap="UserDetailDtoMap">
-		SELECT username, nickname, profile_image_url, bio, role, account_status
+		SELECT username, email, nickname, profile_image_url, bio, role, account_status, email_verified_at
 		FROM users
 		WHERE username = #{username}
 	</select>
 	
 	<!-- 특정 username을 가진 유저만 반환(비밀번호 포함) -->
 	<select id="selectUserForAuth" resultMap="UserDtoMap">
-		SELECT user_id, username, password, role, account_status
+		SELECT user_id, username, email, password, role, account_status, email_verified_at
 		FROM users
 		WHERE username = #{username}
+	</select>
+
+	<!-- 현재 이메일로 이미 가입한 회원이 있는지 개수 반환 -->
+	<select id="countByEmail" resultType="int">
+		SELECT COUNT(*)
+		FROM users
+		WHERE email = #{email}
 	</select>
 	
 	<!-- username, password 기반으로 새 유저 INSERT(user_id, role은 자동 생성) -->
 	<insert id="insertUser">
-		INSERT INTO users(username, password, nickname, profile_image_url)
-		VALUES(#{username}, #{password}, #{nickname}, #{profileImageUrl})
+		INSERT INTO users(username, email, email_verified_at, password, nickname, profile_image_url)
+		VALUES(#{username}, #{email}, #{emailVerifiedAt}, #{password}, #{nickname}, #{profileImageUrl})
 	</insert>
 	
 	<!-- username 기반으로 유저 UPDATE -->

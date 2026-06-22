@@ -37,6 +37,7 @@ const emit = defineEmits([
 
 const user = ref({
   username: props.username,
+  email: '',
   nickname: '',
   profileImageUrl: '',
   bio: '',
@@ -331,6 +332,10 @@ async function updateUserRole(payload) {
 
         <div class="info-list">
           <div class="info-row">
+            <span class="info-label">이메일</span>
+            <span class="info-value">{{ user.email || '-' }}</span>
+          </div>
+          <div class="info-row">
             <span class="info-label">권한</span>
             <span class="role-badge">{{ user.role || 'USER' }}</span>
           </div>
@@ -571,6 +576,7 @@ async function updateUserRole(payload) {
 
 .info-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 12px;
   border-bottom: 1px solid #eee;
@@ -588,24 +594,33 @@ async function updateUserRole(payload) {
 .info-value {
   color: #333;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .role-badge {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   background: #f2f7fd;
   color: #2f6fab;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .status-badge {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   background: #f8f9fa;
   color: #555;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .bio-section {
