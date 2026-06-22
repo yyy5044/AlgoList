@@ -11,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.ProblemDao;
+import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.solution.SolutionDao;
+import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dao.UserDao;
 import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
@@ -26,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 public class AdminUserServiceImpl implements AdminUserService {
 
 	private final UserDao userDao;
+	private final ProblemDao problemDao;
+	private final SolutionDao solutionDao;
 	private final SessionRegistry sessionRegistry;
 
 	@Override
@@ -56,8 +62,47 @@ public class AdminUserServiceImpl implements AdminUserService {
 	}
 
 	@Override
+	// 유저 상세정보 조회 로직
 	public UserDetailDto selectUser(String username) {
 		return userDao.selectUser(username);
+	}
+
+	@Override
+	// 조회한 유저의 문제 목록 조회 로직
+	public List<UserProblemDto> selectUserProblems(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return null;
+		}
+
+		return problemDao.selectAllByUserId(user.getUserId());
+	}
+
+	@Override
+	// 조회한 유저의 특정 문제 풀이 목록 조회 로직
+	public List<SolutionDto> selectUserProblemSolutions(String username, Long userProblemId) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null || !existsUserProblem(user.getUserId(), userProblemId)) {
+			return null;
+		}
+
+		return solutionDao.selectSolutions(user.getUserId(), userProblemId);
+	}
+
+	@Override
+	// 조회한 유저의 문제 풀이 코드 조회 로직
+	public SolutionDto selectUserProblemSolution(String username, Long userProblemId, Long solutionId) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null || !existsUserProblem(user.getUserId(), userProblemId)) {
+			return null;
+		}
+
+		SolutionDto solution = solutionDao.selectSolution(user.getUserId(), solutionId);
+		if (solution == null || !userProblemId.equals(solution.getUserProblemId())) {
+			return null;
+		}
+
+		return solution;
 	}
 
 	@Override
@@ -198,5 +243,9 @@ public class AdminUserServiceImpl implements AdminUserService {
 				session.expireNow();
 			}
 		}
+	}
+
+	private boolean existsUserProblem(Long userId, Long userProblemId) {
+		return userId != null && userProblemId != null && solutionDao.countUserProblem(userId, userProblemId) == 1;
 	}
 }

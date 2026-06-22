@@ -19,7 +19,7 @@ const selectedItem = ref(null)
 const selectedAdminUsername = ref('') // 어드민이 조회한 유저의 이름
 const authPage = ref('login')
 const mainPage = ref('problems')
-// 상단 탭: 'main' = 메인 페이지(문제 둘러보기), 'my' = 내 문제(기존 화면)
+// 상단 탭: 'main' = 메인 페이지(문제 둘러보기), 'my' = 내 문제, 'users' = 어드민 유저 조회
 const activeTab = ref('main')
 const isUserListPath = ref(window.location.pathname === '/users')
 const isBatchTriggerPath = ref(false) // 어드민 '배치 트리거' 뷰 표시 여부
@@ -53,7 +53,9 @@ onMounted(async () => {
     isLoggedIn.value = true
     currentUser.value = user.username
     currentUserRole.value = user.role || ''
-    if (isUserListPath.value && !isAdmin.value) {
+    if (isUserListPath.value && isAdmin.value) {
+      activeTab.value = 'users'
+    } else if (isUserListPath.value) {
       showProblemPage()
     }
   } catch (error) {
@@ -70,7 +72,9 @@ function onLoginSuccess(user) {
   mainPage.value = 'problems'
   activeTab.value = 'main'
   loginSuccessMessage.value = ''
-  if (isUserListPath.value && !isAdmin.value) {
+  if (isUserListPath.value && isAdmin.value) {
+    activeTab.value = 'users'
+  } else if (isUserListPath.value) {
     showProblemPage()
   }
 }
@@ -94,6 +98,12 @@ function onSelectItem(item) {
   selectedItem.value = item
   mainPage.value = 'problems'
   activeTab.value = 'my'
+  selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
+  if (isUserListPath.value) {
+    window.history.pushState({}, '', '/')
+    isUserListPath.value = false
+  }
 }
 
 function showSignupPage() {
@@ -106,6 +116,18 @@ function showLoginPage() {
 }
 
 function showProblemPage() {
+  mainPage.value = 'problems'
+  activeTab.value = 'main'
+  selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
+  if (isUserListPath.value) {
+    window.history.pushState({}, '', '/')
+    isUserListPath.value = false
+  }
+}
+
+function showMyProblemPage() {
+  activeTab.value = 'my'
   mainPage.value = 'problems'
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
@@ -129,7 +151,7 @@ function showUserDetailPage() {
 function showUserListPage() {
   if (!isAdmin.value) return
 
-  activeTab.value = 'my'
+  activeTab.value = 'users'
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
   window.history.pushState({}, '', '/users')
@@ -194,20 +216,26 @@ function onUserProblemUpdated(userProblem) {
         <div class="page-tabs">
           <button
             :class="['page-tab', { active: activeTab === 'main' }]"
-            @click="activeTab = 'main'"
+            @click="showProblemPage"
           >
             메인 페이지
           </button>
           <button
             :class="['page-tab', { active: activeTab === 'my' }]"
-            @click="activeTab = 'my'"
+            @click="showMyProblemPage"
           >
             내 문제
+          </button>
+          <button
+            v-if="isAdmin"
+            :class="['page-tab', { active: activeTab === 'users' }]"
+            @click="showUserListPage"
+          >
+            유저 조회
           </button>
         </div>
         <div class="top-bar-right">
           <button v-if="isAdmin" class="user-link" @click="showBatchTriggerPage">배치 트리거</button>
-          <button v-if="isAdmin" class="user-link" @click="showUserListPage">유저 목록 확인</button>
           <button class="user-link" @click="showUserDetailPage">
             {{ currentUser }}님 환영합니다
           </button>
@@ -218,9 +246,9 @@ function onUserProblemUpdated(userProblem) {
         <KeepAlive>
           <BrowsePage v-if="activeTab === 'main'" @problem-added="onProblemAdded" />
         </KeepAlive>
-        <template v-if="activeTab !== 'main'">
+        <template v-if="activeTab === 'users' && isAdmin">
           <UserDetailPage
-            v-if="isUserListPath && isAdmin && selectedAdminUsername"
+            v-if="selectedAdminUsername"
             :username="selectedAdminUsername"
             :current-username="currentUser"
             api-base-path="/api/admin/users"
@@ -229,12 +257,14 @@ function onUserProblemUpdated(userProblem) {
             @back="showUserListPage"
           />
           <UserListPage
-            v-else-if="isUserListPath && isAdmin"
+            v-else
             @back="showProblemPage"
             @select-user="showAdminUserDetailPage"
           />
+        </template>
+        <template v-else-if="activeTab !== 'main'">
           <BatchTriggerPage
-            v-else-if="isBatchTriggerPath && isAdmin"
+            v-if="isBatchTriggerPath && isAdmin"
             @back="showProblemPage"
           />
           <UserDetailPage
@@ -256,7 +286,11 @@ function onUserProblemUpdated(userProblem) {
             @user-problem-updated="onUserProblemUpdated"
           />
         </template>
-        <ListSection ref="listSectionRef" @select-item="onSelectItem" />
+        <ListSection
+          v-if="activeTab !== 'users'"
+          ref="listSectionRef"
+          @select-item="onSelectItem"
+        />
       </div>
       <footer class="app-footer">
         Codeforces 문제 데이터 출처: <a href="https://huggingface.co/datasets/open-r1/codeforces" target="_blank">open-r1/codeforces</a> (CC-BY-4.0) | 문제 데이터는 권리자 요청 시 삭제할 수 있습니다. 연락처: yyy5044@naver.com

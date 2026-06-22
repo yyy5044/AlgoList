@@ -1,5 +1,7 @@
 package com.algolist.backend.user.controller;
 
+import java.util.List;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
@@ -52,6 +56,44 @@ public class AdminUserController {
 			return ResponseEntity.status(HttpStatus.OK).body(user);
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
+		}
+	}
+
+	@GetMapping("/{username}/problems")
+	// 특정 유저 문제 목록 조회 요청
+	public ResponseEntity<List<UserProblemDto>> selectUserProblems(@PathVariable String username) {
+		List<UserProblemDto> problems = adminUserService.selectUserProblems(username);
+
+		if (problems != null) {
+			return ResponseEntity.status(HttpStatus.OK).body(problems);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	@GetMapping("/{username}/problems/{userProblemId}/solutions")
+	// 유저의 특정 문제 풀이 목록 조회 요청
+	public ResponseEntity<List<SolutionDto>> selectUserProblemSolutions(@PathVariable String username,
+			@PathVariable Long userProblemId) {
+		List<SolutionDto> solutions = adminUserService.selectUserProblemSolutions(username, userProblemId);
+
+		if (solutions != null) {
+			return ResponseEntity.status(HttpStatus.OK).body(solutions);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	@GetMapping("/{username}/problems/{userProblemId}/solutions/{solutionId}")
+	// 유저의 풀이 코드 조회 요청
+	public ResponseEntity<SolutionDto> selectUserProblemSolution(@PathVariable String username,
+			@PathVariable Long userProblemId, @PathVariable Long solutionId) {
+		SolutionDto solution = adminUserService.selectUserProblemSolution(username, userProblemId, solutionId);
+
+		if (solution != null) {
+			return ResponseEntity.status(HttpStatus.OK).body(solution);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
 
