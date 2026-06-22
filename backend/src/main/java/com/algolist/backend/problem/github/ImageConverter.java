@@ -1,7 +1,9 @@
 package com.algolist.backend.problem.github;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,12 +39,25 @@ public class ImageConverter {
      * 이미지를 다운로드한 뒤 Base64 data URI로 교체한다.
      * 다운로드 실패 시 대체 텍스트로 교체.
      */
-    public String processImages(String html) {
-        if (html == null || !html.contains("<img")) return html;
+    public ImageProcessResult processImages(String html) {
+    	List<String> failedUrls = new ArrayList<>();
+
+        if (html == null || !html.contains("<img")) {
+        	return new ImageProcessResult(html, true, failedUrls);
+        }
 
         Matcher imgMatcher = IMG_PATTERN.matcher(html);
-        StringBuilder sb = new StringBuilder();
+        
+        // <img> 태그는 있는데 다운로드 가능한 이미지가 하나도 없음
+        if (!imgMatcher.find()) {
+            return new ImageProcessResult(html, false, failedUrls);
+        }
 
+        // find()가 커서를 이미 한 칸 옮겼으니 reset()
+        imgMatcher.reset();
+        
+        StringBuilder sb = new StringBuilder();
+        boolean failed = false;
         while (imgMatcher.find()) {
             String imgUrl = imgMatcher.group(1);
             String dataUri = downloadAsBase64(imgUrl);
@@ -51,31 +66,44 @@ public class ImageConverter {
                 imgMatcher.appendReplacement(sb,
                     Matcher.quoteReplacement(imgMatcher.group().replace(imgUrl, dataUri)));
             } else {
-                imgMatcher.appendReplacement(sb,
-                    Matcher.quoteReplacement("<em>[이미지를 불러올 수 없습니다]</em>"));
+                failedUrls.add(imgUrl);
+                failed = true;
             }
         }
 
-        imgMatcher.appendTail(sb);
-        return sb.toString();
+        if (failed) {
+        	return new ImageProcessResult(html, false, failedUrls);
+        } else {
+        	imgMatcher.appendTail(sb);
+        	return new ImageProcessResult(sb.toString(), true, failedUrls);
+        }
+        
     }
 
     /** 이미지 URL → Base64 data URI. 실패 시 null */
     private String downloadAsBase64(String imageUrl) {
         try {
+        	log.info("[downloadAsBase64] 이미지 다운로드 시도: {}", imageUrl);
             ResponseEntity<byte[]> response = restClient.get()
                 .uri(URI.create(imageUrl))
                 .retrieve()
                 .toEntity(byte[].class);
 
             byte[] body = response.getBody();
-            if (body == null) return null;
+            if (body == null) {
+            	log.warn("[downloadAsBase64] 이미지 다운로드 실패: body is null");
+            	return null;
+            }
 
             MediaType contentType = response.getHeaders().getContentType();
-            String type = (contentType != null) ? contentType.toString() : "image/png";
+            if (contentType == null || !contentType.getType().equals("image")) {
+                log.warn("[downloadAsBase64] 이미지가 아닌 응답: {} contentType: {}", imageUrl, contentType);
+                return null;
+            }
+            String type = contentType.toString();
             return "data:" + type + ";base64," + Base64.getEncoder().encodeToString(body);
         } catch (Exception e) {
-            log.warn("이미지 다운로드 실패: {} ({})", imageUrl, e.getMessage());
+            log.warn("[downloadAsBase64] 이미지 다운로드 예외 발생: {}, 에러메세지: ({})", imageUrl, e.getMessage());
             return null;
         }
     }

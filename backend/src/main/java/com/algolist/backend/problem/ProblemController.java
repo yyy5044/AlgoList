@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.algolist.backend.auth.CustomUserDetails;
 import com.algolist.backend.problem.dto.ProblemDto;
 import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.problem.translation.TranslatedProblemDto;
+import com.algolist.backend.problem.translation.TranslationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class ProblemController {
 
 	private final ProblemService service;
+	private final TranslationService tService;
 	
 	// 초기 목록 조회: GET /api/problems
 	@GetMapping
@@ -91,4 +94,14 @@ public class ProblemController {
 		return (description != null) ? ResponseEntity.status(HttpStatus.OK).body(description) :
 									   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	}
+	
+	// 문제 번역본 조회
+	@GetMapping("/translation/{problemId}")
+	public ResponseEntity<?> getTranslatedDescription(@PathVariable Long problemId) {
+		
+		TranslatedProblemDto translatedProblem = tService.getTranslatedProblem(problemId);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(translatedProblem);
+	}
+	
 }
