@@ -6,7 +6,8 @@ WORKDIR /app
 # 이러면 src만 바뀌었을 때 아래 무거운 의존성 다운로드 레이어를 재사용 -> 빌드 속도 빨라짐
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN ./mvnw dependency:go-offline -B
+# Windows에서 커밋되면 실행 비트(+x)가 유실되므로 컨테이너 안에서 직접 부여
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 # 소스 복사 후 jar 빌드 (-DskipTests: 빌드 땐 테스트 생략)
 COPY src ./src
