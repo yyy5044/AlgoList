@@ -25,7 +25,9 @@ public interface EmailVerificationDao {
 			@Param("expiresAt") LocalDateTime expiresAt);
 
 	// 인증 실패 시 failed_attempts 값 증가
-	public int incrementFailedAttempts(@Param("email") String email);
+	public int incrementFailedAttempts(@Param("email") String email,
+			@Param("maxFailedAttempts") int maxFailedAttempts,
+			@Param("blockedUntil") LocalDateTime blockedUntil);
 
 	// 인증 성공 시 verified_at 값 갱신
 	public int markVerified(@Param("email") String email, @Param("verifiedAt") LocalDateTime verifiedAt);

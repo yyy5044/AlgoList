@@ -28,6 +28,7 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 	private static final Duration CODE_TTL = Duration.ofMinutes(10);
 	private static final Duration RESEND_COOLDOWN = Duration.ofSeconds(60);
+	private static final Duration FAILED_ATTEMPT_BLOCK_DURATION = Duration.ofMinutes(10);
 	private static final int MAX_FAILED_ATTEMPTS = 5;
 	private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -53,6 +54,10 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 		LocalDateTime now = LocalDateTime.now();
 		// 이전 인증 요청 기록 가져오기
 		EmailVerificationDto verification = emailVerificationDao.selectByEmail(normalizedEmail);
+		// 잦은 인증 실패로 일시정지된 상태라면 예외 반환
+		if (verification != null && verification.getConsumedAt() == null && isBlocked(verification, now)) {
+			throw new IllegalArgumentException("인증 실패 횟수를 초과했습니다. 10분 후 다시 요청해주세요.");
+		}
 		// 이전에 이미 인증 시도를 했고 RESEND_COOLDOWN이 지나지 않은 상황이라면 예외 반환
 		if (verification != null && verification.getConsumedAt() == null && verification.getUpdatedAt() != null
 				&& verification.getUpdatedAt().isAfter(now.minus(RESEND_COOLDOWN))) {
@@ -86,19 +91,29 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 		
 		// 인증 코드가 유효한지 확인
 		EmailVerificationDto verification = getActiveVerification(normalizedEmail);
-		// 인증을 MAX_FAILED_ATTEMPTS회 이상 실패하면 새로운 코드를 보내도록 예외 반환
+		LocalDateTime now = LocalDateTime.now();
+		if (isBlocked(verification, now)) {
+			throw new IllegalArgumentException("인증 실패 횟수를 초과했습니다. 10분 후 다시 시도해주세요.");
+		}
+		// 실패 횟수를 초과한 인증 코드는 더 이상 사용할 수 없으므로 새 인증 코드를 요청하도록 예외 반환
 		if (verification.getFailedAttempts() >= MAX_FAILED_ATTEMPTS) {
 			throw new IllegalArgumentException("인증 실패 횟수를 초과했습니다. 새 인증 코드를 요청해주세요.");
 		}
 
 		// 인증 실패 시 failed_attempts 값 증가
 		if (!passwordEncoder.matches(verificationCode, verification.getCodeHash())) {
-			emailVerificationAttemptService.recordFailedAttempt(normalizedEmail);
+			boolean willBeBlocked = verification.getFailedAttempts() + 1 >= MAX_FAILED_ATTEMPTS;
+			LocalDateTime blockedUntil = now.plus(FAILED_ATTEMPT_BLOCK_DURATION);
+			// 실패 횟수를 초과하면 FAILED_ATTEMPT_BLOCK_DURATION만큼 정지
+			emailVerificationAttemptService.recordFailedAttempt(normalizedEmail, MAX_FAILED_ATTEMPTS, blockedUntil);
+			if (willBeBlocked) {
+				throw new IllegalArgumentException("인증 실패 횟수를 초과했습니다. 10분 후 다시 요청해주세요.");
+			}
 			throw new IllegalArgumentException("인증 코드가 일치하지 않습니다.");
 		}
 
 		// 인증 성공 시 현재 email_verifications 데이터의 verified_at을 현재 시간으로 변경
-		int result = emailVerificationDao.markVerified(normalizedEmail, LocalDateTime.now());
+		int result = emailVerificationDao.markVerified(normalizedEmail, now);
 		if (result != 1) {
 			throw new IllegalArgumentException("이메일 인증이 더 이상 유효하지 않습니다.");
 		}
@@ -152,6 +167,11 @@ public class EmailVerificationServiceImpl implements EmailVerificationService {
 	// expires_at이나 consumed_at이 threshold보다 오래됐다면 삭제
 	public int deleteExpiredOrConsumedBefore(LocalDateTime threshold) {
 		return emailVerificationDao.deleteExpiredOrConsumedBefore(threshold);
+	}
+
+	// 인증 실패 초과로 요청 정지여부 확인
+	private boolean isBlocked(EmailVerificationDto verification, LocalDateTime now) {
+		return verification.getBlockedUntil() != null && verification.getBlockedUntil().isAfter(now);
 	}
 
 	// 인증 코드를 확인할 때 만료/사용 완료된 인증인지 확인하는 메서드

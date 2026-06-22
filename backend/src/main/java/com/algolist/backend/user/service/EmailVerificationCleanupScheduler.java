@@ -15,6 +15,7 @@ public class EmailVerificationCleanupScheduler {
 
 	private final EmailVerificationService emailVerificationService;
 
+	// 매일 새벽 3시에 만료된 인증 데이터들 삭제
 	@Scheduled(cron = "0 0 3 * * *", zone = "Asia/Seoul")
 	public void cleanupEmailVerifications() {
 		emailVerificationService.deleteExpiredOrConsumedBefore(LocalDateTime.now().minusDays(RETENTION_DAYS));

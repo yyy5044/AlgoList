@@ -16,6 +16,7 @@ public class EmailVerificationDto {
 	private LocalDateTime verifiedAt;
 	private LocalDateTime consumedAt;
 	private int failedAttempts;
+	private LocalDateTime blockedUntil;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 }

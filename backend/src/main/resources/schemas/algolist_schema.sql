@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS email_verifications (
     verified_at DATETIME NULL,
     consumed_at DATETIME NULL,
     failed_attempts INT NOT NULL DEFAULT 0,
+    blocked_until DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     # 인증 요청이 갱신될 때마다 updated_at을 현재 시간으로 변경
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

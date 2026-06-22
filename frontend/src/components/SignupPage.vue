@@ -22,6 +22,7 @@ const emailVerification = ref({
   sent: false,
   verified: false,
   message: '',
+  messageType: '',
   isSending: false,
   isConfirming: false,
 })
@@ -55,6 +56,7 @@ watch(
     emailVerification.value.sent = false
     emailVerification.value.verified = false
     emailVerification.value.message = ''
+    emailVerification.value.messageType = ''
   },
 )
 
@@ -106,9 +108,11 @@ function clearProfileImageSelection() {
 async function sendEmailVerificationCode() {
   errorMessage.value = ''
   emailVerification.value.message = ''
+  emailVerification.value.messageType = ''
 
   if (!isValidEmail(normalizedEmail.value)) {
-    errorMessage.value = '올바른 이메일 주소를 입력해주세요.'
+    emailVerification.value.message = '올바른 이메일 주소를 입력해주세요.'
+    emailVerification.value.messageType = 'error'
     return
   }
 
@@ -125,12 +129,15 @@ async function sendEmailVerificationCode() {
       emailVerification.value.sent = true
       emailVerification.value.verified = false
       emailVerification.value.message = '인증 코드가 발송되었습니다. 메일함을 확인해주세요.'
+      emailVerification.value.messageType = 'success'
     } else {
-      errorMessage.value = await readErrorMessage(response, '인증 코드 발송에 실패했습니다.')
+      emailVerification.value.message = await readErrorMessage(response, '인증 코드 발송에 실패했습니다.')
+      emailVerification.value.messageType = 'error'
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = NETWORK_ERROR_MESSAGE
+    emailVerification.value.message = NETWORK_ERROR_MESSAGE
+    emailVerification.value.messageType = 'error'
   } finally {
     emailVerification.value.isSending = false
   }
@@ -139,14 +146,17 @@ async function sendEmailVerificationCode() {
 async function confirmEmailVerificationCode() {
   errorMessage.value = ''
   emailVerification.value.message = ''
+  emailVerification.value.messageType = ''
 
   if (!emailVerification.value.sent) {
-    errorMessage.value = '먼저 인증 코드를 발송해주세요.'
+    emailVerification.value.message = '먼저 인증 코드를 발송해주세요.'
+    emailVerification.value.messageType = 'error'
     return
   }
 
   if (!/^\d{6}$/.test(form.value.emailCode.trim())) {
-    errorMessage.value = '6자리 인증 코드를 입력해주세요.'
+    emailVerification.value.message = '6자리 인증 코드를 입력해주세요.'
+    emailVerification.value.messageType = 'error'
     return
   }
 
@@ -166,12 +176,15 @@ async function confirmEmailVerificationCode() {
       verifiedEmail.value = normalizedEmail.value
       emailVerification.value.verified = true
       emailVerification.value.message = '이메일 인증이 완료되었습니다.'
+      emailVerification.value.messageType = 'success'
     } else {
-      errorMessage.value = await readErrorMessage(response, '이메일 인증에 실패했습니다.')
+      emailVerification.value.message = await readErrorMessage(response, '이메일 인증에 실패했습니다.')
+      emailVerification.value.messageType = 'error'
     }
   } catch (error) {
     console.log(error)
-    errorMessage.value = NETWORK_ERROR_MESSAGE
+    emailVerification.value.message = NETWORK_ERROR_MESSAGE
+    emailVerification.value.messageType = 'error'
   } finally {
     emailVerification.value.isConfirming = false
   }
@@ -351,7 +364,7 @@ function isValidPassword(password) {
         </div>
         <p
           v-if="emailVerification.message"
-          :class="['field-guide', { success: isEmailVerified }]"
+          :class="['field-guide', emailVerification.messageType]"
         >
           {{ emailVerification.message }}
         </p>
@@ -525,6 +538,11 @@ input {
 
 .field-guide.success {
   color: #1f8f4d;
+  font-weight: 600;
+}
+
+.field-guide.error {
+  color: #e74c3c;
   font-weight: 600;
 }
 

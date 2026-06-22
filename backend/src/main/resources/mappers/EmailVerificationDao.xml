@@ -12,6 +12,7 @@
 		<result column="verified_at" property="verifiedAt"/>
 		<result column="consumed_at" property="consumedAt"/>
 		<result column="failed_attempts" property="failedAttempts"/>
+		<result column="blocked_until" property="blockedUntil"/>
 		<result column="created_at" property="createdAt"/>
 		<result column="updated_at" property="updatedAt"/>
 	</resultMap>
@@ -19,7 +20,7 @@
 	<!-- 이메일 데이터로 현재 EmailVerfication 객체 찾기 -->
 	<select id="selectByEmail" resultMap="EmailVerificationDtoMap">
 		SELECT verification_id, email, code_hash, expires_at, verified_at, consumed_at,
-			   failed_attempts, created_at, updated_at
+			   failed_attempts, blocked_until, created_at, updated_at
 		FROM email_verifications
 		WHERE email = #{email}
 	</select>
@@ -38,14 +39,19 @@
 			verified_at = NULL,
 			consumed_at = NULL,
 			failed_attempts = 0,
+			blocked_until = NULL,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE email = #{email}
 	</update>
 
-	<!-- 인증 실패 시 failed_attemps 증가 -->
+	<!-- 인증 실패 시 failed_attemps 증가, 최대 횟수 초과 시 blocked_until 값 갱신 -->
 	<update id="incrementFailedAttempts">
 		UPDATE email_verifications
 		SET failed_attempts = failed_attempts + 1,
+			blocked_until = CASE
+				WHEN failed_attempts + 1 &gt;= #{maxFailedAttempts} THEN #{blockedUntil}
+				ELSE blocked_until
+			END,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE email = #{email}
 	</update>
@@ -54,6 +60,8 @@
 	<update id="markVerified">
 		UPDATE email_verifications
 		SET verified_at = #{verifiedAt},
+			failed_attempts = 0,
+			blocked_until = NULL,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE email = #{email}
 		  AND consumed_at IS NULL
