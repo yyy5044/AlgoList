@@ -1,0 +1,44 @@
+services:
+  # ===== MySQL DB =====
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}    # .env에서 가져옴
+    volumes:
+      - mysql-data:/var/lib/mysql            # DB 데이터 영속화 (②)
+      - ./backend/src/main/resources/schemas:/docker-entrypoint-initdb.d  # 최초 1회 스키마 자동 실행
+    healthcheck:                             # "진짜 준비됐는지" 검사 (③)
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ===== Spring Boot 백엔드 =====
+  backend:
+    build: ./backend                         # ./backend의 Dockerfile로 빌드
+    environment:                             # 아까 뚫은 구멍에 값 꽂기! (①)
+      DB_HOST: mysql                         # ← mysql 서비스 이름으로 접속
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      SSAFY_GMS_API_KEY: ${SSAFY_GMS_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    volumes:
+      - backend-uploads:/app/uploads         # 업로드 파일 영속화
+    depends_on:
+      mysql:
+        condition: service_healthy           # mysql 준비될 때까지 대기 (③)
+    ports:
+      - "8080:8080"                          # (선택) 직접 swagger 확인용. 운영선 빼도 됨
+
+  # ===== Vue + nginx 프론트엔드 =====
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"                              # 브라우저가 들어오는 입구
+    depends_on:
+      - backend
+
+# 영속 데이터 저장소 정의
+volumes:
+  mysql-data:
+  backend-uploads:
