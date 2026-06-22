@@ -139,7 +139,7 @@ function showMyProblemPage() {
 
 function showUserDetailPage() {
   mainPage.value = 'user-detail'
-  activeTab.value = 'my' // 둘러보기 탭에서 눌러도 보이도록 내 문제 탭으로 전환
+  activeTab.value = ''
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
   if (isUserListPath.value) {
