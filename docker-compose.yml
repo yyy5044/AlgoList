@@ -22,6 +22,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       SSAFY_GMS_API_KEY: ${SSAFY_GMS_API_KEY}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GMAIL_SMTP_USERNAME: ${GMAIL_SMTP_USERNAME}        # → gmail.smtp.username (relaxed binding)
+      GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD} # → gmail.smtp.app-password
     volumes:
       - backend-uploads:/app/uploads         # 업로드 파일 영속화
     depends_on:
