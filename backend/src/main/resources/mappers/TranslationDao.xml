@@ -25,6 +25,9 @@
 	<insert id="insertTranslatedProblem">
 		INSERT INTO translated_problems (problem_id, translated_title, translated_description)
 		VALUES (#{problemId}, #{translatedTitle}, #{translatedDescription})
+		ON DUPLICATE KEY UPDATE
+			translated_title = VALUES(translated_title),
+			translated_description = VALUES(translated_description)
 	</insert>
 	
 	<select id="getOriginalProblem" resultMap="OriginalMap">

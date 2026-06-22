@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +23,12 @@ public class TranslationServiceImpl implements TranslationService {
 	private final TranslationDao tDao;
 	private final ChatClient chatClient;
 	private final TranslationValidator validator;
+
+	/**
+	 * problemId별 번역 락. 같은 문제에 동시 요청이 와도 LLM 번역을 한 번만 수행하도록 직렬화한다.
+	 * 단일 JVM 한정(다중 인스턴스에선 멱등 insert가 안전망). 같은 키엔 항상 같은 락 객체가 나온다.
+	 */
+	private final ConcurrentHashMap<Long, Object> translationLocks = new ConcurrentHashMap<>();
 
 	/** 자기수정 루프 최대 시도 횟수(첫 호출 포함). */
 	private static final int MAX_ATTEMPTS = 3;
@@ -62,25 +69,41 @@ public class TranslationServiceImpl implements TranslationService {
 				.defaultSystem(systemPrompt)
 				.build();
 	}
-
+	
 	@Override
 	public TranslatedProblemDto getTranslatedProblem(Long problemId) {
-		// 1. DB 캐시 확인
+		// 1. 락 밖 캐시 확인 — 이미 번역된 문제(대부분의 요청)는 락 없이 바로 반환한다.
 		TranslatedProblemDto cached = tDao.getTranslatedProblem(problemId);
 		if (cached != null) {
 			return cached;
 		}
 
-		// 2. 원본 조회
+		// 2. problemId 전용 락 — 같은 문제의 동시 번역을 한 스레드로 직렬화한다.
+		Object lock = translationLocks.computeIfAbsent(problemId, k -> new Object());
+		synchronized (lock) {
+			// 3. 더블체크 — 락을 기다리는 동안 다른 스레드가 이미 번역해 저장했을 수 있다.
+			cached = tDao.getTranslatedProblem(problemId);
+			if (cached != null) {
+				return cached;
+			}
+
+			// 4. 정말 첫 번역인 경우에만 실제 번역을 수행한다.
+			return translateAndStore(problemId);
+		}
+	}
+
+	/** 캐시에 없는 문제를 실제로 번역해 저장한다. 반드시 번역 락 안에서 호출한다. */
+	private TranslatedProblemDto translateAndStore(Long problemId) {
+		// 원본 조회
 		OriginalProblemDto origin = tDao.getOriginalProblem(problemId);
 		if (origin == null) {
 			throw new UnknownProblemIdException("없는 문제이거나 번역이 불가능한 문제입니다.");
 		}
 
-		// 3. 섹션 분해 (원본 순서 보존). Examples는 번역 대상에서 제외하고 원문 그대로 보관한다.
+		// 섹션 분해 (원본 순서 보존). Examples는 번역 대상에서 제외하고 원문 그대로 보관한다.
 		List<Section> sections = splitSections(origin.getOriginalDescription());
 
-		// 4. 수식 마스킹 (title + 번역 대상 섹션이 store 하나를 공유 → [MATH_n] 인덱스 전역 유일)
+		// 수식 마스킹 (title + 번역 대상 섹션이 store 하나를 공유 → [MATH_n] 인덱스 전역 유일)
 		List<String> mathStore = new ArrayList<>();
 		String maskedTitle = maskMath(origin.getOriginalTitle(), mathStore);
 		Map<String, String> maskedSections = new LinkedHashMap<>();
@@ -90,21 +113,21 @@ public class TranslationServiceImpl implements TranslationService {
 			}
 		}
 
-		// 5. 번역 + 자기수정 루프 (이상: placeholder 유실 / 섹션 필드 비어있음)
+		// 번역 + 자기수정 루프 (이상: placeholder 유실 / 섹션 필드 비어있음)
 		String userPrompt = buildUserPrompt(maskedTitle, maskedSections);
 		SectionedTranslationResponse resp = translateWithRetry(userPrompt, maskedSections.keySet(), mathStore.size(), problemId);
 
-		// 6. 최종 실패 → 캐시하지 않고 원문 그대로 반환(조용한 깨진 저장 방지, 다음 요청에서 재시도)
+		// 최종 실패 → 캐시하지 않고 원문 그대로 반환(조용한 깨진 저장 방지, 다음 요청에서 재시도)
 		if (resp == null) {
 			log.error("번역 자기수정 {}회 실패 → 원문 반환(미저장) problemId={}", MAX_ATTEMPTS, problemId);
 			return fallbackToOriginal(problemId, origin);
 		}
 
-		// 7. 수식 복원 + 원본 순서대로 재조립
+		// 수식 복원 + 원본 순서대로 재조립
 		String translatedTitle = restoreMath(resp.getTitle(), mathStore);
 		String translatedDescription = reassemble(sections, resp, mathStore);
 
-		// 8. 저장 후 반환
+		// 저장 후 반환
 		TranslatedProblemDto result = new TranslatedProblemDto();
 		result.setProblemId(problemId);
 		result.setTranslatedTitle(translatedTitle);
