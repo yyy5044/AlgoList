@@ -46,6 +46,13 @@ public class TranslationServiceImpl implements TranslationService {
 	        - [MATH_0], [MATH_1] 처럼 대괄호로 감싼 토큰은 번역/수정/삭제하지 말고 그대로 두세요.
 	          위치만 한국어 어순에 맞게 자연스럽게 옮기면 됩니다.
 	        - 주어지지 않은 섹션의 필드는 빈 문자열로 두세요.
+	        - 제약 조건(Input 범위 등)에서 지수가 깨져 일반 숫자로 표기된 부분을, 문맥에 맞게
+	          올바른 지수 표기로 교정하세요. 교정 시 반드시 LaTeX 형식 $...$ 로 감싸세요.
+	           - 예: 0 ≤ X, Y ≤ 106  →  0 ≤ X, Y ≤ $10^6$
+	           - 예: 1 ≤ N ≤ 109     →  1 ≤ N ≤ $10^9$
+	        - 단, 문맥상 단순 수치나 개수(예: "106번 정점", "정답이 106인 경우")가 확실하면 원본 숫자를
+	          그대로 두세요. '범위/제약'임이 분명할 때만 교정합니다.
+	        - 지수 표기는 마크다운 캐럿(10^6)이 아니라 반드시 $...$ 형식만 사용하세요.
 	        """;
 
 	public TranslationServiceImpl(TranslationDao tDao, ChatClient.Builder builder, TranslationValidator validator) {
