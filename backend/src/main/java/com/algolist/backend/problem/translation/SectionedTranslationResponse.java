@@ -17,4 +17,15 @@ public class SectionedTranslationResponse {
 	private String input;
 	private String output;
 	private String note;
+
+	/** 섹션 헤더 이름 → 대응 필드 값. 번역 대상 외(Examples 등)는 null. */
+	public String section(String name) {
+		return switch (name) {
+			case "Description" -> description;
+			case "Input" -> input;
+			case "Output" -> output;
+			case "Note" -> note;
+			default -> null;
+		};
+	}
 }
