@@ -11,11 +11,13 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 public class SessionConfig {
 
 	@Bean
+	// 현재 로그인 세션 목록을 추적할 수 있는 객체
 	SessionRegistry sessionRegistry() {
 		return new SessionRegistryImpl();
 	}
 
 	@Bean
+	// 로그아웃이나 세션 만료 등의 이벤트를 전달하는 객체(세션이 만료되었을 때 레지스트리도 자동으로 정리)
 	HttpSessionEventPublisher httpSessionEventPublisher() {
 		return new HttpSessionEventPublisher();
 	}
