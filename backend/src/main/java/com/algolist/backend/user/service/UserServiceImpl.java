@@ -33,6 +33,7 @@ public class UserServiceImpl implements UserService {
 	private final ProfileImageService profileImageService;
 	private final EmailVerificationService emailVerificationService;
 	private final SolutionActivityService solutionActivityService;
+	private final UserSessionService userSessionService;
 
 	@Override
 	public UserDetailDto selectUser(String username) {
@@ -147,11 +148,17 @@ public class UserServiceImpl implements UserService {
 	@Override
 	// 유저 삭제(Soft Delete)
 	public boolean deleteUser(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return false;
+		}
+
 		int result = userDao.deleteUser(username);
 
 		if (result != 1) {
 			return false;
 		} else {
+			userSessionService.expireUserSessions(user.getUserId());
 			return true;
 		}
 	}
