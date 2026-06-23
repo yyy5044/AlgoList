@@ -313,11 +313,6 @@ function editItem(item) {
       </li>
     </ul>
     <p v-else class="empty-list">{{ emptyMessage }}</p>
-
-    <!-- 하단 설정 -->
-    <div class="list-footer">
-      <button class="setting-button">⚙</button>
-    </div>
   </div>
 
   <!-- 검색 모달 -->
@@ -762,20 +757,4 @@ function editItem(item) {
   background-color: #f5f5f5;
 }
 
-.list-footer {
-  padding: 10px 12px;
-  border-top: 1px solid #e0e0e0;
-}
-
-.setting-button {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #888;
-}
-
-.setting-button:hover {
-  color: #333;
-}
 </style>

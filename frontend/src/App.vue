@@ -433,6 +433,7 @@ function onUserProblemUpdated(userProblem) {
 .github-icon {
   width: 14px;
   height: 14px;
+  filter: brightness(0); /* 흰색 로고 → 검게 (밝은 푸터 배경용) */
 }
 </style>
 
