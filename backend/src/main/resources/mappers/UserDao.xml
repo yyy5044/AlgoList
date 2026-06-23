@@ -158,8 +158,7 @@
 		SET released_at = CURRENT_TIMESTAMP,
 			released_by = #{releasedBy},
 			release_reason = #{releaseReason}
-		WHERE user_id = #{userId}
-		  AND released_at IS NULL
+		WHERE active_user_id = #{userId}
 	</update>
 
 	<!-- 정지 기간이 만료된 정지 이력 자동 해제 -->
@@ -179,8 +178,7 @@
 		  AND NOT EXISTS (
 			SELECT 1
 			FROM user_suspensions us
-			WHERE us.user_id = u.user_id
-			  AND us.released_at IS NULL
+			WHERE us.active_user_id = u.user_id
 		  )
 	</update>
 
@@ -188,10 +186,7 @@
 	<select id="selectActiveSuspension" resultMap="UserSuspensionInfoDtoMap">
 		SELECT reason, suspended_until
 		FROM user_suspensions
-		WHERE user_id = #{userId}
-		  AND released_at IS NULL
-		ORDER BY suspended_at DESC
-		LIMIT 1
+		WHERE active_user_id = #{userId}
 	</select>
 
 	<!-- user_id 기반으로 유저 권한 변경 -->

@@ -6,7 +6,7 @@ import * as reminderApi from '@/api/reminders'
 const emit = defineEmits(['select-item'])
 
 // 탭
-const tabs = ['문제', '분류', 'Git', '복습']
+const tabs = ['문제', '복습']
 const currentTab = ref('문제')
 
 // 문제 리스트 필터링용 검색어
@@ -62,7 +62,7 @@ const isReminderTab = computed(() => currentTab.value === '복습')
 const showManageActions = computed(() => !isReminderTab.value)
 const currentItems = computed(() => isReminderTab.value ? reminderItems.value : items.value)
 const emptyMessage = computed(() =>
-  isReminderTab.value ? '오늘 복습할 문제가 없습니다.' : '표시할 문제가 없습니다.'
+  isReminderTab.value ? '복습 예정 문제가 없습니다.' : '표시할 문제가 없습니다.'
 )
 
 const todayText = computed(() => {
@@ -75,12 +75,28 @@ function getGradeClass(grade) {
   return grade ? grade.toLowerCase() : ''
 }
 
-function getReviewDueDateText(item) {
-  return item.reviewDueDate || '복습 예정일 없음'
+function getDateDiffDays(dateText) {
+  if (!dateText) return null
+
+  const [year, month, day] = dateText.split('-').map(Number)
+  const [todayYear, todayMonth, todayDay] = todayText.value.split('-').map(Number)
+  if ([year, month, day, todayYear, todayMonth, todayDay].some(Number.isNaN)) return null
+
+  const targetTime = Date.UTC(year, month - 1, day)
+  const todayTime = Date.UTC(todayYear, todayMonth - 1, todayDay)
+  return Math.round((targetTime - todayTime) / 86400000)
 }
 
-function isReviewDueToday(item) {
-  return item.reviewDueDate === todayText.value
+function getReviewDueDateText(item) {
+  const diffDays = getDateDiffDays(item.reviewDueDate)
+  if (diffDays === null) return '복습 예정일 없음'
+  if (diffDays === 0) return '오늘'
+  if (diffDays < 0) return `${Math.abs(diffDays)}일 전`
+  return `${diffDays}일 후`
+}
+
+function isReviewDue(item) {
+  return item.reviewDueDate && item.reviewDueDate <= todayText.value
 }
 
 // 문제 리스트 검색 변수: searchQuery가 변경될 때마다 items에서 필터링해서 filteredItem으로 할당한다
@@ -275,7 +291,7 @@ function editItem(item) {
           'list-item',
           {
             active: selectedItem?.userProblemId === item.userProblemId,
-            'due-today': isReviewDueToday(item)
+            'due-today': isReviewDue(item)
           }
         ]"
         @click="selectItem(item)"

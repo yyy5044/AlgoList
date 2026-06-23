@@ -188,7 +188,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 		}
 
 		int releaseResult = userDao.updateUserSuspensionRelease(user.getUserId(), adminId, releaseReason);
-		if (releaseResult < 1) {
+		if (releaseResult != 1) {
 			throw new IllegalArgumentException("해제할 정지 이력을 찾을 수 없습니다.");
 		}
 
