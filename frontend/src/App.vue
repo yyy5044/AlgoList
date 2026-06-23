@@ -6,6 +6,7 @@ import LoginPage from './components/LoginPage.vue'
 import SignupPage from './components/SignupPage.vue'
 import UserDetailPage from './components/UserDetailPage.vue'
 import UserListPage from './components/UserListPage.vue'
+import UserSuspensionHistoryPage from './components/UserSuspensionHistoryPage.vue'
 import BatchTriggerPage from './components/BatchTriggerPage.vue'
 import UserProfileEditPage from './components/UserPasswordEditPage.vue'
 import ListSection from './components/ListSection.vue'
@@ -22,6 +23,7 @@ const mainPage = ref('problems')
 // 상단 탭: 'main' = 메인 페이지(문제 둘러보기), 'my' = 내 문제, 'users' = 어드민 유저 조회
 const activeTab = ref('main')
 const isUserListPath = ref(window.location.pathname === '/users')
+const isUserSuspensionHistoryPath = ref(window.location.pathname === '/users/suspensions')
 const isBatchTriggerPath = ref(false) // 어드민 '배치 트리거' 뷰 표시 여부
 const loginSuccessMessage = ref('')
 const listSectionRef = ref(null) // 둘러보기에서 문제 추가 시 내 문제 목록 갱신용
@@ -42,6 +44,18 @@ function resetSessionState() {
 
 setOnUnauthorized(() => resetSessionState())
 
+function hasAdminUserPath() {
+  return isUserListPath.value || isUserSuspensionHistoryPath.value
+}
+
+function leaveAdminUserPath() {
+  if (!hasAdminUserPath()) return
+
+  window.history.pushState({}, '', '/')
+  isUserListPath.value = false
+  isUserSuspensionHistoryPath.value = false
+}
+
 // 페이지 로드 시 로그인 상태 확인
 onMounted(async () => {
   try {
@@ -53,9 +67,9 @@ onMounted(async () => {
     isLoggedIn.value = true
     currentUser.value = user.username
     currentUserRole.value = user.role || ''
-    if (isUserListPath.value && isAdmin.value) {
+    if (hasAdminUserPath() && isAdmin.value) {
       activeTab.value = 'users'
-    } else if (isUserListPath.value) {
+    } else if (hasAdminUserPath()) {
       showProblemPage()
     }
   } catch (error) {
@@ -72,9 +86,9 @@ function onLoginSuccess(user) {
   mainPage.value = 'problems'
   activeTab.value = 'main'
   loginSuccessMessage.value = ''
-  if (isUserListPath.value && isAdmin.value) {
+  if (hasAdminUserPath() && isAdmin.value) {
     activeTab.value = 'users'
-  } else if (isUserListPath.value) {
+  } else if (hasAdminUserPath()) {
     showProblemPage()
   }
 }
@@ -100,10 +114,7 @@ function onSelectItem(item) {
   activeTab.value = 'my'
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
-  if (isUserListPath.value) {
-    window.history.pushState({}, '', '/')
-    isUserListPath.value = false
-  }
+  leaveAdminUserPath()
 }
 
 function showSignupPage() {
@@ -120,10 +131,7 @@ function showProblemPage() {
   activeTab.value = 'main'
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
-  if (isUserListPath.value) {
-    window.history.pushState({}, '', '/')
-    isUserListPath.value = false
-  }
+  leaveAdminUserPath()
 }
 
 function showMyProblemPage() {
@@ -131,10 +139,7 @@ function showMyProblemPage() {
   mainPage.value = 'problems'
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
-  if (isUserListPath.value) {
-    window.history.pushState({}, '', '/')
-    isUserListPath.value = false
-  }
+  leaveAdminUserPath()
 }
 
 function showUserDetailPage() {
@@ -142,10 +147,7 @@ function showUserDetailPage() {
   activeTab.value = ''
   selectedAdminUsername.value = ''
   isBatchTriggerPath.value = false
-  if (isUserListPath.value) {
-    window.history.pushState({}, '', '/')
-    isUserListPath.value = false
-  }
+  leaveAdminUserPath()
 }
 
 function showUserListPage() {
@@ -156,6 +158,18 @@ function showUserListPage() {
   isBatchTriggerPath.value = false
   window.history.pushState({}, '', '/users')
   isUserListPath.value = true
+  isUserSuspensionHistoryPath.value = false
+}
+
+function showUserSuspensionHistoryPage() {
+  if (!isAdmin.value) return
+
+  activeTab.value = 'users'
+  selectedAdminUsername.value = ''
+  isBatchTriggerPath.value = false
+  window.history.pushState({}, '', '/users/suspensions')
+  isUserListPath.value = false
+  isUserSuspensionHistoryPath.value = true
 }
 
 function showBatchTriggerPage() {
@@ -164,8 +178,9 @@ function showBatchTriggerPage() {
   activeTab.value = 'my'
   selectedAdminUsername.value = ''
   isUserListPath.value = false
+  isUserSuspensionHistoryPath.value = false
   isBatchTriggerPath.value = true
-  if (window.location.pathname === '/users') {
+  if (window.location.pathname === '/users' || window.location.pathname === '/users/suspensions') {
     window.history.pushState({}, '', '/')
   }
 }
@@ -256,10 +271,15 @@ function onUserProblemUpdated(userProblem) {
             :show-admin-actions="true"
             @back="showUserListPage"
           />
+          <UserSuspensionHistoryPage
+            v-else-if="isUserSuspensionHistoryPath"
+            @back="showUserListPage"
+          />
           <UserListPage
             v-else
             @back="showProblemPage"
             @select-user="showAdminUserDetailPage"
+            @show-suspension-history="showUserSuspensionHistoryPage"
           />
         </template>
         <template v-else-if="activeTab !== 'main'">

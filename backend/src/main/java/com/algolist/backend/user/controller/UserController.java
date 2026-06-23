@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.user.dto.request.CreateRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRequestDto;
+import com.algolist.backend.user.dto.response.SolutionActivityResponseDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.service.UserService;
 
@@ -52,6 +53,23 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.OK).body(user);
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
+		}
+	}
+
+	@GetMapping("/{username}/activity")
+	// 최근 1년간의 풀이 기록 수 조회
+	public ResponseEntity<SolutionActivityResponseDto> selectSolutionActivity(@PathVariable String username,
+			Authentication authentication) {
+		if (!isCurrentUser(username, authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
+
+		SolutionActivityResponseDto activity = userService.selectSolutionActivity(username);
+
+		if (activity != null) {
+			return ResponseEntity.status(HttpStatus.OK).body(activity);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
 

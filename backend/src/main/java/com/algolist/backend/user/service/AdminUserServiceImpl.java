@@ -4,15 +4,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import com.algolist.backend.auth.CustomUserDetails;
 import com.algolist.backend.problem.ProblemDao;
 import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.solution.SolutionActivityService;
 import com.algolist.backend.solution.SolutionDao;
 import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dao.UserDao;
@@ -20,8 +18,11 @@ import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
+import com.algolist.backend.user.dto.response.SolutionActivityResponseDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.dto.response.UserPageResponseDto;
+import com.algolist.backend.user.dto.response.UserSuspensionHistoryDto;
+import com.algolist.backend.user.dto.response.UserSuspensionHistoryPageResponseDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +33,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 	private final UserDao userDao;
 	private final ProblemDao problemDao;
 	private final SolutionDao solutionDao;
-	private final SessionRegistry sessionRegistry;
+	private final SolutionActivityService solutionActivityService;
+	private final UserSessionService userSessionService;
 
 	@Override
 	public List<UserDto> selectAllUsers() {
@@ -54,6 +56,30 @@ public class AdminUserServiceImpl implements AdminUserService {
 
 		UserPageResponseDto response = new UserPageResponseDto(); // 객체에 값 할당
 		response.setUsers(users);
+		response.setPage(page);
+		response.setSize(size);
+		response.setTotalCount(totalCount);
+		response.setTotalPages((int) Math.ceil((double) totalCount / size));
+		return response;
+	}
+
+	@Override
+	// 페이징 처리를 위한 selectUserSuspensions 비즈니스 로직
+	public UserSuspensionHistoryPageResponseDto selectUserSuspensions(int page, int size, String status,
+			String searchType, String keyword) {
+		page = Math.max(page, 1);
+		size = Math.min(Math.max(size, 1), 100);
+		int offset = (page - 1) * size;
+		String suspensionStatus = normalizeSuspensionStatus(status);
+		String searchTarget = "nickname".equals(searchType) ? "nickname" : "username";
+		String searchKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+
+		long totalCount = userDao.countUserSuspensions(suspensionStatus, searchTarget, searchKeyword);
+		List<UserSuspensionHistoryDto> suspensions =
+				userDao.selectUserSuspensions(suspensionStatus, searchTarget, searchKeyword, size, offset);
+
+		UserSuspensionHistoryPageResponseDto response = new UserSuspensionHistoryPageResponseDto();
+		response.setSuspensions(suspensions);
 		response.setPage(page);
 		response.setSize(size);
 		response.setTotalCount(totalCount);
@@ -106,12 +132,28 @@ public class AdminUserServiceImpl implements AdminUserService {
 	}
 
 	@Override
+	public SolutionActivityResponseDto selectSolutionActivity(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return null;
+		}
+
+		return solutionActivityService.selectActivity(user.getUserId());
+	}
+
+	@Override
 	public boolean deleteUser(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return false;
+		}
+
 		int result = userDao.deleteUser(username);
 
 		if (result != 1) {
 			return false;
 		} else {
+			userSessionService.expireUserSessions(user.getUserId());
 			return true;
 		}
 	}
@@ -157,7 +199,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 			throw new IllegalStateException("정지 이력을 저장하지 못했습니다.");
 		}
 
-		expireUserSessions(user.getUserId());
+		userSessionService.expireUserSessions(user.getUserId());
 
 		return true;
 	}
@@ -188,7 +230,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 		}
 
 		int releaseResult = userDao.updateUserSuspensionRelease(user.getUserId(), adminId, releaseReason);
-		if (releaseResult < 1) {
+		if (releaseResult != 1) {
 			throw new IllegalArgumentException("해제할 정지 이력을 찾을 수 없습니다.");
 		}
 
@@ -228,24 +270,21 @@ public class AdminUserServiceImpl implements AdminUserService {
 		return result == 1;
 	}
 
-	// 정지된 유저의 userId를 이용해 해당 유저의 세션을 만료 처리하는 메서드
-	private void expireUserSessions(Long userId) {
-		for (Object principal : sessionRegistry.getAllPrincipals()) {
-			if (!(principal instanceof CustomUserDetails userDetails)) {
-				continue;
-			}
-
-			if (!userId.equals(userDetails.getUser().getUserId())) {
-				continue;
-			}
-
-			for (SessionInformation session : sessionRegistry.getAllSessions(userDetails, false)) {
-				session.expireNow();
-			}
-		}
-	}
-
 	private boolean existsUserProblem(Long userId, Long userProblemId) {
 		return userId != null && userProblemId != null && solutionDao.countUserProblem(userId, userProblemId) == 1;
+	}
+
+	// 정지 이력 조회 결과 계산용(ACTIVE, RELEASED만 허용)
+	private String normalizeSuspensionStatus(String status) {
+		if (!StringUtils.hasText(status) || "ALL".equalsIgnoreCase(status)) {
+			return null;
+		}
+
+		String normalized = status.trim().toUpperCase();
+		if ("ACTIVE".equals(normalized) || "RELEASED".equals(normalized)) {
+			return normalized;
+		}
+
+		return null;
 	}
 }

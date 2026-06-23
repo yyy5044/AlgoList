@@ -1,5 +1,7 @@
 package com.algolist.backend.solution;
 
+import java.time.LocalDateTime;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,4 +17,5 @@ public class SolutionDto {
 	// filename은 DB에 미포함, 확장자명을 통해 올바른 파일인지 검증하는 용도
 	private String fileName;
 	private String code;
+	private LocalDateTime createdAt;
 }

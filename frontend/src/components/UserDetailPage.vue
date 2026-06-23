@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import AdminUserProblemsPanel from './AdminUserProblemsPanel.vue'
+import SolutionActivityHeatmap from './SolutionActivityHeatmap.vue'
 import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
 import UserSuspensionForm from './UserSuspensionForm.vue'
 import UserRoleUpdateForm from './UserRoleUpdateForm.vue'
@@ -57,6 +58,13 @@ const isRoleControlOpen = ref(false)
 const imageLoadFailed = ref(false)
 const selectedRole = ref('')
 const activeAdminTab = ref('profile')
+const solutionActivity = ref({
+  startDate: '',
+  endDate: '',
+  days: [],
+})
+const activityErrorMessage = ref('')
+const isActivityLoading = ref(false)
 
 const displayName = computed(() => user.value.nickname || user.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -145,11 +153,39 @@ async function loadUser() {
   }
 }
 
+async function loadSolutionActivity() {
+  if (!props.username) {
+    solutionActivity.value = { startDate: '', endDate: '', days: [] }
+    return
+  }
+
+  try {
+    isActivityLoading.value = true
+    activityErrorMessage.value = ''
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}/activity`, {
+      credentials: 'include',
+    })
+
+    if (response.ok) {
+      solutionActivity.value = await response.json()
+    } else {
+      solutionActivity.value = { startDate: '', endDate: '', days: [] }
+      activityErrorMessage.value = await readErrorMessage(response, '풀이 기록을 불러오지 못했습니다.')
+    }
+  } catch (error) {
+    console.log(error)
+    solutionActivity.value = { startDate: '', endDate: '', days: [] }
+    activityErrorMessage.value = NETWORK_ERROR_MESSAGE
+  } finally {
+    isActivityLoading.value = false
+  }
+}
+
 watch(
-  () => props.username,
+  () => [props.username, props.apiBasePath],
   async () => {
     resetAdminProblemState()
-    await loadUser()
+    await Promise.all([loadUser(), loadSolutionActivity()])
   },
   { immediate: true },
 )
@@ -349,6 +385,12 @@ async function updateUserRole(payload) {
           <span class="bio-label">자기소개</span>
           <p class="bio-text">{{ user.bio || '등록된 자기소개가 없습니다.' }}</p>
         </div>
+
+        <SolutionActivityHeatmap
+          :activity="solutionActivity"
+          :is-loading="isActivityLoading"
+          :error-message="activityErrorMessage"
+        />
 
         <div class="user-actions">
           <template v-if="showActions">

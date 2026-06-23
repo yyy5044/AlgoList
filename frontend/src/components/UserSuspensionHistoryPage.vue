@@ -3,14 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
-const emit = defineEmits(['back', 'select-user', 'show-suspension-history'])
+const emit = defineEmits(['back'])
 
-const users = ref([])
+const suspensions = ref([])
 const errorMessage = ref('')
 const isLoading = ref(false)
 const hasLoaded = ref(false)
 const filters = ref({
-  // 페이징 요청을 위한 검색 조건
   page: 1,
   size: 10,
   status: 'ALL',
@@ -18,7 +17,6 @@ const filters = ref({
   keyword: '',
 })
 const pageInfo = ref({
-  // 요청 후 응답을 받을 객체
   page: 1,
   size: 10,
   totalCount: 0,
@@ -39,16 +37,20 @@ const visiblePages = computed(() => {
   return pages
 })
 
-function userKey(user) {
-  return user.id ?? user.userId ?? user.username
-}
-
 function formatDate(value) {
   if (!value) return '-'
   return String(value).replace('T', ' ').slice(0, 19)
 }
 
-function buildUserListUrl() {
+function suspensionKey(suspension) {
+  return suspension.suspensionId
+}
+
+function statusLabel(status) {
+  return status === 'ACTIVE' ? '활성 정지' : '해제됨'
+}
+
+function buildSuspensionHistoryUrl() {
   const params = new URLSearchParams()
   params.set('page', filters.value.page)
   params.set('size', filters.value.size)
@@ -59,20 +61,20 @@ function buildUserListUrl() {
     params.set('keyword', filters.value.keyword.trim())
   }
 
-  return `/api/admin/users?${params.toString()}`
+  return `/api/admin/user-suspensions?${params.toString()}`
 }
 
-async function loadUsers() {
+async function loadSuspensions() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetchWithCsrf(buildUserListUrl(), {
+    const response = await fetchWithCsrf(buildSuspensionHistoryUrl(), {
       credentials: 'include',
     })
 
     if (response.ok) {
       const data = await response.json()
-      users.value = data.users || []
+      suspensions.value = data.suspensions || []
       pageInfo.value = {
         page: data.page || filters.value.page,
         size: data.size || filters.value.size,
@@ -80,7 +82,7 @@ async function loadUsers() {
         totalPages: data.totalPages || 0,
       }
     } else {
-      errorMessage.value = await readErrorMessage(response, '회원 목록을 불러오지 못했습니다.')
+      errorMessage.value = await readErrorMessage(response, '정지 이력을 불러오지 못했습니다.')
     }
   } catch (error) {
     console.log(error)
@@ -91,9 +93,9 @@ async function loadUsers() {
   }
 }
 
-function searchUsers() {
+function searchSuspensions() {
   filters.value.page = 1
-  loadUsers()
+  loadSuspensions()
 }
 
 function resetFilters() {
@@ -104,44 +106,40 @@ function resetFilters() {
     searchType: 'username',
     keyword: '',
   }
-  loadUsers()
+  loadSuspensions()
 }
 
 function changePage(page) {
   if (page < 1 || page > pageInfo.value.totalPages || page === pageInfo.value.page) return
 
   filters.value.page = page
-  loadUsers()
+  loadSuspensions()
 }
 
-onMounted(loadUsers)
+onMounted(loadSuspensions)
 </script>
 
 <template>
-  <div class="user-list-page">
-    <div class="user-list-panel">
-      <div class="user-list-header">
+  <div class="suspension-history-page">
+    <div class="suspension-history-panel">
+      <div class="suspension-history-header">
         <div>
-          <h2>전체 회원 조회</h2>
-          <p>가입된 회원 목록을 확인합니다.</p>
+          <h2>정지 이력 조회</h2>
+          <p>회원 정지와 해제 기록을 확인합니다.</p>
         </div>
-        <div class="user-list-header-actions">
-          <button class="history-button" @click="emit('show-suspension-history')">정지 이력</button>
-          <button class="back-button" @click="emit('back')">돌아가기</button>
-        </div>
+        <button class="back-button" @click="emit('back')">회원 목록</button>
       </div>
 
-      <p v-if="isLoading && !hasLoaded" class="guide-message">회원 목록을 불러오는 중입니다.</p>
+      <p v-if="isLoading && !hasLoaded" class="guide-message">정지 이력을 불러오는 중입니다.</p>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-      <form class="filter-bar" @submit.prevent="searchUsers">
+      <form class="filter-bar" @submit.prevent="searchSuspensions">
         <label>
           <span>상태</span>
-          <select v-model="filters.status" :disabled="isLoading" @change="searchUsers">
+          <select v-model="filters.status" :disabled="isLoading" @change="searchSuspensions">
             <option value="ALL">전체</option>
-            <option value="ACTIVE">활성</option>
-            <option value="SUSPENDED">정지</option>
-            <option value="DELETED">삭제</option>
+            <option value="ACTIVE">활성 정지</option>
+            <option value="RELEASED">해제됨</option>
           </select>
         </label>
 
@@ -172,40 +170,50 @@ onMounted(loadUsers)
         <table>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>아이디</th>
-              <th>닉네임</th>
-              <th>권한</th>
-              <th>이메일 인증일</th>
-              <th>생성일</th>
-              <th>삭제일</th>
-              <th>계정 상태</th>
+              <th>대상 유저</th>
+              <th>상태</th>
+              <th>정지 사유</th>
+              <th>정지일</th>
+              <th>정지 종료일</th>
+              <th>정지 처리자</th>
+              <th>해제일</th>
+              <th>해제 처리자</th>
+              <th>해제 사유</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in users" :key="userKey(user)">
-              <td>{{ user.id ?? user.userId ?? '-' }}</td>
+            <tr v-for="suspension in suspensions" :key="suspensionKey(suspension)">
               <td>
-                <button class="username-button" @click="emit('select-user', user.username)">
-                  {{ user.username }}
-                </button>
+                <div class="user-cell">
+                  <strong>{{ suspension.username }}</strong>
+                  <span>{{ suspension.nickname || '-' }} · {{ suspension.accountStatus || 'ACTIVE' }}</span>
+                </div>
               </td>
-              <td>{{ user.nickname || '-' }}</td>
-              <td>{{ user.role || 'USER' }}</td>
-              <td>{{ formatDate(user.emailVerifiedAt) }}</td>
-              <td>{{ formatDate(user.createdAt) }}</td>
-              <td>{{ formatDate(user.deletedAt) }}</td>
-              <td>{{ user.accountStatus || 'ACTIVE' }}</td>
+              <td>
+                <span
+                  class="status-badge"
+                  :class="{ active: suspension.suspensionStatus === 'ACTIVE' }"
+                >
+                  {{ statusLabel(suspension.suspensionStatus) }}
+                </span>
+              </td>
+              <td class="reason-cell">{{ suspension.reason || '-' }}</td>
+              <td>{{ formatDate(suspension.suspendedAt) }}</td>
+              <td>{{ formatDate(suspension.suspendedUntil) }}</td>
+              <td>{{ suspension.suspendedByUsername || '-' }}</td>
+              <td>{{ formatDate(suspension.releasedAt) }}</td>
+              <td>{{ suspension.releasedByUsername || '-' }}</td>
+              <td class="reason-cell">{{ suspension.releaseReason || '-' }}</td>
             </tr>
-            <tr v-if="!isLoading && users.length === 0">
-              <td colspan="8" class="empty-message">조회된 회원이 없습니다.</td>
+            <tr v-if="!isLoading && suspensions.length === 0">
+              <td colspan="9" class="empty-message">조회된 정지 이력이 없습니다.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="pagination">
-        <span class="page-summary">총 {{ pageInfo.totalCount }}명</span>
+        <span class="page-summary">총 {{ pageInfo.totalCount }}건</span>
         <div class="page-buttons">
           <button
             type="button"
@@ -241,25 +249,20 @@ onMounted(loadUsers)
 </template>
 
 <style scoped>
-.user-list-page {
+.suspension-history-page {
   flex: 1;
   padding: 28px 36px;
   overflow: auto;
   background: white;
 }
 
-.user-list-panel {
+.suspension-history-panel {
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
-.user-list-header {
+.suspension-history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -267,19 +270,14 @@ onMounted(loadUsers)
   margin-bottom: 20px;
 }
 
-.user-list-header h2 {
+.suspension-history-header h2 {
   margin-bottom: 4px;
   color: #333;
 }
 
-.user-list-header p {
+.suspension-history-header p {
   color: #999;
   font-size: 14px;
-}
-
-.user-list-header-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .guide-message {
@@ -335,7 +333,8 @@ onMounted(loadUsers)
 }
 
 .search-button,
-.reset-button {
+.reset-button,
+.back-button {
   height: 38px;
   padding: 0 14px;
   border-radius: 6px;
@@ -354,13 +353,15 @@ onMounted(loadUsers)
   background: #3a7bc8;
 }
 
-.reset-button {
+.reset-button,
+.back-button {
   background: white;
   color: #777;
   border: 1px solid #ddd;
 }
 
-.reset-button:hover {
+.reset-button:hover,
+.back-button:hover {
   background: #f8f9fa;
 }
 
@@ -381,7 +382,7 @@ onMounted(loadUsers)
 
 table {
   width: 100%;
-  min-width: 1020px;
+  min-width: 1180px;
   border-collapse: collapse;
 }
 
@@ -390,6 +391,7 @@ td {
   padding: 12px;
   border-bottom: 1px solid #eee;
   text-align: left;
+  vertical-align: top;
   font-size: 14px;
 }
 
@@ -407,52 +409,47 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
+.user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-cell strong {
+  color: #333;
+}
+
+.user-cell span {
+  color: #999;
+  font-size: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  min-width: 64px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f3f5;
+  color: #777;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #fff3cd;
+  color: #946200;
+}
+
+.reason-cell {
+  max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
+}
+
 .empty-message {
   text-align: center;
   color: #999;
-}
-
-.username-button {
-  padding: 0;
-  background: none;
-  color: #4a90d9;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.username-button:hover {
-  color: #1a56db;
-  text-decoration: underline;
-}
-
-.history-button,
-.back-button {
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.history-button {
-  background: #4a90d9;
-  color: white;
-  border: 1px solid #4a90d9;
-}
-
-.history-button:hover {
-  background: #3a7bc8;
-}
-
-.back-button {
-  background: white;
-  color: #4a90d9;
-  border: 1px solid #4a90d9;
-}
-
-.back-button:hover {
-  background: #f0f6fd;
 }
 
 .pagination {
@@ -503,12 +500,12 @@ tbody tr:last-child td {
 }
 
 @media (max-width: 720px) {
-  .user-list-page {
+  .suspension-history-page {
     padding: 18px;
   }
 
+  .suspension-history-header,
   .filter-bar,
-  .user-list-header-actions,
   .pagination {
     align-items: stretch;
     flex-direction: column;

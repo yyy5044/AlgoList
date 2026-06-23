@@ -22,6 +22,19 @@
 	<resultMap type="UserSuspensionInfoDto" id="UserSuspensionInfoDtoMap" autoMapping="true">
 		<result column="suspended_until" property="suspendedUntil"/>
 	</resultMap>
+
+	<resultMap type="UserSuspensionHistoryDto" id="UserSuspensionHistoryDtoMap" autoMapping="true">
+		<id column="suspension_id" property="suspensionId"/>
+		<result column="user_id" property="userId"/>
+		<result column="account_status" property="accountStatus"/>
+		<result column="suspended_at" property="suspendedAt"/>
+		<result column="suspended_until" property="suspendedUntil"/>
+		<result column="suspended_by_username" property="suspendedByUsername"/>
+		<result column="released_at" property="releasedAt"/>
+		<result column="released_by_username" property="releasedByUsername"/>
+		<result column="release_reason" property="releaseReason"/>
+		<result column="suspension_status" property="suspensionStatus"/>
+	</resultMap>
 	
 	<!-- 모든 유저 반환 -->
 	<select id="selectAllUsers" resultMap="UserDtoMap">
@@ -67,6 +80,76 @@
 					</when>
 					<otherwise>
 						AND username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</select>
+
+	<!-- 조건에 맞는 정지 이력 목록 반환 -->
+	<select id="selectUserSuspensions" resultMap="UserSuspensionHistoryDtoMap">
+		SELECT
+			us.suspension_id,
+			us.user_id,
+			target_user.username,
+			target_user.nickname,
+			target_user.account_status,
+			us.reason,
+			us.suspended_at,
+			us.suspended_until,
+			suspended_by.username AS suspended_by_username,
+			us.released_at,
+			released_by.username AS released_by_username,
+			us.release_reason,
+			CASE
+				WHEN us.active_user_id IS NOT NULL THEN 'ACTIVE'
+				ELSE 'RELEASED'
+			END AS suspension_status
+		FROM user_suspensions us
+		JOIN users target_user ON target_user.user_id = us.user_id
+		LEFT JOIN users suspended_by ON suspended_by.user_id = us.suspended_by
+		LEFT JOIN users released_by ON released_by.user_id = us.released_by
+		<where>
+			<if test="suspensionStatus == 'ACTIVE'">
+				us.active_user_id IS NOT NULL
+			</if>
+			<if test="suspensionStatus == 'RELEASED'">
+				us.active_user_id IS NULL
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND target_user.nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND target_user.username LIKE CONCAT('%', #{keyword}, '%')
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+		ORDER BY us.suspension_id DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+	<!-- 조건에 맞는 정지 이력 수 반환 -->
+	<select id="countUserSuspensions" resultType="long">
+		SELECT COUNT(*)
+		FROM user_suspensions us
+		JOIN users target_user ON target_user.user_id = us.user_id
+		<where>
+			<if test="suspensionStatus == 'ACTIVE'">
+				us.active_user_id IS NOT NULL
+			</if>
+			<if test="suspensionStatus == 'RELEASED'">
+				us.active_user_id IS NULL
+			</if>
+			<if test="keyword != null">
+				<choose>
+					<when test="searchType == 'nickname'">
+						AND target_user.nickname LIKE CONCAT('%', #{keyword}, '%')
+					</when>
+					<otherwise>
+						AND target_user.username LIKE CONCAT('%', #{keyword}, '%')
 					</otherwise>
 				</choose>
 			</if>
@@ -158,8 +241,7 @@
 		SET released_at = CURRENT_TIMESTAMP,
 			released_by = #{releasedBy},
 			release_reason = #{releaseReason}
-		WHERE user_id = #{userId}
-		  AND released_at IS NULL
+		WHERE active_user_id = #{userId}
 	</update>
 
 	<!-- 정지 기간이 만료된 정지 이력 자동 해제 -->
@@ -179,8 +261,7 @@
 		  AND NOT EXISTS (
 			SELECT 1
 			FROM user_suspensions us
-			WHERE us.user_id = u.user_id
-			  AND us.released_at IS NULL
+			WHERE us.active_user_id = u.user_id
 		  )
 	</update>
 
@@ -188,10 +269,7 @@
 	<select id="selectActiveSuspension" resultMap="UserSuspensionInfoDtoMap">
 		SELECT reason, suspended_until
 		FROM user_suspensions
-		WHERE user_id = #{userId}
-		  AND released_at IS NULL
-		ORDER BY suspended_at DESC
-		LIMIT 1
+		WHERE active_user_id = #{userId}
 	</select>
 
 	<!-- user_id 기반으로 유저 권한 변경 -->

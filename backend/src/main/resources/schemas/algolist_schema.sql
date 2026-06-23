@@ -58,7 +58,11 @@ CREATE TABLE IF NOT EXISTS user_suspensions (
     released_by BIGINT NULL,
     release_reason VARCHAR(255) NULL,
 
-    INDEX idx_user_suspensions_active_user (user_id, released_at),
+    active_user_id BIGINT GENERATED ALWAYS AS (
+        CASE WHEN released_at IS NULL THEN user_id ELSE NULL END
+    ) STORED,
+
+    UNIQUE KEY uq_user_suspensions_one_active (active_user_id),
     INDEX idx_user_suspensions_expired (released_at, suspended_until),
 
     FOREIGN KEY (user_id) REFERENCES users(user_id),
@@ -119,5 +123,7 @@ CREATE TABLE IF NOT EXISTS solutions (
     language VARCHAR(50) NOT NULL,
     code TEXT NOT NULL,
     user_problem_id BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_solutions_user_problem_created_at (user_problem_id, created_at),
     FOREIGN KEY (user_problem_id) REFERENCES user_problems(user_problem_id) ON DELETE CASCADE
 );
