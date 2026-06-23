@@ -31,25 +31,25 @@ public class ReminderServiceImpl implements ReminderService {
 			LocalDate reviewDueDate = ReminderSchedule.getReviewDueDate(item.getGrade(), item.getLastSolvedDate());
 			item.setReviewDueDate(reviewDueDate);
 
-			// 복습 날짜가 오늘이거나 이미 지나갔다면 다시 풀어야하는 문제 리스트에 문제를 추가
-			if (ReminderSchedule.isDueTodayOrEarlier(reviewDueDate, today)) {
+			// 복습 예정일이 계산되는 문제는 미래 일정까지 함께 표시
+			if (reviewDueDate != null) {
 				reminders.add(item);
 			}
 		}
 
-		// 오늘 복습해야 하는 문제를 가장 위로 올리고, 이후 RED-YELLOW, 복습 날짜, problem_id 순으로 정렬
+		// 현재 복습 대상이 먼저 오고, 이후 복습 예정일이 가까운 순으로 정렬
 		reminders.sort(Comparator
 				.comparingInt((ReminderProblemDto item) -> getDueDatePriority(item, today))
-				.thenComparingInt(item -> ReminderSchedule.getGradePriority(item.getGrade()))
 				.thenComparing(ReminderProblemDto::getReviewDueDate)
+				.thenComparingInt(item -> ReminderSchedule.getGradePriority(item.getGrade()))
 				.thenComparing(ReminderProblemDto::getUserProblemId));
 
 		return reminders;
 	}
 
-	// 오늘 복습해야 하는 문제인지 확인
+	// 오늘까지 복습해야 하는 문제인지 확인
 	private int getDueDatePriority(ReminderProblemDto item, LocalDate today) {
-		return today.equals(item.getReviewDueDate()) ? 0 : 1;
+		return ReminderSchedule.isDueTodayOrEarlier(item.getReviewDueDate(), today) ? 0 : 1;
 	}
 
 	@Override
