@@ -8,9 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import com.algolist.backend.global.exception.DuplicateUsernameException;
+import com.algolist.backend.solution.SolutionActivityService;
 import com.algolist.backend.user.dao.UserDao;
+import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.CreateRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRequestDto;
+import com.algolist.backend.user.dto.response.SolutionActivityResponseDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.dto.response.UserSuspensionInfoDto;
 
@@ -29,6 +32,7 @@ public class UserServiceImpl implements UserService {
 	private final PasswordEncoder passwordEncoder;
 	private final ProfileImageService profileImageService;
 	private final EmailVerificationService emailVerificationService;
+	private final SolutionActivityService solutionActivityService;
 
 	@Override
 	public UserDetailDto selectUser(String username) {
@@ -155,6 +159,16 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserSuspensionInfoDto selectActiveSuspension(Long userId) {
 		return userDao.selectActiveSuspension(userId);
+	}
+
+	@Override
+	public SolutionActivityResponseDto selectSolutionActivity(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return null;
+		}
+
+		return solutionActivityService.selectActivity(user.getUserId());
 	}
 	
 	// 아이디, 닉네임, 비밀번호, 자기소개 등이 허용된 길이 이내인지 검증하는 메서드

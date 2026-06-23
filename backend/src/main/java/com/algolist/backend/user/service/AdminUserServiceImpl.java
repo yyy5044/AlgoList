@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import com.algolist.backend.auth.CustomUserDetails;
 import com.algolist.backend.problem.ProblemDao;
 import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.solution.SolutionActivityService;
 import com.algolist.backend.solution.SolutionDao;
 import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dao.UserDao;
@@ -20,6 +21,7 @@ import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
+import com.algolist.backend.user.dto.response.SolutionActivityResponseDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.dto.response.UserPageResponseDto;
 import com.algolist.backend.user.dto.response.UserSuspensionHistoryDto;
@@ -34,6 +36,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 	private final UserDao userDao;
 	private final ProblemDao problemDao;
 	private final SolutionDao solutionDao;
+	private final SolutionActivityService solutionActivityService;
 	private final SessionRegistry sessionRegistry;
 
 	@Override
@@ -129,6 +132,16 @@ public class AdminUserServiceImpl implements AdminUserService {
 		}
 
 		return solution;
+	}
+
+	@Override
+	public SolutionActivityResponseDto selectSolutionActivity(String username) {
+		UserDto user = userDao.selectUserForAuth(username);
+		if (user == null) {
+			return null;
+		}
+
+		return solutionActivityService.selectActivity(user.getUserId());
 	}
 
 	@Override

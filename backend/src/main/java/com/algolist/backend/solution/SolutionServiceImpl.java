@@ -2,6 +2,7 @@ package com.algolist.backend.solution;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,6 +68,9 @@ public class SolutionServiceImpl implements SolutionService {
 			throw new IllegalArgumentException("문제당 풀이 업로드는 최대 20개까지 가능합니다.");
 		}
 
+		LocalDateTime createdAt = LocalDateTime.now();
+		solution.setCreatedAt(createdAt);
+
 		int result = solutionDao.insertSolution(solution);
 
 		if (result != 1) {
@@ -74,7 +78,7 @@ public class SolutionServiceImpl implements SolutionService {
 		}
 
 		// 문제 풀이를 성공적으로 추가했다면 user_problem 컬럼을 UPDATE
-		int updated = solutionDao.updateUserProblemSolvedStatus(userId, solution.getUserProblemId(), LocalDate.now());
+		int updated = solutionDao.updateUserProblemSolvedStatus(userId, solution.getUserProblemId(), createdAt.toLocalDate());
 		if (updated != 1) {
 			throw new IllegalStateException("풀이 기록 갱신에 실패했습니다.");
 		}

@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.user.dto.response.SolutionActivityDayDto;
 
 @Mapper
 public interface SolutionDao {
@@ -35,4 +36,9 @@ public interface SolutionDao {
 
 	// Solution 삭제
 	int deleteSolution(@Param("userId") Long userId, @Param("solutionId") Long solutionId);
+
+	// startDate부터 endDate까지의 각 날짜별 문제 풀이 수 반환
+	List<SolutionActivityDayDto> selectActivityDays(@Param("userId") Long userId,
+			@Param("startDate") LocalDate startDate,
+			@Param("endDate") LocalDate endDate);
 }

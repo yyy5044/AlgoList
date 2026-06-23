@@ -9,6 +9,12 @@
 	<resultMap id="solutionMap" type="SolutionDto" autoMapping="true">
 		<id column="solution_id" property="solutionId"/>
 		<result column="user_problem_id" property="userProblemId"/>
+		<result column="created_at" property="createdAt"/>
+	</resultMap>
+
+	<resultMap id="activityDayMap" type="SolutionActivityDayDto">
+		<result column="activity_date" property="date"/>
+		<result column="solution_count" property="count"/>
 	</resultMap>
 
 	<resultMap id="problemMap" type="ProblemDto" autoMapping="true">
@@ -28,7 +34,7 @@
 
 	<!-- 현재 선택된 문제의 모든 풀이들 반환(code 미포함) -->
 	<select id="selectSolutions" resultMap="solutionMap">
-		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.user_problem_id
+		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.user_problem_id, s.created_at
 		FROM solutions s
 		JOIN user_problems up
 		USING (user_problem_id)
@@ -39,7 +45,7 @@
 
 	<!-- 선택한 풀이 하나만 반환(code 포함) -->
 	<select id="selectSolution" resultMap="solutionMap">
-		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.code, s.user_problem_id
+		SELECT s.solution_id, s.algorithm, s.`type`, s.language, s.code, s.user_problem_id, s.created_at
 		FROM solutions s
 		JOIN user_problems up
 		USING (user_problem_id)
@@ -67,9 +73,22 @@
 
 	<!-- 문제 풀이 추가 -->
 	<insert id="insertSolution">
-		INSERT INTO solutions (algorithm, `type`, language, code, user_problem_id)
-		VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{userProblemId})
+		INSERT INTO solutions (algorithm, `type`, language, code, user_problem_id, created_at)
+		VALUES (#{algorithm}, #{type}, #{language}, #{code}, #{userProblemId}, #{createdAt})
 	</insert>
+
+	<!-- statDate부터 endDate까지의 문제 풀이 수를 각각 반환 -->
+	<select id="selectActivityDays" resultMap="activityDayMap">
+		SELECT DATE(s.created_at) AS activity_date, COUNT(*) AS solution_count
+		FROM solutions s
+		JOIN user_problems up
+		USING (user_problem_id)
+		WHERE up.user_id = #{userId}
+		  AND s.created_at &gt;= #{startDate}
+		  AND s.created_at &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+		GROUP BY DATE(s.created_at)
+		ORDER BY activity_date
+	</select>
 
 	<!-- 풀이 업로드 성공 시 최근 풀이 날짜와 풀이 횟수 갱신 -->
 	<update id="updateUserProblemSolvedStatus">

@@ -123,5 +123,7 @@ CREATE TABLE IF NOT EXISTS solutions (
     language VARCHAR(50) NOT NULL,
     code TEXT NOT NULL,
     user_problem_id BIGINT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_solutions_user_problem_created_at (user_problem_id, created_at),
     FOREIGN KEY (user_problem_id) REFERENCES user_problems(user_problem_id) ON DELETE CASCADE
 );

@@ -21,6 +21,7 @@ import com.algolist.backend.solution.SolutionDto;
 import com.algolist.backend.user.dto.request.ReleaseSuspensionRequestDto;
 import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
+import com.algolist.backend.user.dto.response.SolutionActivityResponseDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.dto.response.UserPageResponseDto;
 import com.algolist.backend.user.service.AdminUserService;
@@ -56,6 +57,18 @@ public class AdminUserController {
 			return ResponseEntity.status(HttpStatus.OK).body(user);
 		} else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 조회된 정보가 없으므로 NOT_FOUND(404) 에러
+		}
+	}
+
+	@GetMapping("/{username}/activity")
+	// 특정 유저의 최근 1년간 풀이 기록 수 조회
+	public ResponseEntity<SolutionActivityResponseDto> selectSolutionActivity(@PathVariable String username) {
+		SolutionActivityResponseDto activity = adminUserService.selectSolutionActivity(username);
+
+		if (activity != null) {
+			return ResponseEntity.status(HttpStatus.OK).body(activity);
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
 
