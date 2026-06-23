@@ -1,0 +1,21 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]        # main에 push될 때마다 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest    # GitHub가 띄워주는 임시 리눅스 러너
+    steps:
+      - name: SSH로 EC2 접속해서 배포
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/AlgoList
+            git pull
+            docker compose up -d --build
+            docker image prune -f
