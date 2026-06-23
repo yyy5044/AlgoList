@@ -293,7 +293,13 @@ function onUserProblemUpdated(userProblem) {
         />
       </div>
       <footer class="app-footer">
-        Codeforces 문제 데이터 출처: <a href="https://huggingface.co/datasets/open-r1/codeforces" target="_blank">open-r1/codeforces</a> (CC-BY-4.0) | 문제 데이터는 권리자 요청 시 삭제할 수 있습니다. 연락처: yyy5044@naver.com
+        <div>
+          Codeforces 문제 데이터 출처: <a href="https://huggingface.co/datasets/open-r1/codeforces" target="_blank">open-r1/codeforces</a> (CC-BY-4.0) | 문제 데이터는 권리자 요청 시 삭제할 수 있습니다. 연락처: yyy5044@naver.com
+        </div>
+        <a class="github-link" href="https://github.com/yyy5044/AlgoList" target="_blank" rel="noopener">
+          <img src="/icons/github.png" alt="GitHub" class="github-icon" />
+          깃허브 링크
+        </a>
       </footer>
     </div>
   </div>
@@ -409,6 +415,24 @@ function onUserProblemUpdated(userProblem) {
 .app-footer a {
   color: #999;
   text-decoration: underline;
+}
+
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  text-decoration: none;
+  color: #666;
+}
+
+.github-link:hover {
+  color: #1a56db;
+}
+
+.github-icon {
+  width: 14px;
+  height: 14px;
 }
 </style>
 
