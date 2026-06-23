@@ -22,6 +22,8 @@ import com.algolist.backend.user.dto.request.SuspendUserRequestDto;
 import com.algolist.backend.user.dto.request.UpdateRoleRequestDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
 import com.algolist.backend.user.dto.response.UserPageResponseDto;
+import com.algolist.backend.user.dto.response.UserSuspensionHistoryDto;
+import com.algolist.backend.user.dto.response.UserSuspensionHistoryPageResponseDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -54,6 +56,30 @@ public class AdminUserServiceImpl implements AdminUserService {
 
 		UserPageResponseDto response = new UserPageResponseDto(); // 객체에 값 할당
 		response.setUsers(users);
+		response.setPage(page);
+		response.setSize(size);
+		response.setTotalCount(totalCount);
+		response.setTotalPages((int) Math.ceil((double) totalCount / size));
+		return response;
+	}
+
+	@Override
+	// 페이징 처리를 위한 selectUserSuspensions 비즈니스 로직
+	public UserSuspensionHistoryPageResponseDto selectUserSuspensions(int page, int size, String status,
+			String searchType, String keyword) {
+		page = Math.max(page, 1);
+		size = Math.min(Math.max(size, 1), 100);
+		int offset = (page - 1) * size;
+		String suspensionStatus = normalizeSuspensionStatus(status);
+		String searchTarget = "nickname".equals(searchType) ? "nickname" : "username";
+		String searchKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+
+		long totalCount = userDao.countUserSuspensions(suspensionStatus, searchTarget, searchKeyword);
+		List<UserSuspensionHistoryDto> suspensions =
+				userDao.selectUserSuspensions(suspensionStatus, searchTarget, searchKeyword, size, offset);
+
+		UserSuspensionHistoryPageResponseDto response = new UserSuspensionHistoryPageResponseDto();
+		response.setSuspensions(suspensions);
 		response.setPage(page);
 		response.setSize(size);
 		response.setTotalCount(totalCount);
@@ -247,5 +273,19 @@ public class AdminUserServiceImpl implements AdminUserService {
 
 	private boolean existsUserProblem(Long userId, Long userProblemId) {
 		return userId != null && userProblemId != null && solutionDao.countUserProblem(userId, userProblemId) == 1;
+	}
+
+	// 정지 이력 조회 결과 계산용(ACTIVE, RELEASED만 허용)
+	private String normalizeSuspensionStatus(String status) {
+		if (!StringUtils.hasText(status) || "ALL".equalsIgnoreCase(status)) {
+			return null;
+		}
+
+		String normalized = status.trim().toUpperCase();
+		if ("ACTIVE".equals(normalized) || "RELEASED".equals(normalized)) {
+			return normalized;
+		}
+
+		return null;
 	}
 }

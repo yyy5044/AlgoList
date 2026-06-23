@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.algolist.backend.user.dto.UserDto;
 import com.algolist.backend.user.dto.response.UserDetailDto;
+import com.algolist.backend.user.dto.response.UserSuspensionHistoryDto;
 import com.algolist.backend.user.dto.response.UserSuspensionInfoDto;
 
 @Mapper
@@ -25,6 +26,18 @@ public interface UserDao {
 
 	// 조건에 맞는 유저 수 반환
 	public long countUsers(@Param("accountStatus") String accountStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword);
+
+	// 조건에 맞는 정지 이력 리스트 반환
+	public List<UserSuspensionHistoryDto> selectUserSuspensions(@Param("suspensionStatus") String suspensionStatus,
+			@Param("searchType") String searchType,
+			@Param("keyword") String keyword,
+			@Param("size") int size,
+			@Param("offset") int offset);
+
+	// 조건에 맞는 정지 이력 수 반환
+	public long countUserSuspensions(@Param("suspensionStatus") String suspensionStatus,
 			@Param("searchType") String searchType,
 			@Param("keyword") String keyword);
 	
