@@ -4,7 +4,7 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.algolist.backend.reminder.ReminderDao">
-	<resultMap id="problemMap" type="com.algolist.backend.problem.ProblemDto" autoMapping="true">
+	<resultMap id="problemMap" type="com.algolist.backend.problem.dto.ProblemDto" autoMapping="true">
 		<id column="problem_id" property="problemId"/>
 		<collection property="category" ofType="string">
 			<result column="category_name"/>

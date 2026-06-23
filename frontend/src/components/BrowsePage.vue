@@ -197,7 +197,7 @@ function closeDetail() {
           <div
             v-else-if="detailProblem.description"
             class="description-content"
-            v-html="renderDescription(detailProblem.description)"
+            v-html="renderDescription(detailProblem.description, detailProblem.site)"
           ></div>
           <p v-else class="status-text">본문이 없습니다.</p>
           <div class="detail-footer">

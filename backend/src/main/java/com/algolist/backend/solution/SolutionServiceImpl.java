@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import com.algolist.backend.problem.UserProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 import lombok.RequiredArgsConstructor;
 

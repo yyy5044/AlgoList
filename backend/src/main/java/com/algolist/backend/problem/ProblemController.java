@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.algolist.backend.auth.CustomUserDetails;
+import com.algolist.backend.problem.dto.ProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
+import com.algolist.backend.problem.translation.TranslatedProblemDto;
+import com.algolist.backend.problem.translation.TranslationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class ProblemController {
 
 	private final ProblemService service;
+	private final TranslationService tService;
 	
 	// 초기 목록 조회: GET /api/problems
 	@GetMapping
@@ -60,7 +65,7 @@ public class ProblemController {
 
 	// 개별 삭제: DELETE /api/problems/{id}
 	@DeleteMapping("/{problemId}")
-	public ResponseEntity<Void> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
+	public ResponseEntity<?> delete(@AuthenticationPrincipal CustomUserDetails userDetails,
 								       @PathVariable Long problemId) {
 		Long userId = userDetails.getUser().getUserId();
 		
@@ -68,6 +73,35 @@ public class ProblemController {
 		
 		return (deleted > 0) ? ResponseEntity.status(HttpStatus.NO_CONTENT).build() :
 				  			   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+	
+	// 문제 목록 페이지 전달 : /api/problems/browse/{params}
+	@GetMapping("/browse/{site}")
+	public ResponseEntity<?> selectPage(@PathVariable String site, @RequestParam int page, @RequestParam int size) {
+		
+		List<ProblemDto> problems = service.selectPage(site, page, size);
+		
+		return (problems != null) ? ResponseEntity.status(HttpStatus.OK).body(problems) :
+									ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+	
+	// 문제 상세 조회
+	@GetMapping("/detail/{problemId}")
+	public ResponseEntity<?> selectDescription(@PathVariable Long problemId) {
+		
+		String description = service.selectDescription(problemId);
+		
+		return (description != null) ? ResponseEntity.status(HttpStatus.OK).body(description) :
+									   ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	}
+	
+	// 문제 번역본 조회
+	@GetMapping("/translation/{problemId}")
+	public ResponseEntity<?> getTranslatedDescription(@PathVariable Long problemId) {
+		
+		TranslatedProblemDto translatedProblem = tService.getTranslatedProblem(problemId);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(translatedProblem);
 	}
 	
 }

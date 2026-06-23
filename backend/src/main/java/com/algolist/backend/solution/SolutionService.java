@@ -2,7 +2,7 @@ package com.algolist.backend.solution;
 
 import java.util.List;
 
-import com.algolist.backend.problem.UserProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 public interface SolutionService {
 	// 모든 Solution 목록 가져오기

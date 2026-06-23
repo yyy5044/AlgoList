@@ -6,7 +6,7 @@ import * as reminderApi from '@/api/reminders'
 const emit = defineEmits(['select-item'])
 
 // 탭
-const tabs = ['문제', '분류', 'Git', '복습']
+const tabs = ['문제', '복습']
 const currentTab = ref('문제')
 
 // 문제 리스트 필터링용 검색어

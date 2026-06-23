@@ -1,8 +1,10 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import AdminUserProblemsPanel from './AdminUserProblemsPanel.vue'
 import UserSuspensionReleaseForm from './UserSuspensionReleaseForm.vue'
 import UserSuspensionForm from './UserSuspensionForm.vue'
 import UserRoleUpdateForm from './UserRoleUpdateForm.vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
@@ -35,6 +37,7 @@ const emit = defineEmits([
 
 const user = ref({
   username: props.username,
+  email: '',
   nickname: '',
   profileImageUrl: '',
   bio: '',
@@ -53,6 +56,7 @@ const isSuspensionFormOpen = ref(false)
 const isRoleControlOpen = ref(false)
 const imageLoadFailed = ref(false)
 const selectedRole = ref('')
+const activeAdminTab = ref('profile')
 
 const displayName = computed(() => user.value.nickname || user.value.username || '사용자')
 const profileInitial = computed(() => displayName.value.slice(0, 1).toUpperCase())
@@ -108,13 +112,21 @@ const releaseButtonText = computed(() => {
   return '정지 해제'
 })
 
+function resetAdminProblemState() {
+  activeAdminTab.value = 'profile'
+}
+
+function changeAdminTab(tab) {
+  activeAdminTab.value = tab
+}
+
 async function loadUser() {
   if (!props.username) return
 
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       credentials: 'include',
     })
 
@@ -133,7 +145,14 @@ async function loadUser() {
   }
 }
 
-onMounted(loadUser)
+watch(
+  () => props.username,
+  async () => {
+    resetAdminProblemState()
+    await loadUser()
+  },
+  { immediate: true },
+)
 
 function openRoleControl() {
   selectedRole.value = user.value.role || 'USER'
@@ -148,7 +167,7 @@ async function deleteUser() {
     isDeleting.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -172,7 +191,7 @@ async function suspendUser(payload) {
     isSuspending.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -200,7 +219,7 @@ async function releaseUserSuspension(payload) {
     isReleasingSuspension.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(
+    const response = await fetchWithCsrf(
       `${props.apiBasePath}/${encodeURIComponent(props.username)}/suspensions/release`,
       {
         method: 'PATCH',
@@ -234,7 +253,7 @@ async function updateUserRole(payload) {
     isUpdatingRole.value = true
     errorMessage.value = ''
     successMessage.value = ''
-    const response = await fetch(`${props.apiBasePath}/${encodeURIComponent(props.username)}/role`, {
+    const response = await fetchWithCsrf(`${props.apiBasePath}/${encodeURIComponent(props.username)}/role`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -260,78 +279,123 @@ async function updateUserRole(payload) {
 <template>
   <div class="user-page">
     <div class="user-panel">
-      <h2>회원 상세</h2>
-      <p class="user-subtitle">{{ subtitle }}</p>
+      <div class="user-detail-header">
+        <div>
+          <h2>회원 상세</h2>
+          <p class="user-subtitle">{{ subtitle }}</p>
+        </div>
+        <button
+          v-if="showAdminActions && activeAdminTab === 'problems'"
+          class="back-button"
+          @click="emit('back')"
+        >
+          뒤로가기
+        </button>
+      </div>
 
       <p v-if="isLoading" class="guide-message">회원 정보를 불러오는 중입니다.</p>
       <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
       <p v-if="successMessage" class="success">{{ successMessage }}</p>
 
-      <div class="profile-summary">
-        <img
-          v-if="user.profileImageUrl && !imageLoadFailed"
-          class="profile-image"
-          :src="user.profileImageUrl"
-          :alt="`${displayName} 프로필 이미지`"
-          @error="imageLoadFailed = true"
-        />
-        <div v-else class="profile-placeholder">{{ profileInitial }}</div>
-        <div class="profile-name-wrap">
-          <strong class="profile-name">{{ displayName }}</strong>
-          <span class="profile-username">@{{ user.username }}</span>
-        </div>
-      </div>
-
-      <div class="info-list">
-        <div class="info-row">
-          <span class="info-label">권한</span>
-          <span class="role-badge">{{ user.role || 'USER' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">계정 상태</span>
-          <span class="status-badge">{{ user.accountStatus || 'ACTIVE' }}</span>
-        </div>
-      </div>
-
-      <div class="bio-section">
-        <span class="bio-label">자기소개</span>
-        <p class="bio-text">{{ user.bio || '등록된 자기소개가 없습니다.' }}</p>
-      </div>
-
-      <template v-if="showActions">
-        <button @click="emit('edit-profile')">수정</button>
-        <button class="delete-button" @click="deleteUser" :disabled="isDeleting">
-          {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
+      <div v-if="showAdminActions" class="admin-detail-tabs" role="tablist">
+        <button
+          type="button"
+          :class="['admin-detail-tab', { active: activeAdminTab === 'profile' }]"
+          @click="changeAdminTab('profile')"
+        >
+          회원 정보
         </button>
-      </template>
-      <template v-if="showAdminActions">
-        <div class="admin-actions">
-          <button
-            class="role-open-button"
-            :disabled="!canOpenRoleControl"
-            @click="openRoleControl"
-          >
-            {{ roleControlButtonText }}
-          </button>
-          <button
-            v-if="user.accountStatus === 'SUSPENDED'"
-            class="release-button"
-            :disabled="!canReleaseSuspension || isReleasingSuspension"
-            @click="isReleaseFormOpen = true"
-          >
-            {{ isReleasingSuspension ? '해제 처리 중...' : releaseButtonText }}
-          </button>
-          <button
-            v-else
-            class="suspend-button"
-            :disabled="!canSuspend || isSuspending"
-            @click="isSuspensionFormOpen = true"
-          >
-            {{ isSuspending ? '정지 처리 중...' : suspendButtonText }}
-          </button>
+        <button
+          type="button"
+          :class="['admin-detail-tab', { active: activeAdminTab === 'problems' }]"
+          @click="changeAdminTab('problems')"
+        >
+          작성한 문제
+        </button>
+      </div>
+
+      <div v-show="!showAdminActions || activeAdminTab === 'profile'" class="admin-tab-panel">
+        <div class="profile-summary">
+          <img
+            v-if="user.profileImageUrl && !imageLoadFailed"
+            class="profile-image"
+            :src="user.profileImageUrl"
+            :alt="`${displayName} 프로필 이미지`"
+            @error="imageLoadFailed = true"
+          />
+          <div v-else class="profile-placeholder">{{ profileInitial }}</div>
+          <div class="profile-name-wrap">
+            <strong class="profile-name">{{ displayName }}</strong>
+            <span class="profile-username">@{{ user.username }}</span>
+          </div>
         </div>
-      </template>
-      <button class="back-button" @click="emit('back')">뒤로가기</button>
+
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">이메일</span>
+            <span class="info-value">{{ user.email || '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">권한</span>
+            <span class="role-badge">{{ user.role || 'USER' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">계정 상태</span>
+            <span class="status-badge">{{ user.accountStatus || 'ACTIVE' }}</span>
+          </div>
+        </div>
+
+        <div class="bio-section">
+          <span class="bio-label">자기소개</span>
+          <p class="bio-text">{{ user.bio || '등록된 자기소개가 없습니다.' }}</p>
+        </div>
+
+        <div class="user-actions">
+          <template v-if="showActions">
+            <button @click="emit('edit-profile')">수정</button>
+            <button class="delete-button" @click="deleteUser" :disabled="isDeleting">
+              {{ isDeleting ? '탈퇴 중...' : '회원 탈퇴' }}
+            </button>
+          </template>
+          <template v-if="showAdminActions">
+            <div class="admin-actions">
+              <button
+                class="role-open-button"
+                :disabled="!canOpenRoleControl"
+                @click="openRoleControl"
+              >
+                {{ roleControlButtonText }}
+              </button>
+              <button
+                v-if="user.accountStatus === 'SUSPENDED'"
+                class="release-button"
+                :disabled="!canReleaseSuspension || isReleasingSuspension"
+                @click="isReleaseFormOpen = true"
+              >
+                {{ isReleasingSuspension ? '해제 처리 중...' : releaseButtonText }}
+              </button>
+              <button
+                v-else
+                class="suspend-button"
+                :disabled="!canSuspend || isSuspending"
+                @click="isSuspensionFormOpen = true"
+              >
+                {{ isSuspending ? '정지 처리 중...' : suspendButtonText }}
+              </button>
+            </div>
+          </template>
+          <button class="back-button" @click="emit('back')">뒤로가기</button>
+        </div>
+      </div>
+
+      <AdminUserProblemsPanel
+        v-if="showAdminActions"
+        v-show="activeAdminTab === 'problems'"
+        :username="props.username"
+        :display-username="user.username"
+        :active="activeAdminTab === 'problems'"
+      />
+
     </div>
 
     <UserSuspensionForm
@@ -385,6 +449,14 @@ async function updateUserRole(payload) {
   text-align: left;
 }
 
+.user-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .user-panel h2 {
   margin-bottom: 4px;
   color: #333;
@@ -393,7 +465,6 @@ async function updateUserRole(payload) {
 .user-subtitle {
   color: #999;
   font-size: 14px;
-  margin-bottom: 24px;
 }
 
 .guide-message {
@@ -412,6 +483,39 @@ async function updateUserRole(payload) {
   color: #2e7d32;
   font-size: 13px;
   margin-bottom: 12px;
+}
+
+.admin-detail-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-detail-tab {
+  min-width: 112px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: white;
+  color: #777;
+  font-size: 14px;
+}
+
+.admin-detail-tab:hover,
+.admin-detail-tab.active {
+  background: #f8fbff;
+  color: #1a56db;
+}
+
+.admin-detail-tab.active {
+  border-color: #eee;
+  font-weight: 700;
+}
+
+.admin-tab-panel {
+  min-width: 0;
 }
 
 .profile-summary {
@@ -472,6 +576,7 @@ async function updateUserRole(payload) {
 
 .info-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 12px;
   border-bottom: 1px solid #eee;
@@ -489,24 +594,33 @@ async function updateUserRole(payload) {
 .info-value {
   color: #333;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .role-badge {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   background: #f2f7fd;
   color: #2f6fab;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .status-badge {
-  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   background: #f8f9fa;
   color: #555;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .bio-section {
@@ -533,6 +647,14 @@ async function updateUserRole(payload) {
   word-break: break-word;
 }
 
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 button {
   width: auto;
   min-width: 120px;
@@ -555,8 +677,6 @@ button:disabled {
 }
 
 .delete-button {
-  margin-top: 10px;
-  margin-left: 8px;
   background: #e74c3c;
 }
 
@@ -573,10 +693,9 @@ button:disabled {
 }
 
 .admin-actions {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
 }
 
 .role-open-button {
@@ -601,8 +720,6 @@ button:disabled {
 }
 
 .back-button {
-  margin-top: 10px;
-  margin-left: 8px;
   background: white;
   color: #4a90d9;
   border: 1px solid #4a90d9;
@@ -621,6 +738,11 @@ button:disabled {
     padding: 0;
   }
 
+  .user-detail-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .profile-summary {
     flex-direction: column;
     gap: 12px;
@@ -637,9 +759,22 @@ button:disabled {
     width: 100%;
   }
 
-  .delete-button,
-  .back-button {
-    margin-left: 0;
+  .user-actions {
+    flex-direction: column;
+  }
+
+  .admin-detail-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-detail-tab {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-actions > button {
+    width: 100%;
   }
 }
 </style>

@@ -3,7 +3,9 @@ package com.algolist.backend.problem.github;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -36,13 +38,15 @@ public class GitHubClient {
     }
 
     /** GitHub Search API 호출 → 응답 JSON 반환 */
-    public String searchCode(String query, int perPage) {
+    public List<String> searchCode(String query, int perPage, int page) {
         String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
-        URI uri = toUri("https://api.github.com/search/code?q=" + encoded + "&per_page=" + perPage);
-        return restClient.get()
-            .uri(uri)
-            .retrieve()
-            .body(String.class);
+        URI uri = toUri("https://api.github.com/search/code?q=" + encoded + "&per_page=" + perPage + "&page=" + page);
+        String json = restClient.get()
+					            .uri(uri)
+					            .retrieve()
+					            .body(String.class);
+        
+        return extractFileUrls(json);
     }
 
     /** GitHub Contents API로 파일 내용을 가져와 Base64 디코딩 후 반환 */
@@ -79,5 +83,28 @@ public class GitHubClient {
             return URI.create(url.replace("[", "%5B").replace("]", "%5D")
                                  .replace("{", "%7B").replace("}", "%7D"));
         }
+    }
+    
+    /** Search API 응답 JSON에서 파일의 Contents API URL을 추출한다 */
+    private List<String> extractFileUrls(String json) {
+        List<String> urls = new ArrayList<>();
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(json);
+        } catch (JsonProcessingException e) {
+            // checked → unchecked로 전환하여 전역 핸들러까지 전파 (삼키지 않음)
+            throw new IllegalStateException("GitHub 검색 응답 파싱 실패", e);
+        }
+
+        JsonNode items = root.get("items");
+        if (items != null && items.isArray()) {
+            for (JsonNode item : items) {
+                JsonNode urlNode = item.get("url");
+                if (urlNode != null) {
+                    urls.add(urlNode.asText());
+                }
+            }
+        }
+        return urls;
     }
 }

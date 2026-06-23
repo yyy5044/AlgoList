@@ -2,7 +2,7 @@ package com.algolist.backend.reminder;
 
 import java.time.LocalDate;
 
-import com.algolist.backend.problem.UserProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 import lombok.Getter;
 import lombok.Setter;

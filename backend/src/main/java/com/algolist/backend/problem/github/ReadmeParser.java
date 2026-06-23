@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
-import com.algolist.backend.problem.ProblemDto;
+import com.algolist.backend.problem.dto.ProblemDto;
 
 /**
  * 백준허브가 생성한 README.md를 파싱하여 문제 메타데이터를 추출한다.
@@ -151,7 +151,7 @@ public class ReadmeParser {
             }
         }
 
-        return result.toString().replaceFirst("### 문제 설명\\s*", "").trim();
+        return result.toString().trim();
     }
 
     /** 헤더가 알려진 백준 문제 섹션인지 판별 */

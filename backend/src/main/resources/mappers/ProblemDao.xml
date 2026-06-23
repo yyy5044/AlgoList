@@ -81,4 +81,24 @@
 		INSERT IGNORE INTO problem_categories (problem_id, category_name)
 		VALUES (#{problemId}, #{categoryName})
 	</insert>
+	
+	<!-- 한 페이지 분량의 문제 가져오기 -->
+	<select id="selectPage" resultMap="problemMap">
+		SELECT p.problem_id, p.title, p.number, p.difficulty, p.site, p.link, pc.category_name
+		FROM (
+			SELECT problem_id, title, number, difficulty, site, link
+			FROM problems
+			WHERE site = #{site}
+			ORDER BY problem_id
+			LIMIT #{offset}, #{size}
+		) p
+		LEFT JOIN problem_categories pc USING (problem_id)
+	</select>
+	
+	<!-- 문제 본문 가져오기 -->
+	<select id="selectDescription" resultType="String">
+		SELECT description
+		FROM problems
+		WHERE problem_id=#{problemId}
+	</select>
 </mapper>

@@ -3,6 +3,8 @@ package com.algolist.backend.problem;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.algolist.backend.problem.dto.ProblemDto;
+
 import lombok.RequiredArgsConstructor;
 
 @Component

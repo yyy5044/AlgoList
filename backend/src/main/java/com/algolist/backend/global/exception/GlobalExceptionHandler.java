@@ -2,10 +2,12 @@ package com.algolist.backend.global.exception;
 
 import java.util.Map;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +28,12 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
 	}
 
+	/** 중복 이메일 → 409 */
+	@ExceptionHandler(DuplicateEmailException.class)
+	public ResponseEntity<Map<String, String>> handleDuplicateEmailException(DuplicateEmailException e) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+	}
+
 	/** 잘못된 요청 파라미터 → 400 */
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
@@ -38,5 +46,20 @@ public class GlobalExceptionHandler {
 		log.error("처리되지 않은 예외 발생", e);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 			.body("서버 내부 오류가 발생했습니다.");
+	}
+	
+	/** DB단에서 발생한 중복 문제 삽입 예외 */
+	@ExceptionHandler(DuplicateKeyException.class)
+	public ResponseEntity<String> handleDuplicateKeyException(DuplicateKeyException e){
+		log.warn("중복 문제 삽입 예외");
+		return ResponseEntity.status(HttpStatus.CONFLICT).body("중복 문제 삽입 요청");
+	}
+	
+	/** 프론트에서 없는 자원에 요청 보낼 때 예외 */
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException e) {
+	    log.warn("존재하지 않는 경로 요청: /{}", e.getResourcePath());
+	    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	            .body(Map.of("message", "존재하지 않는 경로입니다."));
 	}
 }

@@ -39,3 +39,13 @@ export async function fetchDescription(problemId) {
   const response = await request(`/api/problems/detail/${problemId}`)
   return response.text()
 }
+
+/**
+ * 코드포스 문제 AI 번역 조회.
+ * 서버가 캐싱을 담당한다(번역이 있으면 DB에서, 없으면 LLM 호출 후 저장).
+ * 응답: { problemId, translatedTitle, translatedDescription }
+ */
+export async function translate(problemId) {
+  const response = await request(`/api/problems/translation/${problemId}`)
+  return response.json()
+}

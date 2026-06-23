@@ -33,9 +33,13 @@ public interface UserDao {
 	
 	// username으로 로그인을 위해 특정 유저 찾기(비밀번호 포함)
 	public UserDto selectUserForAuth(@Param("username") String username);
+
+	public int countByEmail(@Param("email") String email);
 	
-	// username, password, nickname, profileImageUrl로 유저 추가
+	// username, password, email, nickname, profileImageUrl로 유저 추가
 	public int insertUser(@Param("username") String username,
+			@Param("email") String email,
+			@Param("emailVerifiedAt") LocalDateTime emailVerifiedAt,
 			@Param("password") String password,
 			@Param("nickname") String nickname,
 			@Param("profileImageUrl") String profileImageUrl);

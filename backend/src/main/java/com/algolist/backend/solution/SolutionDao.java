@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.algolist.backend.problem.UserProblemDto;
+import com.algolist.backend.problem.dto.UserProblemDto;
 
 @Mapper
 public interface SolutionDao {

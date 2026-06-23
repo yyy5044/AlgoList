@@ -47,6 +47,7 @@ public class ReminderServiceImpl implements ReminderService {
 		return reminders;
 	}
 
+	// 오늘 복습해야 하는 문제인지 확인
 	private int getDueDatePriority(ReminderProblemDto item, LocalDate today) {
 		return today.equals(item.getReviewDueDate()) ? 0 : 1;
 	}

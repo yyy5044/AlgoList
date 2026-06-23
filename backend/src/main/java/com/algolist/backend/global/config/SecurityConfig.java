@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import lombok.RequiredArgsConstructor;
@@ -35,13 +36,15 @@ public class SecurityConfig {
 	private final ObjectMapper objectMapper;
 	private final UserService userService;
 
-	// ⚠️ 개발용 설정: 모든 요청 허용 + CSRF 비활성화.
-	// 로그인/회원 기능 구현 시, 아래를 인증 규칙(formLogin, authorizeHttpRequests 등)으로 교체할 것.
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, SessionRegistry sessionRegistry) throws Exception {
-		http.csrf(csrf -> csrf.disable()) // REST API라 세션 기반 CSRF 토큰이 없으므로 끈다 (안 끄면 POST/DELETE가 403)
-			.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.POST, "/api/login").permitAll() // 로그인 요청은 모두 가능
+		http.csrf(csrf -> csrf.spa())
+			.headers(headers -> headers.contentTypeOptions(contentTypeOptions -> { // 웹 서버가 명시한 파일 타입을 브라우저가 임의적으로 변경하지 않도록 함
+			}))
+			.authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.GET, "/api/csrf").permitAll() // CSRF 토큰을 받는 요청은 모두 가능
+			.requestMatchers(HttpMethod.POST, "/api/login").permitAll() // 로그인 요청은 모두 가능
 			.requestMatchers(HttpMethod.POST, "/api/users").permitAll() // POST 요청으로 오는 /api/users(회원가입) 요청은 모두 가능
+			.requestMatchers(HttpMethod.POST, "/api/email-verifications", "/api/email-verifications/confirm").permitAll() // 이메일 인증 요청은 모두 가능
 			.requestMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN만 가능
 			.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // swagger 관련 요청은 모두 허용
 			.anyRequest().authenticated()) // 로그인을 제외한 나머지 요청들은 로그인해야 가능하도록 설정
@@ -55,6 +58,10 @@ public class SecurityConfig {
 					writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."); // UNAUTHORIZED(401) 응답 보내기
 				})
 				.accessDeniedHandler((request, response, accessDeniedException) -> {
+					if (accessDeniedException instanceof CsrfException) { // 유효하지 않은 CSRF 토큰이 들어왔을 때 예외 처리
+						writeErrorResponse(response, HttpStatus.FORBIDDEN, "CSRF 토큰이 유효하지 않습니다.");
+						return;
+					}
 					writeErrorResponse(response, HttpStatus.FORBIDDEN, "접근 권한이 없습니다.");
 				}))
 		.formLogin(login -> login.loginProcessingUrl("/api/login") // 로그인 요청은 /api/login 요청일 때

@@ -8,6 +8,7 @@ import 'prismjs/components/prism-cpp'
 import 'prismjs/plugins/line-numbers/prism-line-numbers'
 import 'prismjs/themes/prism-tomorrow.css'
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const props = defineProps({
@@ -116,7 +117,7 @@ function resetFileSelection() {
 }
 
 async function fetchSolutions(userProblemId) {
-  const response = await fetch(`/api/solutions/${userProblemId}`, {
+  const response = await fetchWithCsrf(`/api/solutions/${userProblemId}`, {
     credentials: 'include' // 세션 쿠키
   })
   solutions.value = await response.json()
@@ -140,7 +141,7 @@ async function fetchSolutionDetail(solutionId) {
 
   try {
     isLoadingSolution.value = true
-    const response = await fetch(`/api/solutions/detail/${solutionId}`, {
+    const response = await fetchWithCsrf(`/api/solutions/detail/${solutionId}`, {
       credentials: 'include' // 세션 쿠키
     })
 
@@ -308,7 +309,7 @@ async function uploadFile() {
 
   try {
     isUploading.value = true
-    const response = await fetch('/api/solutions', {
+    const response = await fetchWithCsrf('/api/solutions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(solution),
@@ -338,7 +339,7 @@ async function uploadFile() {
 // 풀이 삭제
 async function deleteSolution(id) {
   try {
-    const response = await fetch(`/api/solutions/${id}`, {
+    const response = await fetchWithCsrf(`/api/solutions/${id}`, {
       method: 'DELETE',
       credentials: 'include' // 세션 쿠키
     })

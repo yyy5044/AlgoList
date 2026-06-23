@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { fetchWithCsrf } from '../api/http'
 import { NETWORK_ERROR_MESSAGE, readErrorMessage } from '../utils/apiError'
 
 const emit = defineEmits(['back', 'select-user'])
@@ -65,7 +66,7 @@ async function loadUsers() {
   try {
     isLoading.value = true
     errorMessage.value = ''
-    const response = await fetch(buildUserListUrl(), {
+    const response = await fetchWithCsrf(buildUserListUrl(), {
       credentials: 'include',
     })
 
