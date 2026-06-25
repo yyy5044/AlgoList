@@ -72,22 +72,18 @@ public class TranslationServiceImpl implements TranslationService {
 	
 	@Override
 	public TranslatedProblemDto getTranslatedProblem(Long problemId) {
-		// 1. 락 밖 캐시 확인 — 이미 번역된 문제(대부분의 요청)는 락 없이 바로 반환한다.
 		TranslatedProblemDto cached = tDao.getTranslatedProblem(problemId);
 		if (cached != null) {
 			return cached;
 		}
 
-		// 2. problemId 전용 락 — 같은 문제의 동시 번역을 한 스레드로 직렬화한다.
 		Object lock = translationLocks.computeIfAbsent(problemId, k -> new Object());
 		synchronized (lock) {
-			// 3. 더블체크 — 락을 기다리는 동안 다른 스레드가 이미 번역해 저장했을 수 있다.
 			cached = tDao.getTranslatedProblem(problemId);
 			if (cached != null) {
 				return cached;
 			}
 
-			// 4. 정말 첫 번역인 경우에만 실제 번역을 수행한다.
 			return translateAndStore(problemId);
 		}
 	}
