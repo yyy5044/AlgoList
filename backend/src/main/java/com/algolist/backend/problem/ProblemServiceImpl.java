@@ -25,12 +25,12 @@ public class ProblemServiceImpl implements ProblemService {
 	}
 
 	/**
-	 * 문제 검색: DB 우선 → DB에 없으면 GitHub에서 실시간 수집 후 저장
-	 *
-	 * @Transactional 없음 — GitHub API 호출 중 DB 커넥션 점유를 방지하기 위해
-	 * DB 저장은 ProblemWriter.save()에서 문제 단위로 트랜잭션 처리
+	 * [측정용 before 재현] 과거 안티패턴: 메서드 전체를 @Transactional 로 묶어
+	 * GitHub 검색·파싱·이미지 처리(외부 I/O) 동안에도 DB 커넥션을 점유한다.
+	 * ProblemWriter.save()의 @Transactional 은 REQUIRED 라 이 트랜잭션에 합류한다.
 	 */
 	@Override
+	@Transactional
 	public List<ProblemDto> searchProblem(String query) {
 		// 1. DB 검색
 		List<ProblemDto> results = dao.searchProblem(query);
