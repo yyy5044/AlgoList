@@ -49,6 +49,7 @@ public class CodeforcesPageReader implements ItemStreamReader<JsonNode> {
     private final long requestDelayMs;     // 페이지 요청 사이에 쉬는 시간(ms) — rate limit 예방용 throttle
     private final int maxRetries;          // 일시 오류(502/429 등) 시 재시도 횟수
     private final int maxConsecutiveSkips; // 연속 실패가 이만큼 넘으면 체계적 장애로 보고 중단
+    private final int maxPages;            // 읽을 페이지 수 상한(0 = 무제한) — 측정/부분 수집용
     private final FailedPageRecorder failedPageRecorder; // 끝내 실패한 페이지 기록기
 
     private final RestClient restClient = RestClient.create();
@@ -64,11 +65,13 @@ public class CodeforcesPageReader implements ItemStreamReader<JsonNode> {
             @Value("${codeforces.batch.request-delay-ms:300}") long requestDelayMs,
             @Value("${codeforces.batch.max-retries:3}") int maxRetries,
             @Value("${codeforces.batch.max-consecutive-skips:5}") int maxConsecutiveSkips,
+            @Value("${codeforces.batch.max-pages:0}") int maxPages,
             FailedPageRecorder failedPageRecorder) {
         this.pageSize = pageSize;
         this.requestDelayMs = requestDelayMs;
         this.maxRetries = maxRetries;
         this.maxConsecutiveSkips = maxConsecutiveSkips;
+        this.maxPages = maxPages;
         this.failedPageRecorder = failedPageRecorder;
     }
 
@@ -110,6 +113,10 @@ public class CodeforcesPageReader implements ItemStreamReader<JsonNode> {
     private List<JsonNode> nextAvailablePage() {
         while (true) {
             long offset = nextOffset;
+            if (maxPages > 0 && offset >= (long) maxPages * pageSize) {
+                log.info("[CF-READ] max-pages({}) 도달 — 읽기 종료", maxPages);
+                return null; // 상한 도달 = 데이터셋 끝과 동일하게 종료
+            }
             nextOffset += pageSize;
             try {
                 List<JsonNode> page = fetchPage(offset);
