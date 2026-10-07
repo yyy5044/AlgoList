@@ -3,6 +3,7 @@ package com.algolist.backend.db;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.batch.autoconfigure.BatchTransactionManager;
 import org.springframework.boot.batch.jdbc.autoconfigure.BatchDataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -24,6 +25,7 @@ public class BatchSystemDBConfig {
     }
 
     @Bean
+    @BatchTransactionManager
     PlatformTransactionManager batchSystemTransactionManager(@Qualifier("batchSystemDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
     }

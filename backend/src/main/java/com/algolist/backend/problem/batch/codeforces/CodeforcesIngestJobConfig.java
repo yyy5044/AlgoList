@@ -41,7 +41,7 @@ public class CodeforcesIngestJobConfig {
     @Bean
     public Step codeforcesIngestStep(
             JobRepository jobRepository,
-            PlatformTransactionManager txManager,   // algolist 데이터소스용 트랜잭션 매니저(자동 구성, 유일)
+            PlatformTransactionManager txManager,   // algolist 데이터소스용 트랜잭션 매니저(비즈니스DB, 배치DB 중 @Primary가 달린 것으로 구성)
             CodeforcesPageReader reader,
             CodeforcesParser parser,
             ProblemItemWriter writer,
