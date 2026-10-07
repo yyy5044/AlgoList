@@ -3,27 +3,26 @@ package com.algolist.backend.problem.batch.codeforces;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 
 import com.algolist.backend.problem.batch.common.ProblemParseException;
-import com.algolist.backend.problem.batch.common.ProblemParser;
 import com.algolist.backend.problem.dto.ProblemDto;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * [PROCESS 단계 - 코드포스 전용] 허깅페이스 raw row(JsonNode) 한 건을 ProblemDto 로 변환한다.
  *
- * ProblemParser&lt;JsonNode&gt; 를 구현 → Step 의 processor 자리에 parser::parse 메서드 참조로 꽂힌다.
  * 변환 불가(필수 필드 누락) 또는 예기치 못한 오류는 모두 ProblemParseException 으로 던진다.
  *   → Step 의 skip(ProblemParseException) 설정에 걸려 "실패"로 집계되고 건너뛰어진다.
  */
 @Component
-public class CodeforcesParser implements ProblemParser<JsonNode> {
+public class CodeforcesParser implements ItemProcessor<JsonNode, ProblemDto> {
 
     private static final String SITE = "CODEFORCES";
 
     @Override
-    public ProblemDto parse(JsonNode row) {
+    public ProblemDto process(JsonNode row) {
         try {
             // 문제 번호(number)와 링크를 만들 수 없는 행은 변환 불가 → 실패로 던진다.
             if (!row.hasNonNull("contest_id") || !row.hasNonNull("index")) {

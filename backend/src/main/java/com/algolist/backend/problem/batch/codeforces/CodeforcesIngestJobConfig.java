@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  *   codeforcesIngestJob                                  (실행 단위, 관리자 트리거로 실행)
  *     └─ codeforcesIngestStep (chunk = page-size)        (작업 한 덩어리)
  *          ├─ reader   : CodeforcesPageReader  (전량을 페이징하며 읽음 + offset 체크포인트)
- *          ├─ processor: CodeforcesParser::parse(JsonNode -> ProblemDto, 실패 시 예외)
+ *          ├─ processor: CodeforcesParser(JsonNode -> ProblemDto, 실패 시 예외)
  *          └─ writer   : ProblemItemWriter     (algolist DB 적재, 소스 공용)
  *
  * 핵심 동작
@@ -52,7 +52,7 @@ public class CodeforcesIngestJobConfig {
         return new StepBuilder(STEP_NAME, jobRepository)
                 .<JsonNode, ProblemDto>chunk(pageSize)   // 100건씩 한 청크 (== 한 페이지)
                 .reader(reader)                 // 읽기 (허깅페이스 전량, offset 체크포인트)
-                .processor(parser::parse)       // 변환 (JsonNode → ProblemDto), 실패 시 ProblemParseException
+                .processor(parser)       // 변환 (JsonNode → ProblemDto), 실패 시 ProblemParseException
                 .writer(writer)                 // 저장 (algolist)
                 .transactionManager(txManager)  // 청크 한 묶음의 commit/rollback 경계
                 .faultTolerant()                // 내결함성 켜기
