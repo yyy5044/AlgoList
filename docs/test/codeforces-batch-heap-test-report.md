@@ -17,7 +17,7 @@
 
 - 응답 전체를 `String`으로 수신한 뒤 `ObjectMapper.readTree()`로 통짜 JsonNode 트리를 구성
 - 이 시점의 힙에는 ① 응답 String 전체, ② 전체 JSON 트리, ③ 하류(청크)로 전달된 100건의 full-fat JsonNode가 동시에 존재
-- 데이터셋 행에는 파서가 사용하지 않는 대용량 필드(`generated_tests`, 풀이 코드 등)가 포함되어 있어, 한 페이지(100건) 응답만으로도 수백 MB급 힙이 필요
+- 데이터셋 행에는 파서가 사용하지 않는 대용량 필드(주로 `official_tests`)가 포함되어 있어, 한 페이지(100건) 응답만으로도 수백 MB급 힙이 필요
 
 개선판은 응답 body를 `InputStream`으로 받아 Jackson `JsonParser`로 토큰 단위 순회하며, 파서가 실제로 사용하는 필드(KEEP 10개)만 슬림 노드로 추출하고 나머지는 `skipChildren()`으로 읽는 즉시 버린다. 당시 수정으로 운영 OOM은 해소되었으나 **정량 측정 없이 배포**되어, 본 측정으로 개선 효과를 수치화했다.
 
@@ -184,3 +184,14 @@ grep -oE '[0-9]+M->[0-9]+M\([0-9]+M\)' "$1" \
 | 데이터 소스 | `datasets-server.huggingface.co` `open-r1/codeforces` (train split, 전체 약 10,000건 중 앞 3,000건) |
 | Spring Batch | 6.0.3 (Spring Boot 4.x) |
 | 상한 커밋 | `perf-before` `5443729` / `perf-after` `da52055` |
+
+## 정정 (2026-11-13)
+
+1장 배경의 대용량 필드 표기를 `generated_tests`, 풀이 코드 → `official_tests` 로 고쳤다. 최초 작성 시에는 추정으로 적었고, 이후 허깅페이스 응답을 직접 받아 필드별 크기를 확인했다(2026-10-02).
+
+- 데이터셋은 약 9,556행, 행당 27필드. 파서가 사용하는 필드는 10개(KEEP).
+- offset 500~599 페이지 응답은 143MB. 이 중 row 566(contest 1838 C) 한 행이 107.4MB이며 거의 전부 `official_tests` 필드다.
+- 같은 행에서 KEEP 10필드의 합계는 1.8KB.
+- 행 크기가 극단적으로 편중되어 있어, 페이지·청크 건수를 줄여도 무거운 행이 포함된 묶음에서는 OOM 이 난다.
+
+측정 수치(피크 힙 1,570M → 105M)와 결론에는 영향이 없다.

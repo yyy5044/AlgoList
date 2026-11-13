@@ -56,7 +56,7 @@ public class CodeforcesPageReader implements ItemStreamReader<JsonNode> {
 
     /**
      * CodeforcesParser 가 실제로 사용하는 필드만 남긴다.
-     * 여기 없는 무거운 필드(generated_tests, solutions, editorials 등)는 스트림에서 읽는 즉시 버린다.
+     * 여기 없는 필드(가장 무거운 official_tests 포함)는 스트림에서 읽는 즉시 버린다.
      */
     private static final Set<String> KEEP = Set.of(
             "contest_id", "index", "title", "rating", "tags",
